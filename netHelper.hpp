@@ -89,7 +89,7 @@ namespace bestsens {
 
 			if(response) {
 				*response = nlohmann::json::parse(str);
-				
+
 				if(response->empty()) {
 					syslog(LOG_ERR, "Error");
 					free(str);
