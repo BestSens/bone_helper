@@ -13,12 +13,9 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netdb.h>
-
 #include <syslog.h>
 
-extern "C" {
-	#include "../cJSON/cJSON.h"
-}
+#include "../json/src/json.hpp"
 
 namespace bestsens {
     class netHelper {
@@ -50,36 +47,26 @@ namespace bestsens {
 	class jsonNetHelper : public netHelper {
 	public:
 		using netHelper::netHelper;
-		int send_command(std::string command, cJSON ** json, const cJSON * payload);
+		int send_command(std::string command, nlohmann::json * response, const nlohmann::json * payload);
 	};
 
 	int netHelper::get_sockfd() {
 		return this->sockfd;
 	}
 
-	int jsonNetHelper::send_command(std::string command, cJSON ** json = NULL, const cJSON * payload = NULL) {
-		/*
-		 * create JSON object
-		 */
-		cJSON * temp = cJSON_CreateObject();
-		cJSON_AddStringToObject(temp, "command", command.c_str());
+	int jsonNetHelper::send_command(std::string command, nlohmann::json * response = NULL, const nlohmann::json * payload = NULL) {
+		nlohmann::json temp = {{"command", command}};
 
 		if(payload)
-			cJSON_AddItemToObject(temp, "payload", (cJSON *)payload);
-
-		char * data = cJSON_PrintUnformatted(temp);
+			temp["payload"] = *payload;
 
 		std::stringstream data_stream;
-		data_stream << data << "\r\n";
+		data_stream << temp << "\r\n";
 
 		/*
 		 * send data to server
 		 */
 		this->send(data_stream.str());
-
-		free(data);
-		cJSON_DetachItemFromObject(temp, "payload");
-		cJSON_Delete(temp);
 
 		/*
 		 * receive data length
@@ -100,10 +87,11 @@ namespace bestsens {
 		if(t > 0) {
 			str[t] = '\0';
 
-			if(json) {
-				*json = cJSON_Parse(str);
-				if (!*json) {
-					syslog(LOG_ERR, "Error before: [%s]\n", cJSON_GetErrorPtr());
+			if(response) {
+				*response = nlohmann::json::parse(str);
+				
+				if(response->empty()) {
+					syslog(LOG_ERR, "Error");
 					free(str);
 					return 0;
 				}
