@@ -17,6 +17,8 @@
 
 #include "../json/src/json.hpp"
 
+using json = nlohmann::json;
+
 namespace bestsens {
     class netHelper {
     public:
@@ -47,18 +49,18 @@ namespace bestsens {
 	class jsonNetHelper : public netHelper {
 	public:
 		using netHelper::netHelper;
-		int send_command(std::string command, nlohmann::json * response, const nlohmann::json * payload);
+		int send_command(std::string command, json& response, json payload);
 	};
 
 	int netHelper::get_sockfd() {
 		return this->sockfd;
 	}
 
-	int jsonNetHelper::send_command(std::string command, nlohmann::json * response = NULL, const nlohmann::json * payload = NULL) {
-		nlohmann::json temp = {{"command", command}};
+	int jsonNetHelper::send_command(std::string command, json& response, json payload = {}) {
+		json temp = {{"command", command}};
 
-		if(payload)
-			temp["payload"] = *payload;
+		if(payload.is_object())
+			temp["payload"] = payload;
 
 		std::stringstream data_stream;
 		data_stream << temp << "\r\n";
@@ -87,10 +89,10 @@ namespace bestsens {
 		if(t > 0) {
 			str[t] = '\0';
 
-			if(response) {
-				*response = nlohmann::json::parse(str);
+			if(&response != NULL) {
+				response = json::parse(str);
 
-				if(response->empty()) {
+				if(response.empty()) {
 					syslog(LOG_ERR, "Error");
 					free(str);
 					return 0;
