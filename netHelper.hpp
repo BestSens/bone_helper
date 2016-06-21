@@ -74,9 +74,10 @@ namespace bestsens {
 		 * receive data length
 		 */
 		int data_len = 0;
-		char len_buffer[8];
+		char len_buffer[9];
 
 		if(this->recv(&len_buffer, 8) == 8) {
+            len_buffer[8] = '\0';
 			data_len = strtoul(len_buffer, NULL, 16);
 		}
 
