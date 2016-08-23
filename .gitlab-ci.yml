@@ -1,0 +1,16 @@
+before_script:
+    - cd test
+
+stages:
+    - build
+    - test
+
+build:
+    stage: build
+    script:
+        - make
+
+test:
+    stage: test
+    script:
+        - ./test
