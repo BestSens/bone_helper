@@ -9,6 +9,10 @@ build:
     stage: build
     script:
         - make
+    artifacts:
+        paths:
+        - test
+        expire_in: 10 minutes
 
 test:
     stage: test
