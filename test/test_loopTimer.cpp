@@ -1,8 +1,8 @@
-#include <boost/test/unit_test.hpp>
+#include "libs/catch/include/catch.hpp"
 #include <chrono>
 #include "../loopTimer.hpp"
 
-BOOST_AUTO_TEST_CASE(loopTimer_test) {
+TEST_CASE("loopTimer_test") {
     /*
      * check first timer with delayed start
      */
@@ -15,7 +15,7 @@ BOOST_AUTO_TEST_CASE(loopTimer_test) {
     timer->wait_on_tick();
     auto calculation_end = std::chrono::steady_clock::now();
     auto runtime = calculation_end - calculation_start;
-    BOOST_CHECK(std::chrono::duration<double>(runtime).count() >= 0.1);
+    CHECK(std::chrono::duration<double>(runtime).count() >= 0.1);
 
     /*
      * check second tick
@@ -23,7 +23,7 @@ BOOST_AUTO_TEST_CASE(loopTimer_test) {
     timer->wait_on_tick();
     calculation_end = std::chrono::steady_clock::now();
     runtime = calculation_end - calculation_start;
-    BOOST_CHECK(std::chrono::duration<double>(runtime).count() >= 0.2);
+    CHECK(std::chrono::duration<double>(runtime).count() >= 0.2);
 
     delete timer;
 
@@ -39,7 +39,7 @@ BOOST_AUTO_TEST_CASE(loopTimer_test) {
     timer2->wait_on_tick();
     calculation_end = std::chrono::steady_clock::now();
     runtime = calculation_end - calculation_start;
-    BOOST_CHECK(std::chrono::duration<double>(runtime).count() < 0.1);
+    CHECK(std::chrono::duration<double>(runtime).count() < 0.1);
 
     /*
      * check second tick
@@ -47,7 +47,8 @@ BOOST_AUTO_TEST_CASE(loopTimer_test) {
     timer2->wait_on_tick();
     calculation_end = std::chrono::steady_clock::now();
     runtime = calculation_end - calculation_start;
-    BOOST_CHECK(std::chrono::duration<double>(runtime).count() < 0.2 && std::chrono::duration<double>(runtime).count() > 0.1);
+    CHECK(std::chrono::duration<double>(runtime).count() < 0.2);
+    CHECK(std::chrono::duration<double>(runtime).count() > 0.1);
 
     delete timer2;
 }

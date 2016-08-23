@@ -1,3 +1,2 @@
-#define BOOST_TEST_DYN_LINK
-#define BOOST_TEST_MODULE "loopTimer"
-#include <boost/test/included/unit_test.hpp>
+#define CATCH_CONFIG_MAIN
+#include "libs/catch/include/catch.hpp"
