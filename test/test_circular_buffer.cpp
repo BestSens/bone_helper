@@ -1,7 +1,5 @@
-#include "../circular_buffer.hpp"
-#define BOOST_TEST_DYN_LINK
-#define BOOST_TEST_MODULE CircularBuffer
 #include <boost/test/unit_test.hpp>
+#include "../circular_buffer.hpp"
 
 #define BUFFER_SIZE 100
 
