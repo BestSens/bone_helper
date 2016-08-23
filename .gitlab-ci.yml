@@ -14,9 +14,9 @@ build:
     artifacts:
         paths:
         - test
-        expire_in: 10 minutes
+        expire_in: 5 minutes
 
 test:
     stage: test
     script:
-        - ./test
+        - ./test ~loopTimer_test -d yes
