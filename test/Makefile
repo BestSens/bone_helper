@@ -1,7 +1,7 @@
 CPPFLAGS = -std=c++14 -O3 -Wall
 LDFLAGS = -lm -lpthread -lboost_unit_test_framework
 
-OBJ = test_main.o test_circular_buffer.o test_loopTimer.o
+OBJ = test_main.o test_circular_buffer.o
 BIN = test
 
 .PHONY: clean
