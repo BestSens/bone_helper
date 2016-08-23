@@ -12,4 +12,4 @@
 *.user
 *.o
 *.txt
-test
+test/test
