@@ -25,8 +25,6 @@ TEST_CASE("loopTimer_test") {
     runtime = calculation_end - calculation_start;
     CHECK(std::chrono::duration<double>(runtime).count() >= 0.2);
 
-    delete timer;
-
     /*
      * check second timer with direct start
      */
@@ -49,6 +47,4 @@ TEST_CASE("loopTimer_test") {
     runtime = calculation_end - calculation_start;
     CHECK(std::chrono::duration<double>(runtime).count() < 0.2);
     CHECK(std::chrono::duration<double>(runtime).count() > 0.1);
-
-    delete timer2;
 }

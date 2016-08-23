@@ -19,4 +19,4 @@ build:
 test:
     stage: test
     script:
-        - ./test ~loopTimer_test -d yes
+        - ./test -d yes
