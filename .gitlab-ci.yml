@@ -1,3 +1,5 @@
+image: gcc:4.9
+
 before_script:
     - git submodule init
     - git submodule update
