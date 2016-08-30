@@ -24,7 +24,23 @@ using json = nlohmann::json;
 namespace bestsens {
     class netHelper {
     public:
-		netHelper(std::string conn_target, std::string conn_port) : conn_target(conn_target), conn_port(conn_port);
+		netHelper(std::string conn_target, std::string conn_port) : conn_target(conn_target), conn_port(conn_port) {
+            /*
+             * socket configuration
+             */
+            memset(&(this->remote), 0, sizeof (this->remote));
+            this->remote.ai_family = AF_UNSPEC;
+            this->remote.ai_socktype = SOCK_STREAM;
+
+            getaddrinfo(this->conn_target.c_str(), this->conn_port.c_str(), &(this->remote), &(this->res));
+
+            /*
+             * open socket
+             */
+            if((this->sockfd = socket(this->res->ai_family, this->res->ai_socktype, this->res->ai_protocol)) == -1) {
+                syslog(LOG_CRIT, "socket");
+            }
+        };
 		~netHelper();
 
 		int connect();
@@ -52,7 +68,7 @@ namespace bestsens {
 	public:
         using netHelper::netHelper;
 
-        jsonNetHelper(std::string &conn_target, std::string &conn_port) : netHelper(conn_target, conn_port), user_level(0) {}
+        jsonNetHelper(std::string conn_target, std::string conn_port) : netHelper(conn_target, conn_port), user_level(0) {}
 
 		int send_command(std::string command, json& response, json payload);
 
@@ -68,7 +84,7 @@ namespace bestsens {
 		return this->sockfd;
 	}
 
-    int jsonNetHelper::login(std::string &user_name, std::string &hashed_password) {
+    int jsonNetHelper::login(std::string user_name, std::string hashed_password) {
         /*
          * request token
          */
@@ -168,24 +184,6 @@ namespace bestsens {
 		free(str);
 
 		return 1;
-	}
-
-	netHelper::netHelper(std::string conn_target, std::string conn_port) {
-		/*
-		 * socket configuration
-		 */
-		memset(&(this->remote), 0, sizeof (this->remote));
-		this->remote.ai_family = AF_UNSPEC;
-		this->remote.ai_socktype = SOCK_STREAM;
-
-		getaddrinfo(this->conn_target.c_str(), this->conn_port.c_str(), &(this->remote), &(this->res));
-
-		/*
-		 * open socket
-		 */
-		if((this->sockfd = socket(this->res->ai_family, this->res->ai_socktype, this->res->ai_protocol)) == -1) {
-			syslog(LOG_CRIT, "socket");
-		}
 	}
 
 	netHelper::~netHelper() {
