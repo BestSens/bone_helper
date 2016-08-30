@@ -24,7 +24,7 @@ using json = nlohmann::json;
 namespace bestsens {
     class netHelper {
     public:
-		netHelper(std::string conn_target, std::string conn_port);
+		netHelper(std::string conn_target, std::string conn_port) : conn_target(conn_target), conn_port(conn_port);
 		~netHelper();
 
 		int connect();
@@ -50,7 +50,10 @@ namespace bestsens {
 
 	class jsonNetHelper : public netHelper {
 	public:
-		using netHelper::netHelper;
+        using netHelper::netHelper;
+
+        jsonNetHelper(std::string &conn_target, std::string &conn_port) : netHelper(conn_target, conn_port), user_level(0) {}
+
 		int send_command(std::string command, json& response, json payload);
 
 
@@ -65,7 +68,7 @@ namespace bestsens {
 		return this->sockfd;
 	}
 
-    int jsonNetHelper::login(std::string user_name, std::string hashed_password) {
+    int jsonNetHelper::login(std::string &user_name, std::string &hashed_password) {
         /*
          * request token
          */
@@ -86,7 +89,7 @@ namespace bestsens {
         std::string concat = hashed_password + token;
 
         unsigned char hash[SHA512_DIGEST_LENGTH];
-        char login_token[SHA512_DIGEST_LENGTH*2+1];
+        char login_token[SHA512_DIGEST_LENGTH*2+1] = "";
 
         SHA512((unsigned char*)concat.c_str(), concat.length(), hash);
 
@@ -168,9 +171,6 @@ namespace bestsens {
 	}
 
 	netHelper::netHelper(std::string conn_target, std::string conn_port) {
-		this->conn_target = conn_target;
-		this->conn_port = conn_port;
-
 		/*
 		 * socket configuration
 		 */

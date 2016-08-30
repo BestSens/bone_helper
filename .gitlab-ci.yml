@@ -1,11 +1,13 @@
 image: gcc:4.9
 
 before_script:
+    - 'which git || ( apt-get update -y && apt-get install git -y )'
     - git submodule init
     - git submodule update
     - cd test
 
 stages:
+    - static test
     - build
     - test
 
@@ -22,3 +24,9 @@ test:
     stage: test
     script:
         - ./test -d yes
+
+static:
+    image: walberla/cppcheck
+    stage: static test
+    script:
+        - cppcheck --enable=warning,style,performance -j 2 ../netHelper.hpp ../loopTimer.hpp ../circular_buffer.hpp
