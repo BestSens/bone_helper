@@ -1,4 +1,4 @@
-CPPFLAGS = -std=c++14 -O3 -Wall
+CPPFLAGS = -std=c++14 -O3 -Wall -fsanitize=address
 LDFLAGS = -lm -lpthread -lcrypto
 
 OBJ = test_main.o test_circular_buffer.o test_loopTimer.o
