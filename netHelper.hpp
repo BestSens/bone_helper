@@ -10,10 +10,12 @@
 
 #include <sstream>
 #include <cstring>
-#include <sys/socket.h>
-#include <sys/types.h>
 #include <netdb.h>
 #include <syslog.h>
+
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <openssl/sha.h>
 
 #include "../json/src/json.hpp"
 
@@ -22,7 +24,23 @@ using json = nlohmann::json;
 namespace bestsens {
     class netHelper {
     public:
-		netHelper(std::string conn_target, std::string conn_port);
+		netHelper(std::string conn_target, std::string conn_port) : conn_target(conn_target), conn_port(conn_port) {
+            /*
+             * socket configuration
+             */
+            memset(&(this->remote), 0, sizeof (this->remote));
+            this->remote.ai_family = AF_UNSPEC;
+            this->remote.ai_socktype = SOCK_STREAM;
+
+            getaddrinfo(this->conn_target.c_str(), this->conn_port.c_str(), &(this->remote), &(this->res));
+
+            /*
+             * open socket
+             */
+            if((this->sockfd = socket(this->res->ai_family, this->res->ai_socktype, this->res->ai_protocol)) == -1) {
+                syslog(LOG_CRIT, "socket");
+            }
+        };
 		~netHelper();
 
 		int connect();
@@ -48,13 +66,75 @@ namespace bestsens {
 
 	class jsonNetHelper : public netHelper {
 	public:
-		using netHelper::netHelper;
+        using netHelper::netHelper;
+
+        jsonNetHelper(std::string conn_target, std::string conn_port) : netHelper(conn_target, conn_port), user_level(0) {}
+
 		int send_command(std::string command, json& response, json payload);
+
+
+        int login(std::string user_name, std::string hashed_password);
+        int is_logged_in();
+    private:
+        std::string user_name;
+        int user_level;
 	};
 
 	int netHelper::get_sockfd() {
 		return this->sockfd;
 	}
+
+    int jsonNetHelper::login(std::string user_name, std::string hashed_password) {
+        /*
+         * request token
+         */
+        json token_response;
+
+        this->send_command("request_token", token_response, NULL);
+
+        if(!token_response["payload"]["token"].is_string()) {
+            syslog(LOG_ERR, "token request failed");
+            return 0;
+        }
+
+        std::string token = token_response["payload"]["token"];
+
+        /*
+         * sign token
+         */
+        std::string concat = hashed_password + token;
+
+        unsigned char hash[SHA512_DIGEST_LENGTH];
+        char login_token[SHA512_DIGEST_LENGTH*2+1] = "";
+
+        SHA512((unsigned char*)concat.c_str(), concat.length(), hash);
+
+        for(int i=0; i<SHA512_DIGEST_LENGTH; i++) {
+            sprintf(login_token + i*2, "%02x", hash[i]);
+        }
+
+        /*
+         * do login
+         */
+        json payload = {
+            {"signed_token", login_token},
+            {"username", user_name}
+        };
+        json login_response;
+
+        this->send_command("auth", login_response, payload);
+
+        if(login_response["payload"]["error"].is_string())
+            syslog(LOG_ERR, "login failed: %s", login_response["payload"]["error"].get<std::string>().c_str());
+
+        this->user_level = login_response["payload"]["user_level"];
+
+        return this->user_level;
+    }
+
+    int jsonNetHelper::is_logged_in() {
+        return this->user_level;
+    }
 
 	int jsonNetHelper::send_command(std::string command, json& response, json payload = {}) {
 		json temp = {{"command", command}};
@@ -114,27 +194,6 @@ namespace bestsens {
 		return 1;
 	}
 
-	netHelper::netHelper(std::string conn_target, std::string conn_port) {
-		this->conn_target = conn_target;
-		this->conn_port = conn_port;
-
-		/*
-		 * socket configuration
-		 */
-		memset(&(this->remote), 0, sizeof (this->remote));
-		this->remote.ai_family = AF_UNSPEC;
-		this->remote.ai_socktype = SOCK_STREAM;
-
-		getaddrinfo(this->conn_target.c_str(), this->conn_port.c_str(), &(this->remote), &(this->res));
-
-		/*
-		 * open socket
-		 */
-		if((this->sockfd = socket(this->res->ai_family, this->res->ai_socktype, this->res->ai_protocol)) == -1) {
-			syslog(LOG_CRIT, "socket");
-		}
-	}
-
 	netHelper::~netHelper() {
 		this->disconnect();
 		freeaddrinfo(this->res);
@@ -146,14 +205,14 @@ namespace bestsens {
 
 	int netHelper::connect() {
 		if(this->connected)
-			return -1;
+			return 1;
 
 		/*
 		 * connect to socket
 		 */
 		if(::connect(this->sockfd, this->res->ai_addr, this->res->ai_addrlen) == -1) {
 			syslog(LOG_CRIT, "error connecting to %s:%s", this->conn_target.c_str(), this->conn_port.c_str());
-			return -1;
+			return 1;
 		}
 
 		this->connected = 1;

@@ -1,0 +1,15 @@
+*.opensdf
+*.sdf
+*.exe
+*.lib
+*.pdb
+*.ilk
+*.obj
+*.idb
+*.log
+*.tlog
+*.lastbuildstate
+*.user
+*.o
+*.txt
+test/test

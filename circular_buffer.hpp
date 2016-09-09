@@ -12,7 +12,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <climits>
-#include <pthread.h>
+#include <mutex>
 
 namespace bestsens {
 	template <typename T=unsigned long>
@@ -37,7 +37,7 @@ namespace bestsens {
 
 		int getRange(T * target, int start, int end);
 
-		pthread_mutex_t lock;
+		std::mutex mutex;
 	};
 
 	template <typename T>
@@ -46,10 +46,6 @@ namespace bestsens {
 		this->current_position = 0;
 		this->item_count = 0;
 		this->base_id = 0;
-
-		/* init mutex */
-	    if(pthread_mutex_init(&(this->lock), NULL) != 0)
-	        std::cout << "mutex init failed\r\n";
 
 		/* allocate buffer with zeros */
 		if((this->buffer = (T*)calloc(this->size, sizeof(T))) == NULL) {
@@ -62,13 +58,11 @@ namespace bestsens {
 	template <typename T>
 	CircularBuffer<T>::~CircularBuffer() {
 		free(this->buffer);
-
-		pthread_mutex_destroy(&(this->lock));
 	}
 
 	template <typename T>
 	int CircularBuffer<T>::add(T value) {
-		pthread_mutex_lock(&(this->lock));
+		this->mutex.lock();
 		this->buffer[this->current_position] = value;
 
 		this->current_position = (this->current_position + 1) % this->size;
@@ -79,7 +73,7 @@ namespace bestsens {
 		this->base_id = (this->base_id + 1) % INT_MAX;
 		//this->base_id = (this->base_id + 1) % this->size;
 
-		pthread_mutex_unlock(&(this->lock));
+		this->mutex.unlock();
 
 		return 0;
 	}
@@ -137,7 +131,7 @@ namespace bestsens {
 		if(*amount == 0)
 			*amount = -1;
 
-		pthread_mutex_lock(&(this->lock));
+		this->mutex.lock();
 
 		if(last_value > 0) {
 			int temp = this->base_id - last_value;
@@ -157,7 +151,7 @@ namespace bestsens {
 
 		*amount = getRange(target, 0, end);
 
-		pthread_mutex_unlock(&(this->lock));
+		this->mutex.unlock();
 
 		return last_position;
 	}
