@@ -164,7 +164,7 @@ namespace bestsens {
 		/*
 		 * receive actual data and parse
 		 */
-		char * str = (char*)malloc(data_len+1);
+		char * str = (char*)malloc(data_len+1 * sizeof(char));
 		int t = this->recv(str, data_len);
 
 		if(t > 0) {
