@@ -10,6 +10,8 @@
 
 #include "../json/src/json.hpp"
 
+using json = nlohmann::json;
+
 namespace bestsens {
     inline bool is_json_number(const json& input, std::string key) {
         return (input != NULL && input.count(key) > 0 && input.at(key).is_number());
