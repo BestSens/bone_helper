@@ -164,20 +164,28 @@ namespace bestsens {
 		/*
 		 * receive actual data and parse
 		 */
-		char * str = (char*)malloc(data_len+1);
+		char * str = (char*)malloc(data_len+1 * sizeof(char));
 		int t = this->recv(str, data_len);
 
 		if(t > 0) {
 			str[t] = '\0';
 
 			if(&response != NULL) {
-				response = json::parse(str);
+                try{
+    				response = json::parse(str);
 
-				if(response.empty()) {
-					syslog(LOG_ERR, "Error");
-					free(str);
-					return 0;
-				}
+    				if(response.empty()) {
+    					syslog(LOG_ERR, "Error");
+    					free(str);
+    					return 0;
+    				}
+                }
+                catch(const std::invalid_argument& ia) {
+                    syslog(LOG_ERR, ia.what());
+                    syslog(LOG_ERR, "input string: \"%s\"", str);
+                    free(str);
+                    return 0;
+                }
 			}
 		}
 
