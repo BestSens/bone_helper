@@ -13,6 +13,30 @@
 using json = nlohmann::json;
 
 namespace bestsens {
+    inline json merge_json(const json &a, const json &b) {
+        try {
+            json result = a.flatten();
+            json tmp = b.flatten();
+
+            for(json::iterator it = tmp.begin(); it != tmp.end(); ++it)
+                result[it.key()] = it.value();
+
+            return result.unflatten();
+        }
+        catch(const std::domain_error& ia) {
+            syslog(LOG_WARNING, "error merging json: %s", ia.what());
+        }
+        catch(const std::invalid_argument& ia) {
+            syslog(LOG_WARNING, "error merging json: %s", ia.what());
+        }
+
+        json return_value = a;
+        if(!return_value.is_object() && !return_value.is_array())
+            return_value = b;
+
+        return return_value;
+    }
+
     inline bool is_json_number(const json& input, std::string key) {
         return (input != NULL && input.count(key) > 0 && input.at(key).is_number());
     }
