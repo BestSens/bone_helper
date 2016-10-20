@@ -8,6 +8,7 @@
 #ifndef JSONHELPER_HPP_
 #define JSONHELPER_HPP_
 
+#include <syslog.h>
 #include "../json/src/json.hpp"
 
 using json = nlohmann::json;
