@@ -30,6 +30,24 @@ namespace bestsens {
     inline bool is_json_node(const json& input, std::string key) {
         return (input != NULL && input.count(key) > 0 && !input.at(key).is_null());
     }
+
+    inline bool checkedUpdateFromJSON(const json& j, const std::string& name, int& value) {
+    	if(is_json_number(j, name))
+    		value = j[name];
+    	else
+    		return false;
+
+    	return true;
+    }
+
+    inline bool checkedUpdateFromJSON(const json& j, const std::string& name, double& value) {
+    	if(is_json_number(j, name))
+    		value = j[name];
+    	else
+    		return false;
+
+    	return true;
+    }
 }
 
 #endif
