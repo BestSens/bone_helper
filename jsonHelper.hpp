@@ -50,6 +50,10 @@ namespace bestsens {
         return (input != NULL && input.count(key) > 0 && input.at(key).is_string());
     }
 
+    inline bool is_json_bool(const json& input, std::string key) {
+        return (input != NULL && input.count(key) > 0 && input.at(key).is_boolean());
+    }
+
     inline bool is_json_object(const json& input, std::string key) {
         return (input != NULL && input.count(key) > 0 && input.at(key).is_object());
     }
@@ -67,6 +71,15 @@ namespace bestsens {
     	return true;
     }
 
+    inline bool checkedUpdateFromJSON(const json& j, const std::string& name, int& value, const int default_value) {
+        if(!checkedUpdateFromJSON(j, name, value)) {
+            value = default_value;
+            return false;
+        }
+
+        return true;
+    }
+
     inline bool checkedUpdateFromJSON(const json& j, const std::string& name, double& value) {
     	if(is_json_number(j, name))
     		value = j[name];
@@ -74,6 +87,33 @@ namespace bestsens {
     		return false;
 
     	return true;
+    }
+
+    inline bool checkedUpdateFromJSON(const json& j, const std::string& name, double& value, const double default_value) {
+        if(!checkedUpdateFromJSON(j, name, value)) {
+            value = default_value;
+            return false;
+        }
+
+        return true;
+    }
+
+    inline bool checkedUpdateFromJSON(const json& j, const std::string& name, bool& value) {
+        if(is_json_bool(j, name))
+            value = j[name];
+        else
+            return false;
+
+        return true;
+    }
+
+    inline bool checkedUpdateFromJSON(const json& j, const std::string& name, bool& value, const bool default_value) {
+        if(!checkedUpdateFromJSON(j, name, value)) {
+            value = default_value;
+            return false;
+        }
+
+        return true;
     }
 }
 
