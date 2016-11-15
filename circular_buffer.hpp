@@ -130,6 +130,8 @@ namespace bestsens {
 
 		if(*amount == 0)
 			*amount = -1;
+		else if(*amount > this->item_count)
+			*amount = this->item_count;
 
 		this->mutex.lock();
 
