@@ -246,7 +246,7 @@ namespace bestsens {
          */
         unsigned int t = 0;
         while(t < data.length()) {
-            int count = ::send(this->sockfd, data.c_str() + t, data.length() - t, 0);
+            int count = ::send(this->sockfd, (const char*)data.c_str() + t, data.length() - t, 0);
 
             if(count == 0)
                 break;
@@ -267,7 +267,7 @@ namespace bestsens {
          */
         unsigned int t = 0;
         while(t < read_size) {
-            int count = ::recv(this->sockfd, buffer + t, read_size - t, 0);
+            int count = ::recv(this->sockfd, (char *)buffer + t, read_size - t, 0);
 
             if(count == 0)
                 break;
