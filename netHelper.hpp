@@ -165,9 +165,11 @@ namespace bestsens {
 		 * receive actual data and parse
 		 */
 		char * str = (char*)malloc(data_len+1 * sizeof(char));
-		int t = this->recv(str, data_len);
 
-		if(t > 0) {
+        int t = this->recv(str, data_len);
+
+        int ret_val = 1;
+		if(t > 0 && t == data_len) {
 			str[t] = '\0';
 
 			if(&response != NULL) {
@@ -176,22 +178,23 @@ namespace bestsens {
 
     				if(response.empty()) {
     					syslog(LOG_ERR, "Error");
-    					free(str);
-    					return 0;
+    					ret_val = 0;
     				}
                 }
                 catch(const std::invalid_argument& ia) {
                     syslog(LOG_ERR, ia.what());
                     syslog(LOG_ERR, "input string: \"%s\"", str);
-                    free(str);
-                    return 0;
+                    ret_val = 0;
                 }
 			}
-		}
+		} else {
+            syslog(LOG_ERR, "could not receive all data");
+            ret_val = 0;
+        }
 
 		free(str);
 
-		return 1;
+		return ret_val;
 	}
 
 	netHelper::~netHelper() {
@@ -229,22 +232,50 @@ namespace bestsens {
 		return 0;
 	}
 
+    int netHelper::send(const char * data) {
+        return this->send(std::string(data));
+    }
+
 	int netHelper::send(std::string data) {
 		if(!this->connected)
 			return -1;
 
-		return ::send(this->sockfd, data.c_str(), data.length(), 0);
-	}
+        /*
+         * send data untill buffer is empty
+         * or requested data len is reached
+         */
+        unsigned int t = 0;
+        while(t < data.length()) {
+            int count = ::send(this->sockfd, data.c_str() + t, data.length() - t, 0);
 
-	int netHelper::send(const char * data) {
-		return this->send(std::string(data));
+            if(count == 0)
+                break;
+
+            t += count;
+        }
+
+		return (int)t;
 	}
 
 	int netHelper::recv(void * buffer, size_t read_size) {
 		if(!this->connected)
 			return -1;
 
-		return ::recv(this->sockfd, buffer, read_size, 0);
+        /*
+         * receive data untill buffer is empty
+         * or requested data len is reached
+         */
+        unsigned int t = 0;
+        while(t < read_size) {
+            int count = ::recv(this->sockfd, buffer + t, read_size - t, 0);
+
+            if(count == 0)
+                break;
+
+            t += count;
+        }
+
+		return (int)t;
 	}
 }
 
