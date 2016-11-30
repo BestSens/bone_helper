@@ -10,7 +10,7 @@
 
 #include <thread>
 #include <chrono>
-#include <semaphore.h>
+#include <mutex>
 #include <syslog.h>
 
 namespace bestsens {
@@ -21,47 +21,43 @@ namespace bestsens {
         ~loopTimer();
 
         void stop();
-        int wait_on_tick();
+        void wait_on_tick();
     private:
-        sem_t * semaphore;
+        std::mutex m;
 
         std::thread timer_thread;
 
         int running;
-        static int timing_thread(std::chrono::microseconds wait_time, sem_t * mutex, int * running);
     };
 
     loopTimer::loopTimer(std::chrono::microseconds wait_time, int start_value = 0) {
         this->running = 1;
-        this->semaphore = new sem_t;
 
-        sem_init(this->semaphore, 0, start_value);
+        if(start_value == 1)
+            this->m.unlock();
 
-        new (&this->timer_thread) std::thread(timing_thread, wait_time, this->semaphore, &(this->running));
+        new (&this->timer_thread) std::thread([this, wait_time] {
+            while(this->running) {
+                std::this_thread::sleep_for(wait_time);
+                this->m.unlock();
+            }
+
+            return EXIT_SUCCESS;
+        });
     }
 
     loopTimer::~loopTimer() {
         this->running = 0;
         wait_on_tick();
         this->timer_thread.join();
-        sem_destroy(this->semaphore);
-    }
-
-    int loopTimer::timing_thread(std::chrono::microseconds wait_time, sem_t * semaphore, int * running) {
-    	while(*running) {
-    		std::this_thread::sleep_for(wait_time);
-    		sem_post(semaphore);
-    	}
-
-    	return EXIT_SUCCESS;
     }
 
     void loopTimer::stop() {
         this->running = 0;
     }
 
-    int loopTimer::wait_on_tick() {
-        return sem_wait(this->semaphore);
+    void loopTimer::wait_on_tick() {
+        this->m.lock();
     }
 }
 
