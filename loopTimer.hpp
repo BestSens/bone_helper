@@ -10,6 +10,7 @@
 
 #include <thread>
 #include <chrono>
+#include <condition_variable>
 #include <mutex>
 #include <syslog.h>
 
@@ -26,7 +27,10 @@ namespace bestsens {
         int set_wait_time(std::chrono::microseconds wait_time);
         std::chrono::microseconds get_wait_time();
     private:
+        bool ready;
         std::mutex m;
+        std::condition_variable cv;
+
         std::thread timer_thread;
         std::chrono::microseconds wait_time;
 
@@ -37,13 +41,14 @@ namespace bestsens {
         this->running = 1;
         this->wait_time = wait_time;
 
-        if(start_value == 0)
-            this->m.lock();
+        this->ready = (start_value == 1);
 
         new (&this->timer_thread) std::thread([this] {
             while(this->running) {
                 std::this_thread::sleep_for(this->wait_time);
-                this->m.unlock();
+                std::lock_guard<std::mutex> lk(this->m);
+                this->ready = true;
+                this->cv.notify_all();
             }
 
             return EXIT_SUCCESS;
@@ -61,7 +66,12 @@ namespace bestsens {
     }
 
     void loopTimer::wait_on_tick() {
-        this->m.lock();
+        std::unique_lock<std::mutex> lk(this->m);
+
+        while(!ready)
+            this->cv.wait(lk);
+
+        this->ready = false;
     }
 
     int loopTimer::set_wait_time(std::chrono::microseconds wait_time) {
