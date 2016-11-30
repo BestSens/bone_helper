@@ -24,21 +24,22 @@ namespace bestsens {
         void wait_on_tick();
     private:
         std::mutex m;
-
         std::thread timer_thread;
+        std::chrono::microseconds wait_time;
 
         int running;
     };
 
     loopTimer::loopTimer(std::chrono::microseconds wait_time, int start_value = 0) {
         this->running = 1;
+        this->wait_time = wait_time;
 
         if(start_value == 0)
             this->m.lock();
 
-        new (&this->timer_thread) std::thread([this, wait_time] {
+        new (&this->timer_thread) std::thread([this] {
             while(this->running) {
-                std::this_thread::sleep_for(wait_time);
+                std::this_thread::sleep_for(this->wait_time);
                 this->m.unlock();
             }
 
