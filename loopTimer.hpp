@@ -68,7 +68,7 @@ namespace bestsens {
     void loopTimer::wait_on_tick() {
         std::unique_lock<std::mutex> lk(this->m);
 
-        while(!ready)
+        while(!this->ready)
             this->cv.wait(lk);
 
         this->ready = false;
