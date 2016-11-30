@@ -46,4 +46,26 @@ TEST_CASE("loopTimer_test") {
     calculation_end = std::chrono::steady_clock::now();
     runtime = calculation_end - calculation_start;
     CHECK(std::chrono::duration<double>(runtime).count() == Approx(0.1).epsilon(0.025));
+
+    /*
+     * get wait time
+     */
+    CHECK(timer2->get_wait_time() == std::chrono::milliseconds(100));
+
+    /*
+     * update wait time
+     */
+    timer2->set_wait_time(std::chrono::milliseconds(200));
+    CHECK(timer2->get_wait_time() == std::chrono::milliseconds(200));
+
+    timer2->wait_on_tick();
+    calculation_end = std::chrono::steady_clock::now();
+    auto runtime1 = calculation_end - calculation_start;
+
+    timer2->wait_on_tick();
+    calculation_end = std::chrono::steady_clock::now();
+    auto runtime2 = calculation_end - calculation_start;
+
+    runtime = runtime2 - runtime1;
+    CHECK(std::chrono::duration<double>(runtime).count() == Approx(0.2).epsilon(0.025));
 }

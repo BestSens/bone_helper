@@ -22,6 +22,9 @@ namespace bestsens {
 
         void stop();
         void wait_on_tick();
+
+        int set_wait_time(std::chrono::microseconds wait_time);
+        std::chrono::microseconds get_wait_time();
     private:
         std::mutex m;
         std::thread timer_thread;
@@ -59,6 +62,16 @@ namespace bestsens {
 
     void loopTimer::wait_on_tick() {
         this->m.lock();
+    }
+
+    int loopTimer::set_wait_time(std::chrono::microseconds wait_time) {
+        this->wait_time = wait_time;
+
+        return 0;
+    }
+
+    std::chrono::microseconds loopTimer::get_wait_time() {
+        return this->wait_time;
     }
 }
 
