@@ -90,7 +90,7 @@ namespace bestsens {
          */
         json token_response;
 
-        this->send_command("request_token", token_response, NULL);
+        this->send_command("request_token", token_response, nullptr);
 
         if(!token_response["payload"]["token"].is_string()) {
             syslog(LOG_ERR, "token request failed");
