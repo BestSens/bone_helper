@@ -33,8 +33,8 @@ namespace bestsens {
     loopTimer::loopTimer(std::chrono::microseconds wait_time, int start_value = 0) {
         this->running = 1;
 
-        if(start_value == 1)
-            this->m.unlock();
+        if(start_value == 0)
+            this->m.lock();
 
         new (&this->timer_thread) std::thread([this, wait_time] {
             while(this->running) {
