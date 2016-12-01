@@ -68,7 +68,6 @@ namespace bestsens {
                 auto to_wait = this->wait_time;
 
                 while(to_wait > std::chrono::milliseconds(0)) {
-                    std::cout << "running: " << this->running << std::endl;
                     if(!this->running)
                         break;
 
@@ -78,10 +77,8 @@ namespace bestsens {
                         wait_needed = std::chrono::milliseconds(1000);
 
                     std::this_thread::sleep_for(wait_needed);
-                    
-                    to_wait -= wait_needed;
 
-                    std::cout << "to_wait: " << std::chrono::duration_cast<std::chrono::milliseconds>(to_wait).count() << std::endl;
+                    to_wait -= wait_needed;
                 }
 
                 std::lock_guard<std::mutex> lk(this->m);
