@@ -21,7 +21,6 @@ namespace bestsens {
         loopTimer(int wait_time_ms, int start_value) : loopTimer(std::chrono::milliseconds(wait_time_ms), start_value) {};
         ~loopTimer();
 
-        void stop();
         void wait_on_tick();
 
         int set_wait_time(std::chrono::microseconds wait_time);
@@ -35,14 +34,34 @@ namespace bestsens {
         std::chrono::microseconds wait_time;
 
         int running;
+
+        void start(int start_value);
+        void stop();
     };
 
     loopTimer::loopTimer(std::chrono::microseconds wait_time, int start_value = 0) {
-        this->running = 1;
         this->wait_time = wait_time;
 
-        this->ready = (start_value == 1);
+        this->start(start_value);
+    }
 
+    loopTimer::~loopTimer() {
+        this->stop();
+        wait_on_tick();
+        this->timer_thread.join();
+    }
+
+    void loopTimer::stop() {
+        std::lock_guard<std::mutex> lk(this->m);
+        this->running = 0;
+        this->ready = true;
+        this->cv.notify_all();
+    }
+
+    void loopTimer::start(int start_value = 0) {
+        this->running = 1;
+
+        this->ready = (start_value == 1);
         new (&this->timer_thread) std::thread([this] {
             while(this->running) {
                 std::this_thread::sleep_for(this->wait_time);
@@ -51,18 +70,10 @@ namespace bestsens {
                 this->cv.notify_all();
             }
 
+            this->ready = true;
+
             return EXIT_SUCCESS;
         });
-    }
-
-    loopTimer::~loopTimer() {
-        this->running = 0;
-        wait_on_tick();
-        this->timer_thread.join();
-    }
-
-    void loopTimer::stop() {
-        this->running = 0;
     }
 
     void loopTimer::wait_on_tick() {
