@@ -23,6 +23,8 @@ namespace bestsens {
 
         void wait_on_tick();
 
+        static void kill_all();
+
         int set_wait_time(std::chrono::microseconds wait_time);
         std::chrono::microseconds get_wait_time();
     private:
@@ -34,6 +36,10 @@ namespace bestsens {
         std::chrono::microseconds wait_time;
 
         int running;
+
+        static int kill;
+        static std::condition_variable cv_trigger;
+        static std::mutex m_trigger;
 
         void start(int start_value);
         void stop();
@@ -51,12 +57,16 @@ namespace bestsens {
         this->timer_thread.join();
     }
 
-    void loopTimer::stop() {
-        this->running = 0;
+    void loopTimer::kill_all() {
+        std::lock_guard<std::mutex> lk(loopTimer::m_trigger);
+        loopTimer::kill = 1;
+        loopTimer::cv_trigger.notify_all();
+    }
 
-        std::lock_guard<std::mutex> lk(this->m);
-        this->ready = true;
-        this->cv.notify_all();
+    void loopTimer::stop() {
+        std::lock_guard<std::mutex> lk(loopTimer::m_trigger);
+        this->running = 0;
+        loopTimer::cv_trigger.notify_all();
     }
 
     void loopTimer::start(int start_value = 0) {
@@ -65,39 +75,29 @@ namespace bestsens {
         this->ready = (start_value == 1);
         new (&this->timer_thread) std::thread([this] {
             while(this->running) {
-                auto to_wait = this->wait_time;
-
-                while(to_wait > std::chrono::milliseconds(0)) {
-                    if(!this->running)
-                        break;
-
-                    auto wait_needed = to_wait;
-
-                    if(wait_needed > std::chrono::milliseconds(1000))
-                        wait_needed = std::chrono::milliseconds(1000);
-
-                    std::this_thread::sleep_for(wait_needed);
-
-                    to_wait -= wait_needed;
+                {
+                    std::unique_lock<std::mutex> lk(loopTimer::m_trigger);
+                    loopTimer::cv_trigger.wait_for(lk, this->wait_time, [this](){return loopTimer::kill == 1 || this->running == 0;});
                 }
 
-                std::lock_guard<std::mutex> lk(this->m);
-                this->ready = true;
-                this->cv.notify_all();
+                {
+                    std::lock_guard<std::mutex> lk(this->m);
+                    this->ready = true;
+                    this->cv.notify_all();
+                }
             }
 
             this->ready = true;
-
-            return EXIT_SUCCESS;
         });
     }
 
+    int loopTimer::kill = 0;
+    std::condition_variable loopTimer::cv_trigger;
+    std::mutex loopTimer::m_trigger;
+
     void loopTimer::wait_on_tick() {
         std::unique_lock<std::mutex> lk(this->m);
-
-        while(!this->ready)
-            this->cv.wait(lk);
-
+        this->cv.wait(lk, [this](){return this->ready;});
         this->ready = false;
     }
 
