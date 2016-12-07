@@ -75,9 +75,11 @@ namespace bestsens {
         this->ready = (start_value == 1);
         new (&this->timer_thread) std::thread([this] {
             while(this->running) {
+                int exit = 0;
                 {
                     std::unique_lock<std::mutex> lk(loopTimer::m_trigger);
-                    loopTimer::cv_trigger.wait_for(lk, this->wait_time, [this](){return loopTimer::kill == 1 || this->running == 0;});
+                    if(loopTimer::cv_trigger.wait_for(lk, this->wait_time, [this](){return loopTimer::kill == 1 || this->running == 0;}) == true)
+                        exit = 1;
                 }
 
                 {
@@ -85,6 +87,9 @@ namespace bestsens {
                     this->ready = true;
                     this->cv.notify_all();
                 }
+
+                if(exit)
+                    break;
             }
 
             this->ready = true;
@@ -97,7 +102,10 @@ namespace bestsens {
 
     void loopTimer::wait_on_tick() {
         std::unique_lock<std::mutex> lk(this->m);
-        this->cv.wait(lk, [this](){return this->ready;});
+
+        while(!this->ready && !loopTimer::kill)
+            this->cv.wait(lk);
+
         this->ready = false;
     }
 
