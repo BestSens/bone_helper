@@ -53,6 +53,8 @@ namespace bestsens {
 
 		int get_sockfd();
 
+        static std::string sha512(std::string input);
+
 		int recv(void * buffer, size_t read_size);
     private:
 		int sockfd;
@@ -72,8 +74,7 @@ namespace bestsens {
 
 		int send_command(std::string command, json& response, json payload);
 
-
-        int login(std::string user_name, std::string hashed_password);
+        int login(std::string user_name, std::string password, bool use_hash = 1);
         int is_logged_in();
     private:
         std::string user_name;
@@ -84,7 +85,20 @@ namespace bestsens {
 		return this->sockfd;
 	}
 
-    int jsonNetHelper::login(std::string user_name, std::string hashed_password) {
+    inline std::string netHelper::sha512(std::string input) {
+        unsigned char hash[SHA512_DIGEST_LENGTH];
+        char hash_hex[SHA512_DIGEST_LENGTH*2+1];
+
+        SHA512((unsigned char*)input.c_str(), input.length(), hash);
+
+        for(int i=0; i<SHA512_DIGEST_LENGTH; i++) {
+            sprintf(hash_hex + i*2, "%02x", hash[i]);
+        }
+
+        return std::string(hash_hex);
+    }
+
+    int jsonNetHelper::login(std::string user_name, std::string password, bool use_hash) {
         /*
          * request token
          */
@@ -98,20 +112,18 @@ namespace bestsens {
         }
 
         std::string token = token_response["payload"]["token"];
+        std::string hashed_password;
+
+        if(use_hash)
+            hashed_password = password;
+        else
+            hashed_password = this->sha512(password);
 
         /*
          * sign token
          */
         std::string concat = hashed_password + token;
-
-        unsigned char hash[SHA512_DIGEST_LENGTH];
-        char login_token[SHA512_DIGEST_LENGTH*2+1] = "";
-
-        SHA512((unsigned char*)concat.c_str(), concat.length(), hash);
-
-        for(int i=0; i<SHA512_DIGEST_LENGTH; i++) {
-            sprintf(login_token + i*2, "%02x", hash[i]);
-        }
+        std::string login_token = this->sha512(concat);
 
         /*
          * do login
