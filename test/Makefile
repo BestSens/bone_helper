@@ -1,7 +1,7 @@
 CPPFLAGS = -std=c++14 -O3 -Wall -fsanitize=address
 LDFLAGS = -lm -lpthread -lcrypto
 
-OBJ = test_main.o test_circular_buffer.o test_loopTimer.o test_exprHelper.o ../../tinyexpr/tinyexpr.o
+OBJ = test_main.o test_circular_buffer.o test_loopTimer.o
 BIN = test
 
 .PHONY: clean
@@ -20,12 +20,6 @@ test_netHelper.o: test_netHelper.cpp libs/catch/include/catch.hpp ../netHelper.h
 
 test_loopTimer.o: test_loopTimer.cpp libs/catch/include/catch.hpp ../loopTimer.hpp
 	$(CXX) $(CPPFLAGS) -c $<
-
-test_exprHelper.o: test_exprHelper.cpp libs/catch/include/catch.hpp ../exprHelper.hpp
-	$(CXX) $(CPPFLAGS) -c $<
-
-../tinyexpr/tinyexpr.o:
-	$(MAKE) -C ../../tinyexpr/ tinyexpr.o
 
 clean:
 	rm -f $(BIN) $(OBJ)
