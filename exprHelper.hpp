@@ -11,6 +11,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <array>
 #include <stdexcept>
 #include <iostream>
 
@@ -25,46 +26,59 @@ namespace bestsens {
 
         int add_variable();
         int update_expression(const std::string expression, const std::vector<std::pair<std::string, void*>> &variables = std::vector<std::pair<std::string, void*>>());
-        int update_variables(const std::vector<std::pair<std::string, void*>> &variables);
+        int update_variables(const std::vector<std::pair<std::string, void*>> &variables = std::vector<std::pair<std::string, void*>>());
+
+        static double gt(double a, double b) { return a > b; }
+        static double ge(double a, double b) { return a >= b; }
+        static double lt(double a, double b) { return a < b; }
+        static double le(double a, double b) { return a <= b; }
+        static double eq(double a, double b) { return a == b; }
 
         double eval();
     private:
-        te_expr * n;
-        te_variable * vars;
-        int vars_len;
+        std::shared_ptr<te_expr> expr;
+        std::vector<te_variable> vars;
         std::string expression;
 
         int compile();
     };
 
     exprHelper::exprHelper() {
-
+        this->update_variables();
     }
 
     exprHelper::exprHelper(std::string expression) {
+        this->update_variables();
         this->update_expression(expression);
     }
 
     exprHelper::~exprHelper() {
-        te_free(this->n);
-        free(this->vars);
     }
 
     int exprHelper::update_variables(const std::vector<std::pair<std::string, void*>> &variables) {
-        if(this->vars == NULL)
-            free(this->vars);
+        this->vars.clear();
 
-        this->vars = (te_variable*) malloc(variables.size() * sizeof(te_variable));
+        auto add_variable = [this](const char* name, const void* address, int type = TE_VARIABLE) {
+            te_variable temp = {
+                name,
+                address,
+                type
+            };
 
-        auto add_variable = [this](int pos, const char* name, const void* address, int type = 0) {
-            this->vars[pos].name = name;
-            this->vars[pos].address = address;
-            this->vars[pos].type = type;
+            this->vars.push_back(temp);
         };
 
-        int i = 0;
         for(auto element : variables)
-            add_variable(i++, element.first.c_str(), element.second);
+            add_variable(element.first.c_str(), element.second);
+
+        /*
+         * add compare functions
+         */
+        add_variable("gt", (const void*)exprHelper::gt, TE_FUNCTION2);
+        add_variable("ge", (const void*)exprHelper::ge, TE_FUNCTION2);
+        add_variable("lt", (const void*)exprHelper::lt, TE_FUNCTION2);
+        add_variable("le", (const void*)exprHelper::le, TE_FUNCTION2);
+        add_variable("eq", (const void*)exprHelper::eq, TE_FUNCTION2);
 
         return this->compile();
     }
@@ -72,16 +86,18 @@ namespace bestsens {
     double exprHelper::eval() {
         double value = 0;
 
-        if(this->n)
-            value = te_eval(this->n);
+        if(this->expr)
+            value = te_eval(this->expr.get());
 
         return value;
     }
 
     int exprHelper::compile() {
         int error;
+        te_expr * n = te_compile(this->expression.c_str(), this->vars.data(), this->vars.size(), &error);
 
-        this->n = te_compile(this->expression.c_str(), this->vars, this->vars_len, &error);
+        if(error == 0)
+            this->expr.reset(n, te_free);
 
         return error;
     }
