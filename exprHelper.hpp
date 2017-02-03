@@ -103,6 +103,9 @@ namespace bestsens {
     }
 
     int exprHelper::update_expression(const std::string expression, const std::vector<std::pair<std::string, void*>> &variables) {
+        if(this->expression.compare(expression) == 0)
+            return 0;
+
         this->expression = expression;
 
         if(variables.size() > 0)
