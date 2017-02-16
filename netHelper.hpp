@@ -86,7 +86,7 @@ namespace bestsens {
 		return this->sockfd;
 	}
 
-    inline unsigned int getLastRawPosition(const unsigned char * str) {
+    inline unsigned int netHelper::getLastRawPosition(const unsigned char * str) {
         unsigned int last_position;
 
         try {
