@@ -50,6 +50,7 @@ namespace bestsens {
 
 		int send(std::string data);
 		int send(const char * data);
+        int send(const std::vector<uint8_t>& data);
 
 		int get_sockfd();
 
@@ -71,7 +72,8 @@ namespace bestsens {
 	public:
         using netHelper::netHelper;
 
-        jsonNetHelper(std::string conn_target, std::string conn_port) : netHelper(conn_target, conn_port), user_level(0) {}
+        jsonNetHelper(std::string conn_target, std::string conn_port, bool use_msgpack) : netHelper(conn_target, conn_port), user_level(0), use_msgpack(use_msgpack) {}
+        jsonNetHelper(std::string conn_target, std::string conn_port) : netHelper(conn_target, conn_port), user_level(0), use_msgpack(false) {}
 
 		int send_command(std::string command, json& response, json payload);
 
@@ -80,6 +82,7 @@ namespace bestsens {
     private:
         std::string user_name;
         int user_level;
+        bool use_msgpack = false;
 	};
 
 	int netHelper::get_sockfd() {
@@ -167,13 +170,21 @@ namespace bestsens {
 		if(payload.is_object())
 			temp["payload"] = payload;
 
-		std::stringstream data_stream;
-		data_stream << temp << "\r\n";
+        /*
+         * send data to server
+         */
+        if(!this->use_msgpack) {
+            std::stringstream data_stream;
+            data_stream << temp << "\r\n";
 
-		/*
-		 * send data to server
-		 */
-		this->send(data_stream.str());
+            this->send(data_stream.str());
+        } else {
+            std::vector<uint8_t> v_msgpack = json::to_msgpack(temp);
+            v_msgpack.push_back('\r');
+            v_msgpack.push_back('\n');
+
+            this->send(v_msgpack);
+        }
 
 		/*
 		 * receive data length
@@ -199,7 +210,14 @@ namespace bestsens {
 
 			if(&response != NULL) {
                 try{
-    				response = json::parse(str);
+                    if(!this->use_msgpack){
+                        response = json::parse(str);
+                    } else {
+                        std::vector<uint8_t> msgpack;
+                        msgpack.assign(str, str + t);
+
+                        response = json::from_msgpack(msgpack);
+                    }
 
     				if(response.empty()) {
     					syslog(LOG_ERR, "Error");
@@ -259,6 +277,11 @@ namespace bestsens {
 
     int netHelper::send(const char * data) {
         return this->send(std::string(data));
+    }
+
+    int netHelper::send(const std::vector<uint8_t>& data) {
+        std::string s = std::string(data.begin(), data.end());
+        return this->send(s);
     }
 
 	int netHelper::send(std::string data) {
