@@ -54,6 +54,7 @@ namespace bestsens {
 		int get_sockfd();
 
         static std::string sha512(std::string input);
+        static unsigned int getLastRawPosition(const unsigned char * str);
 
 		int recv(void * buffer, size_t read_size);
     private:
@@ -84,6 +85,18 @@ namespace bestsens {
 	int netHelper::get_sockfd() {
 		return this->sockfd;
 	}
+
+    inline unsigned int getLastRawPosition(const unsigned char * str) {
+        unsigned int last_position;
+
+        try {
+            last_position = ((uint8_t)str[0] << 24) + ((uint8_t)str[1] << 16) + ((uint8_t)str[2] << 8) + ((uint8_t)str[3]);
+        } catch(...) {
+            last_position = 0;
+        }
+
+        return last_position;
+    }
 
     inline std::string netHelper::sha512(std::string input) {
         unsigned char hash[SHA512_DIGEST_LENGTH];
