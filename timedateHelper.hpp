@@ -87,6 +87,21 @@ namespace bestsens {
             }
         }
 
+        std::string getTimezone() {
+            for(auto input : pipeSystemCommand("timedatectl status")) {
+                std::regex r("Time zone:\\s*([a-zA-Z]+\\/[a-zA-Z]+)");
+                std::smatch match;
+
+                if(std::regex_search(input, match, r))
+                    if(match.ready() && match.size() == 2)
+                        return match[1];
+            }
+
+            throw std::runtime_error("could not get timezone");
+
+            return "";
+        }
+
         void setTimesync(bool timesync_enabled) {
             std::string cmd = std::string("sudo -n timedatectl set-ntp ") + (timesync_enabled ? "true" : "false");
 
@@ -96,6 +111,25 @@ namespace bestsens {
                 std::string error = std::string("could not set timeync: ") + lines[0];
                 throw std::runtime_error(error);
             }
+        }
+
+        bool getTimesync() {
+            for(auto input : pipeSystemCommand("timedatectl status")) {
+                std::regex r("Network time on:\\s*(yes|no)");
+                std::smatch match;
+
+                if(std::regex_search(input, match, r))
+                    if(match.ready() && match.size() == 2) {
+                        if(match[1].compare("yes") == 0)
+                            return true;
+                        else
+                            return false;
+                    }
+            }
+
+            throw std::runtime_error("could not get timesync status");
+
+            return "";
         }
     }
 }
