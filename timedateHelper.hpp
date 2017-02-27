@@ -70,27 +70,30 @@ namespace bestsens {
 
             auto lines = pipeSystemCommand(cmd);
 
-            for(auto line : lines) {
-                std::cout << line << std::endl;
+            if(lines.size() > 0) {
+                std::string error = std::string("could not set time: ") + lines[0];
+                throw std::runtime_error(error);
             }
+        }
+
+        void setTimezone(const std::string& timezone) {
+            std::string cmd = std::string("sudo -n timedatectl set-timezone \"") + timezone + std::string("\"");
+
+            auto lines = pipeSystemCommand(cmd);
 
             if(lines.size() > 0) {
-                std::string error = std::string("could not set timesync: ") + lines[0];
+                std::string error = std::string("could not set timezone: ") + lines[0];
                 throw std::runtime_error(error);
             }
         }
 
         void setTimesync(bool timesync_enabled) {
-            std::string cmd = std::string("sudo -n timedatectl set-timezone \"") + std::string("\"");
+            std::string cmd = std::string("sudo -n timedatectl set-ntp ") + (timesync_enabled ? "true" : "false");
 
             auto lines = pipeSystemCommand(cmd);
 
-            for(auto line : lines) {
-                std::cout << line << std::endl;
-            }
-
             if(lines.size() > 0) {
-                std::string error = std::string("could not set timesync: ") + lines[0];
+                std::string error = std::string("could not set timeync: ") + lines[0];
                 throw std::runtime_error(error);
             }
         }
