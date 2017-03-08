@@ -13,6 +13,7 @@
 #include <condition_variable>
 #include <mutex>
 #include <syslog.h>
+#include <iostream>
 
 namespace bestsens {
     class loopTimer {
@@ -78,7 +79,9 @@ namespace bestsens {
                 int exit = 0;
                 {
                     std::unique_lock<std::mutex> lk(loopTimer::m_trigger);
-                    if(loopTimer::cv_trigger.wait_until(lk, std::chrono::steady_clock::now() + this->wait_time, [this](){return loopTimer::kill == 1 || this->running == 0;}) == true)
+                    auto expires = std::chrono::steady_clock::now() + this->wait_time;
+
+                    if(loopTimer::cv_trigger.wait_until(lk, expires, [this](){return loopTimer::kill == 1 || this->running == 0;}) == true)
                         exit = 1;
                 }
 
