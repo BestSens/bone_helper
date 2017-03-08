@@ -78,7 +78,7 @@ namespace bestsens {
                 int exit = 0;
                 {
                     std::unique_lock<std::mutex> lk(loopTimer::m_trigger);
-                    if(loopTimer::cv_trigger.wait_for(lk, this->wait_time, [this](){return loopTimer::kill == 1 || this->running == 0;}) == true)
+                    if(loopTimer::cv_trigger.wait_until(lk, std::chrono::steady_clock::now() + this->wait_time, [this](){return loopTimer::kill == 1 || this->running == 0;}) == true)
                         exit = 1;
                 }
 
