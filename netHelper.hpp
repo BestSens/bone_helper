@@ -24,7 +24,7 @@ using json = nlohmann::json;
 namespace bestsens {
     class netHelper {
     public:
-		netHelper(std::string conn_target, std::string conn_port) : conn_target(conn_target), conn_port(conn_port) {
+		netHelper(std::string conn_target, std::string conn_port, bool use_msgpack = false) : conn_target(conn_target), conn_port(conn_port), user_level(0), use_msgpack(use_msgpack) {
             /*
              * socket configuration
              */
@@ -45,12 +45,16 @@ namespace bestsens {
 
 		int connect();
 		int disconnect();
+        int login(std::string user_name, std::string password, bool use_hash = 1);
+
+        int is_logged_in();
 
 		int is_connected();
 
 		int send(std::string data);
 		int send(const char * data);
         int send(const std::vector<uint8_t>& data);
+        int send_command(std::string command, json& response, json payload);
 
 		int get_sockfd();
 
@@ -64,26 +68,18 @@ namespace bestsens {
 		struct addrinfo remote;
 		struct addrinfo * res;
 
-		std::string conn_target;
-		std::string conn_port;
-    };
-
-	class jsonNetHelper : public netHelper {
-	public:
-        using netHelper::netHelper;
-
-        jsonNetHelper(std::string conn_target, std::string conn_port, bool use_msgpack) : netHelper(conn_target, conn_port), user_level(0), use_msgpack(use_msgpack) {}
-        jsonNetHelper(std::string conn_target, std::string conn_port) : netHelper(conn_target, conn_port), user_level(0), use_msgpack(false) {}
-
-		int send_command(std::string command, json& response, json payload);
-
-        int login(std::string user_name, std::string password, bool use_hash = 1);
-        int is_logged_in();
-    private:
         std::string user_name;
+        std::string conn_target;
+        std::string conn_port;
+
         int user_level;
         bool use_msgpack = false;
-	};
+    };
+
+    class jsonNetHelper : public netHelper {
+    public:
+        using netHelper::netHelper;
+    };
 
 	int netHelper::get_sockfd() {
 		return this->sockfd;
@@ -114,7 +110,7 @@ namespace bestsens {
         return std::string(hash_hex);
     }
 
-    int jsonNetHelper::login(std::string user_name, std::string password, bool use_hash) {
+    int netHelper::login(std::string user_name, std::string password, bool use_hash) {
         /*
          * request token
          */
@@ -160,11 +156,11 @@ namespace bestsens {
         return this->user_level;
     }
 
-    int jsonNetHelper::is_logged_in() {
+    int netHelper::is_logged_in() {
         return this->user_level;
     }
 
-	int jsonNetHelper::send_command(std::string command, json& response, json payload = {}) {
+	int netHelper::send_command(std::string command, json& response, json payload = {}) {
 		json temp = {{"command", command}};
 
 		if(payload.is_object())
