@@ -231,7 +231,9 @@ namespace bestsens {
                 }
 			}
 		} else {
-            syslog(LOG_ERR, "could not receive all data");
+            syslog(LOG_CRIT, "could not receive all data");
+            syslog(LOG_CRIT, "input string: \"%s\"", str);
+            throw std::runtime_error("could not receive all data");
             ret_val = 0;
         }
 
