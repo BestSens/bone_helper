@@ -103,7 +103,7 @@ namespace bestsens {
 		if(offset < 0)
 			offset += this->size;
 
-		int len = end - start;
+		int len = end - start ;
 
 		if(len > this->size)
 			len = this->size;
