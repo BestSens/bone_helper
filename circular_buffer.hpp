@@ -173,6 +173,8 @@ namespace bestsens {
 		std::vector<T> vect;
 		vect.assign(target, target + amount);
 
+		free(target);
+
 		return vect;
 	}
 
