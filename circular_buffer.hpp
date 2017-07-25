@@ -165,13 +165,11 @@ namespace bestsens {
 
 	template <typename T>
 	std::vector<T> CircularBuffer<T>::getVector(int amount, unsigned long last_value) {
-		T * target;
-		target = (T*)malloc(amount * sizeof(T));
+		T * target = (T*)malloc(amount * sizeof(T));
 
 		this->get(target, &amount, last_value);
 
-		std::vector<T> vect;
-		vect.assign(target, target + amount);
+		std::vector<T> vect(target, target + amount);
 
 		free(target);
 
