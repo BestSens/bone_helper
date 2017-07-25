@@ -52,11 +52,12 @@ namespace bestsens {
 			item_count = rhs.item_count;
 			base_id = rhs.base_id;
 
-			T * new_buffer = new T[rhs.size()];
+			T * new_buffer;
 
+			new_buffer = (T*)calloc(rhs.size, sizeof(T));
 			std::memcpy(new_buffer, rhs.buffer, rhs.size);
 
-			delete[] this->buffer;
+			free(this->buffer);
 
 			this->buffer = new_buffer;
 		}
@@ -71,7 +72,11 @@ namespace bestsens {
 		this->item_count = 0;
 		this->base_id = 0;
 
-		this->buffer = new T[this->size];
+		/* allocate buffer with zeros */
+		if((this->buffer = (T*)calloc(this->size, sizeof(T))) == NULL) {
+			throw std::runtime_error("error allocating buffer");
+			free(this->buffer);
+		}
 	}
 
 	template <typename T>
@@ -81,13 +86,18 @@ namespace bestsens {
 		this->item_count = src.item_count;
 		this->base_id = src.base_id;
 
-		this->buffer = new T[this->size()];
-		std::memcpy(this->buffer, src.buffer, src.size);
+		/* allocate buffer with zeros */
+		if((this->buffer = (T*)calloc(this->size, sizeof(T))) == NULL) {
+			throw std::runtime_error("error allocating buffer");
+			free(this->buffer);
+		} else {
+			std::memcpy(this->buffer, src.buffer, src.size);
+		}
 	}
 
 	template <typename T>
 	CircularBuffer<T>::~CircularBuffer() {
-		delete[] this->buffer;
+		free(this->buffer);
 	}
 
 	template <typename T>
@@ -155,11 +165,15 @@ namespace bestsens {
 
 	template <typename T>
 	std::vector<T> CircularBuffer<T>::getVector(int amount, unsigned long last_value) {
-		std::unique_ptr<T> target(new T[amount]);
+		T * target;
+		target = (T*)malloc(amount * sizeof(T));
 
 		this->get(target, &amount, last_value);
 
-		std::vector<T> vect(target, target + amount);
+		std::vector<T> vect;
+		vect.assign(target, target + amount);
+
+		free(target);
 
 		return vect;
 	}
