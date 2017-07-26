@@ -19,7 +19,7 @@ TEST_CASE("circular_buffer_test") {
             REQUIRE(buffer_test.add(i) == 0);
         }
 
-        last_position = buffer_test.get(test, &amount);
+        last_position = buffer_test.get(test, amount);
         CHECK(last_position > 0);
 
         for(int i = 0; i < BUFFER_SIZE; i++) {
@@ -39,7 +39,7 @@ TEST_CASE("circular_buffer_test") {
         /*
          * Test last_position usage
          */
-        CHECK(buffer_test.get(test2, &amount, last_position) > 0);
+        CHECK(buffer_test.get(test2, amount, last_position) > 0);
         CHECK(test2[0] == -1);
     }
 
@@ -53,7 +53,7 @@ TEST_CASE("circular_buffer_test") {
          * request 20 items with only 10 set
          */
         int amount = 20;
-        buffer_test.get(test, &amount);
+        buffer_test.get(test, amount);
         CHECK(amount == 10);
     }
 
@@ -67,7 +67,7 @@ TEST_CASE("circular_buffer_test") {
          * request more items than buffer is big
          */
         int amount = 120;
-        buffer_test.get(test, &amount);
+        buffer_test.get(test, amount);
         CHECK(amount == BUFFER_SIZE);
     }
 }
