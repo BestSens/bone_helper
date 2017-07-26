@@ -27,8 +27,10 @@ namespace bestsens {
 		int add(T value);
 		T get(int id);
 		T getPosition(unsigned long pos);
-		int get(T * target, int * amount, unsigned long last_value = 0);
-		std::vector<T> getVector(int amount, unsigned long last_value = 0);
+		int get(T * target, int &amount, int last_value = 0);
+
+		std::vector<T> getVector(int amount);
+		std::vector<T> getVector(int amount, int &last_value);
 
 	private:
 		T * buffer;
@@ -164,10 +166,17 @@ namespace bestsens {
 	}
 
 	template <typename T>
-	std::vector<T> CircularBuffer<T>::getVector(int amount, unsigned long last_value) {
+	std::vector<T> CircularBuffer<T>::getVector(int amount) {
+		int last_value = 0;
+
+		return this->getVector(amount, last_value);
+	}
+
+	template <typename T>
+	std::vector<T> CircularBuffer<T>::getVector(int amount, int &last_value) {
 		T * target = (T*)malloc(amount * sizeof(T));
 
-		this->get(target, &amount, last_value);
+		last_value = this->get(target, amount, last_value);
 
 		std::vector<T> vect(target, target + amount);
 
@@ -177,14 +186,14 @@ namespace bestsens {
 	}
 
 	template <typename T>
-	int CircularBuffer<T>::get(T * target, int * amount, unsigned long last_value) {
+	int CircularBuffer<T>::get(T * target, int &amount, int last_value) {
 		int end;
 		int last_position;
 
-		if(*amount == 0)
-			*amount = -1;
-		else if(*amount > this->item_count)
-			*amount = this->item_count;
+		if(amount == 0)
+			amount = -1;
+		else if(amount > this->item_count)
+			amount = this->item_count;
 
 		this->mutex.lock();
 
@@ -200,11 +209,11 @@ namespace bestsens {
 				end += this->size;
 
 		} else
-			end = *amount;
+			end = amount;
 
 		last_position = this->base_id;
 
-		*amount = getRange(target, 0, end);
+		amount = getRange(target, 0, end);
 
 		this->mutex.unlock();
 
