@@ -47,19 +47,11 @@ namespace bestsens {
 	template <typename T>
 	CircularBuffer<T>& CircularBuffer<T>::operator=(const CircularBuffer& rhs) {
 		if(this != &rhs) {
-			size = rhs.size;
-			current_position = rhs.current_position;
-			item_count = rhs.item_count;
-			base_id = rhs.base_id;
-
-			T * new_buffer;
-
-			new_buffer = (T*)calloc(rhs.size, sizeof(T));
-			std::memcpy(new_buffer, rhs.buffer, rhs.size);
-
-			free(this->buffer);
-
-			this->buffer = new_buffer;
+			this->size = rhs.size;
+			this->current_position = rhs.current_position;
+			this->item_count = rhs.item_count;
+			this->base_id = rhs.base_id;
+			this->buffer = rhs.buffer;
 		}
 
 		return *this;
