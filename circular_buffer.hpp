@@ -25,13 +25,13 @@ namespace bestsens {
 
 		CircularBuffer& operator=(const CircularBuffer& rhs);
 		CircularBuffer& operator=(CircularBuffer&& rhs);
-		T operator[](int id);
+		const T& operator[](int id);
 
 		~CircularBuffer();
 
 		int add(const T& value);
-		T get(int id);
-		T getPosition(int pos);
+		const T& get(int id);
+		const T& getPosition(int pos);
 		int get(T * target, int &amount, int last_value = 0);
 
 		std::vector<T> getVector(int amount);
@@ -93,7 +93,7 @@ namespace bestsens {
 	}
 
 	template < typename T >
-	T CircularBuffer<T>::operator[](int id) {
+	const T& CircularBuffer<T>::operator[](int id) {
 		return this->getPosition(id);
 	}
 
@@ -149,12 +149,12 @@ namespace bestsens {
 	 * return single value
 	 */
 	template < typename T >
-	T CircularBuffer<T>::get(int id) {
+	const T& CircularBuffer<T>::get(int id) {
 		return *(this->buffer + ((this->current_position + id) % this->item_count));
 	}
 
 	template < typename T >
-	T CircularBuffer<T>::getPosition(int pos) {
+	const T& CircularBuffer<T>::getPosition(int pos) {
 		if(pos >= this->item_count)
 			throw std::runtime_error("out of bounds");
 
