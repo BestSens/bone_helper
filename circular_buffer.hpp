@@ -22,8 +22,10 @@ namespace bestsens {
 		CircularBuffer(int size);
 		CircularBuffer(const CircularBuffer& src);
 		CircularBuffer(CircularBuffer&& src);
-		CircularBuffer& operator=(CircularBuffer&& rhs);
+
 		CircularBuffer& operator=(const CircularBuffer& rhs);
+		CircularBuffer& operator=(CircularBuffer&& rhs);
+
 		~CircularBuffer();
 
 		int add(T value);
@@ -48,7 +50,7 @@ namespace bestsens {
 		std::mutex mutex;
 	};
 
-	template <typename T>
+	template < typename T >
 	CircularBuffer<T>::CircularBuffer(CircularBuffer&& src) {
 		std::swap(this->size, src.size);
 		std::swap(this->current_position, src.current_position);
@@ -57,7 +59,7 @@ namespace bestsens {
 		std::swap(this->buffer, src.buffer);
 	}
 
-	template <typename T>
+	template < typename T >
 	CircularBuffer<T>& CircularBuffer<T>::operator=(CircularBuffer&& rhs) {
 		std::swap(this->size, rhs.size);
 		std::swap(this->current_position, rhs.current_position);
@@ -68,7 +70,7 @@ namespace bestsens {
 		return *this;
 	}
 
-	template <typename T>
+	template < typename T >
 	CircularBuffer<T>& CircularBuffer<T>::operator=(const CircularBuffer& rhs) {
 		if(this != &rhs) {
 			size = rhs.size;
@@ -89,7 +91,7 @@ namespace bestsens {
 		return *this;
 	}
 
-	template <typename T>
+	template < typename T >
 	CircularBuffer<T>::CircularBuffer(int size) {
 		this->size = size;
 		this->current_position = 0;
@@ -97,13 +99,11 @@ namespace bestsens {
 		this->base_id = 0;
 
 		/* allocate buffer with zeros */
-		if((this->buffer = (T*)calloc(this->size, sizeof(T))) == NULL) {
+		if((this->buffer = (T*)calloc(this->size, sizeof(T))) == NULL)
 			throw std::runtime_error("error allocating buffer");
-			free(this->buffer);
-		}
 	}
 
-	template <typename T>
+	template < typename T >
 	CircularBuffer<T>::CircularBuffer(const CircularBuffer& src) {
 		this->size = src.size;
 		this->current_position = src.current_position;
@@ -111,20 +111,18 @@ namespace bestsens {
 		this->base_id = src.base_id;
 
 		/* allocate buffer with zeros */
-		if((this->buffer = (T*)calloc(this->size, sizeof(T))) == NULL) {
+		if((this->buffer = (T*)calloc(this->size, sizeof(T))) == NULL)
 			throw std::runtime_error("error allocating buffer");
-			free(this->buffer);
-		} else {
-			std::memcpy(this->buffer, src.buffer, src.size);
-		}
+
+		std::memcpy(this->buffer, src.buffer, src.size);
 	}
 
-	template <typename T>
+	template < typename T >
 	CircularBuffer<T>::~CircularBuffer() {
 		free(this->buffer);
 	}
 
-	template <typename T>
+	template < typename T >
 	int CircularBuffer<T>::add(T value) {
 		this->mutex.lock();
 		this->buffer[this->current_position] = value;
@@ -135,7 +133,6 @@ namespace bestsens {
 			this->item_count++;
 
 		this->base_id = (this->base_id + 1) % INT_MAX;
-		//this->base_id = (this->base_id + 1) % this->size;
 
 		this->mutex.unlock();
 
@@ -145,12 +142,12 @@ namespace bestsens {
 	/*
 	 * return single value
 	 */
-	template <typename T>
+	template < typename T >
 	T CircularBuffer<T>::get(int id) {
 		return *(this->buffer + ((this->current_position + id + 1) % this->size));
 	}
 
-	template <typename T>
+	template < typename T >
 	T CircularBuffer<T>::getPosition(unsigned long pos) {
 		int offset = this->current_position - pos;
 
@@ -160,7 +157,7 @@ namespace bestsens {
 		return NULL;
 	}
 
-	template <typename T>
+	template < typename T >
 	int CircularBuffer<T>::getRange(T * target, int start, int end) {
 		int offset = (this->current_position - end) % this->size;
 
@@ -179,22 +176,22 @@ namespace bestsens {
 			len = this->size - offset;
 		}
 
-		memcpy(target, this->buffer + offset, len * sizeof(T));
-		memcpy(target + len, this->buffer, len2 * sizeof(T));
+		std::memcpy(target, this->buffer + offset, len * sizeof(T));
+		std::memcpy(target + len, this->buffer, len2 * sizeof(T));
 
 		int amount = len + len2;
 
 		return amount;
 	}
 
-	template <typename T>
+	template < typename T >
 	std::vector<T> CircularBuffer<T>::getVector(int amount) {
 		int last_value = 0;
 
 		return this->getVector(amount, last_value);
 	}
 
-	template <typename T>
+	template < typename T >
 	std::vector<T> CircularBuffer<T>::getVector(int amount, int &last_value) {
 		T * target = (T*)malloc(amount * sizeof(T));
 
@@ -207,7 +204,7 @@ namespace bestsens {
 		return vect;
 	}
 
-	template <typename T>
+	template < typename T >
 	int CircularBuffer<T>::get(T * target, int &amount, int last_value) {
 		int end;
 		int last_position;
