@@ -21,6 +21,8 @@ namespace bestsens {
 	public:
 		CircularBuffer(int size);
 		CircularBuffer(const CircularBuffer& src);
+		CircularBuffer(CircularBuffer&& src);
+		CircularBuffer& operator=(CircularBuffer&& rhs);
 		CircularBuffer& operator=(const CircularBuffer& rhs);
 		~CircularBuffer();
 
@@ -45,6 +47,26 @@ namespace bestsens {
 
 		std::mutex mutex;
 	};
+
+	template <typename T>
+	CircularBuffer<T>::CircularBuffer(CircularBuffer&& src) {
+		std::swap(this->size, src.size);
+		std::swap(this->current_position, src.current_position);
+		std::swap(this->item_count, src.item_count);
+		std::swap(this->base_id, src.base_id);
+		std::swap(this->buffer, src.buffer);
+	}
+
+	template <typename T>
+	CircularBuffer<T>& CircularBuffer<T>::operator=(CircularBuffer&& rhs) {
+		std::swap(this->size, rhs.size);
+		std::swap(this->current_position, rhs.current_position);
+		std::swap(this->item_count, rhs.item_count);
+		std::swap(this->base_id, rhs.base_id);
+		std::swap(this->buffer, rhs.buffer);
+
+		return *this;
+	}
 
 	template <typename T>
 	CircularBuffer<T>& CircularBuffer<T>::operator=(const CircularBuffer& rhs) {
