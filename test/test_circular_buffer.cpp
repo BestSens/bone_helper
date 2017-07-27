@@ -72,6 +72,8 @@ TEST_CASE("circular_buffer_test") {
     }
 
     SECTION("test operator") {
+        CHECK_THROWS(buffer_test[0]);
+
         for(int i = 0; i < 10; i++)
             REQUIRE(buffer_test.add(i) == 0);
 

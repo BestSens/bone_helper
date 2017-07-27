@@ -130,6 +130,9 @@ namespace bestsens {
 
 	template < typename T >
 	int CircularBuffer<T>::add(const T& value) {
+		if(this->size == 0)
+			throw std::runtime_error("out of bounds");
+
 		this->mutex.lock();
 		this->buffer[this->current_position] = value;
 
@@ -150,12 +153,15 @@ namespace bestsens {
 	 */
 	template < typename T >
 	const T& CircularBuffer<T>::get(int id) {
+		if(this->item_count == 0)
+			throw std::runtime_error("out of bounds");
+
 		return *(this->buffer + ((this->current_position + id) % this->item_count));
 	}
 
 	template < typename T >
 	const T& CircularBuffer<T>::getPosition(int pos) {
-		if(pos >= this->item_count)
+		if(pos >= this->item_count || this->item_count == 0)
 			throw std::runtime_error("out of bounds");
 
 		return *(this->buffer + ((this->current_position - pos - 1) % this->item_count));
@@ -163,6 +169,9 @@ namespace bestsens {
 
 	template < typename T >
 	int CircularBuffer<T>::getRange(T * target, int start, int end) {
+		if(this->size == 0)
+			throw std::runtime_error("out of bounds");
+
 		int offset = (this->current_position - end) % this->size;
 
 		if(offset < 0)
@@ -210,6 +219,9 @@ namespace bestsens {
 
 	template < typename T >
 	int CircularBuffer<T>::get(T * target, int &amount, int last_value) {
+		if(this->size == 0)
+			throw std::runtime_error("out of bounds");
+
 		int end;
 		int last_position;
 
