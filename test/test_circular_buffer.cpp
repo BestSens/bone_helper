@@ -82,4 +82,11 @@ TEST_CASE("circular_buffer_test") {
         CHECK(buffer_test[2] == 7);
         CHECK_THROWS(buffer_test[99] == 1);
     }
+
+    SECTION("test overflow") {
+        for(int i = 0; i < BUFFER_SIZE; i++) {
+            buffer_test.add(i);
+            CHECK(buffer_test[0] == i);
+        }
+    }
 }

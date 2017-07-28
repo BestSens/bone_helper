@@ -156,7 +156,7 @@ namespace bestsens {
 		if(this->item_count == 0)
 			throw std::runtime_error("out of bounds");
 
-		return *(this->buffer + ((this->current_position + id) % this->item_count));
+		return *(this->buffer + ((this->current_position + id) % this->size));
 	}
 
 	template < typename T >
@@ -164,7 +164,12 @@ namespace bestsens {
 		if(pos >= this->item_count || this->item_count == 0)
 			throw std::runtime_error("out of bounds");
 
-		return *(this->buffer + ((this->current_position - pos - 1) % this->item_count));
+		int offset = ((this->current_position - 1) - pos) % this->size;
+
+		if(offset < 0)
+			offset += this->size;
+
+		return *(this->buffer + offset);
 	}
 
 	template < typename T >
