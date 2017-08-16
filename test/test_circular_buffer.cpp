@@ -28,15 +28,15 @@ TEST_CASE("circular_buffer_test") {
             REQUIRE(test[i] == i);
         }
 
-        CHECK(buffer_test.get(9) == 10);
-        CHECK(buffer_test.get(BUFFER_SIZE-2) == BUFFER_SIZE-1);
+        CHECK(buffer_test.get(9) == 9);
+        CHECK(buffer_test.get(BUFFER_SIZE-2) == BUFFER_SIZE-2);
 
         /*
          * Test overflow
          */
         CHECK(buffer_test.add(-1) == 0);
-        CHECK(buffer_test.get(9) == 11);
-        CHECK(buffer_test.get(BUFFER_SIZE-2) == -1);
+        CHECK(buffer_test.get(9) == 10);
+        CHECK(buffer_test.get(BUFFER_SIZE-1) == -1);
 
         /*
          * Test last_position usage
@@ -71,6 +71,25 @@ TEST_CASE("circular_buffer_test") {
         int amount = 120;
         buffer_test.get(test, amount);
         CHECK(amount == BUFFER_SIZE);
+    }
+
+    SECTION("test operator") {
+        CHECK_THROWS(buffer_test[0]);
+
+        for(int i = 0; i < 10; i++)
+            REQUIRE(buffer_test.add(i) == 0);
+
+        CHECK(buffer_test[0] == 9);
+        CHECK(buffer_test[1] == 8);
+        CHECK(buffer_test[2] == 7);
+        CHECK_THROWS(buffer_test[99] == 1);
+    }
+
+    SECTION("test overflow") {
+        for(int i = 0; i < BUFFER_SIZE; i++) {
+            buffer_test.add(i);
+            CHECK(buffer_test[0] == i);
+        }
     }
 }
 
