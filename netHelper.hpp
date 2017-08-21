@@ -204,7 +204,7 @@ namespace bestsens {
 		if(t > 0 && t == data_len) {
 			str[t] = '\0';
 
-			if(&response != NULL) {
+			if(response != NULL) {
                 try{
                     if(!this->use_msgpack){
                         response = json::parse(str);
