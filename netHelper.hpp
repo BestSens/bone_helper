@@ -221,7 +221,7 @@ namespace bestsens {
     				}
                 }
                 catch(const std::invalid_argument& ia) {
-                    syslog(LOG_ERR, ia.what());
+                    syslog(LOG_ERR, "%s", ia.what());
                     syslog(LOG_ERR, "input string: \"%s\"", str);
                     ret_val = 0;
                 }
