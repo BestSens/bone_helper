@@ -15,7 +15,7 @@
 
 namespace bestsens {
     namespace system_helper {
-        void daemonize() {
+        inline void daemonize() {
             /* Our process ID and Session ID */
             pid_t pid, sid;
 
@@ -58,7 +58,7 @@ namespace bestsens {
         * © 2009 http://www.mdawson.net/misc/readDirectory.php
         * TODO: make custom implementation to avoid potential copyright problems
         */
-        std::vector<std::string> readDirectory(const std::string &directoryLocation, const std::string &start_string, const std::string &extension) {
+        inline std::vector<std::string> readDirectory(const std::string &directoryLocation, const std::string &start_string, const std::string &extension) {
         	std::vector<std::string> result;
         	std::string lcExtension(extension);
         	std::transform(lcExtension.begin(), lcExtension.end(), lcExtension.begin(), ::tolower);
