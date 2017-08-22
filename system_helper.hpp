@@ -9,6 +9,9 @@
 #define SYSTEM_HELPER_HPP_
 
 #include <unistd.h>
+#include <string>
+#include <vector>
+#include <dirent.h>
 
 namespace bestsens {
     namespace system_helper {
@@ -49,6 +52,43 @@ namespace bestsens {
             close(STDIN_FILENO);
             close(STDOUT_FILENO);
             close(STDERR_FILENO);
+        }
+
+        /*
+        * © 2009 http://www.mdawson.net/misc/readDirectory.php
+        * TODO: make custom implementation to avoid potential copyright problems
+        */
+        std::vector<std::string> readDirectory(const std::string &directoryLocation, const std::string &start_string, const std::string &extension) {
+        	std::vector<std::string> result;
+        	std::string lcExtension(extension);
+        	std::transform(lcExtension.begin(), lcExtension.end(), lcExtension.begin(), ::tolower);
+
+        	DIR *dir;
+        	struct dirent *ent;
+
+        	if((dir = opendir(directoryLocation.c_str())) == NULL)
+        		throw std::runtime_error("error opening directory");
+
+        	while((ent = readdir(dir)) != NULL) {
+        		std::string entry(ent->d_name);
+        		std::string lcEntry(entry);
+
+        		std::transform(lcEntry.begin(), lcEntry.end(), lcEntry.begin(), ::tolower);
+
+        		size_t pos = lcEntry.rfind(lcExtension);
+                size_t pos2 = lcEntry.find(start_string);
+        		if(pos != std::string::npos && pos == lcEntry.length() - lcExtension.length() && pos2 == 0) {
+        			result.push_back(directoryLocation + "/" +entry);
+        		}
+        	}
+
+        	if(closedir(dir) != 0) {
+        		throw std::runtime_error("error closing directory");
+        	}
+
+            std::sort(result.begin(), result.end());
+
+        	return result;
         }
     }
 }
