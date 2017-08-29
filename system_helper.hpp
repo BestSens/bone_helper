@@ -13,6 +13,10 @@
 #include <vector>
 #include <dirent.h>
 
+#ifdef ENABLE_SYSTEMD_STATUS
+#include <systemd/sd-daemon.h>
+#endif
+
 namespace bestsens {
     namespace system_helper {
         inline void daemonize() {
@@ -90,6 +94,18 @@ namespace bestsens {
 
         	return result;
         }
+    }
+
+    inline void systemd::ready() {
+        #ifdef ENABLE_SYSTEMD_STATUS
+        sd_notify(0, "READY=1");
+        #endif
+    }
+
+    inline void systemd::watchdog() {
+        #ifdef ENABLE_SYSTEMD_STATUS
+        sd_notify(0, "WATCHDOG=1");
+        #endif
     }
 }
 
