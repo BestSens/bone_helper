@@ -96,16 +96,18 @@ namespace bestsens {
         }
     }
 
-    inline void systemd::ready() {
-        #ifdef ENABLE_SYSTEMD_STATUS
-        sd_notify(0, "READY=1");
-        #endif
-    }
+    namespace systemd {
+        inline void ready() {
+            #ifdef ENABLE_SYSTEMD_STATUS
+            sd_notify(0, "READY=1");
+            #endif
+        }
 
-    inline void systemd::watchdog() {
-        #ifdef ENABLE_SYSTEMD_STATUS
-        sd_notify(0, "WATCHDOG=1");
-        #endif
+        inline void watchdog() {
+            #ifdef ENABLE_SYSTEMD_STATUS
+            sd_notify(0, "WATCHDOG=1");
+            #endif
+        }
     }
 }
 
