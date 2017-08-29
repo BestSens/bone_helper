@@ -107,6 +107,18 @@ namespace bestsens {
                 sd_notify(0, "WATCHDOG=1");
                 #endif
             }
+
+            inline void status(const std::string& status) {
+                #ifdef ENABLE_SYSTEMD_STATUS
+                sd_notifyf(0, "STATUS=%s", status.c_str());
+                #endif
+            }
+
+            inline void error(int errno) {
+                #ifdef ENABLE_SYSTEMD_STATUS
+                sd_notifyf(0, "STATUS=%s\nERRNO=%d", strerror(errno), errno);
+                #endif
+            }
         }
     }
 }
