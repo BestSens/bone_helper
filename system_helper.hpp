@@ -62,7 +62,7 @@ namespace bestsens {
         * © 2009 http://www.mdawson.net/misc/readDirectory.php
         * TODO: make custom implementation to avoid potential copyright problems
         */
-        inline std::vector<std::string> readDirectory(const std::string &directoryLocation, const std::string &start_string, const std::string &extension) {
+        inline std::vector<std::string> readDirectory(const std::string &directoryLocation, const std::string &start_string, const std::string &extension, bool full_path = true) {
         	std::vector<std::string> result;
         	std::string lcExtension(extension);
         	std::transform(lcExtension.begin(), lcExtension.end(), lcExtension.begin(), ::tolower);
@@ -82,7 +82,10 @@ namespace bestsens {
         		size_t pos = lcEntry.rfind(lcExtension);
                 size_t pos2 = lcEntry.find(start_string);
         		if(pos != std::string::npos && pos == lcEntry.length() - lcExtension.length() && pos2 == 0) {
-        			result.push_back(directoryLocation + "/" +entry);
+                    if(full_path)
+                        result.push_back(directoryLocation + "/" +entry);
+                    else
+                        result.push_back(entry);
         		}
         	}
 
