@@ -8,14 +8,23 @@
 #ifndef SYSTEM_HELPER_HPP_
 #define SYSTEM_HELPER_HPP_
 
-#include <unistd.h>
 #include <string>
+#include <algorithm>
+#include <iostream>
 #include <vector>
+#include <cstdarg>
+#include <cstring>
 #include <dirent.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #ifdef ENABLE_SYSTEMD_STATUS
 #include <systemd/sd-daemon.h>
+#include <systemd/sd-journal.h>
 #endif
+
+#include <syslog.h>
 
 namespace bestsens {
     namespace system_helper {
@@ -122,6 +131,83 @@ namespace bestsens {
                 sd_notifyf(0, "STATUS=%s\nERRNO=%d", strerror(errno), errno);
                 #endif
             }
+        }
+
+        class LogManager {
+        public:
+            LogManager(const char* process_name);
+            LogManager() : LogManager("") {};
+
+            void setMaxLogLevel(int max_log_level);
+            void setEcho(bool enable_echo);
+
+            void write(int priority, const std::string& message);
+            void write(const std::string& message);
+            void write(int priority, const char *fmt, ...);
+            void write(const char *fmt, ...);
+        private:
+            int max_log_level = LOG_INFO;
+            const int default_log_level = LOG_INFO;
+            bool enable_echo = true;
+            std::string process_name;
+        };
+
+        inline LogManager::LogManager(const char* process_name) {
+            this->process_name = std::string(process_name);
+            this->setEcho(this->enable_echo);
+        }
+
+        inline void LogManager::setMaxLogLevel(int max_log_level) {
+            this->max_log_level = max_log_level;
+
+            setlogmask(LOG_UPTO(max_log_level));
+        }
+
+        inline void LogManager::setEcho(bool enable_echo) {
+            this->enable_echo = enable_echo;
+
+            closelog();
+            if(!this->enable_echo)
+			    openlog(this->process_name.c_str(), LOG_NDELAY | LOG_PID, LOG_DAEMON);
+            else
+                openlog(this->process_name.c_str(), LOG_CONS | LOG_PERROR | LOG_NDELAY | LOG_PID, LOG_DAEMON);
+        }
+
+        inline void LogManager::write(const std::string& message) {
+            return this->write(this->default_log_level, message);
+        }
+
+        inline void LogManager::write(const char *fmt, ...) {
+            va_list ap;
+            va_start(ap, fmt);
+            this->write(this->default_log_level, fmt, ap);
+            va_end(ap);
+        }
+
+        inline void LogManager::write(int priority, const std::string& message) {
+            return this->write(priority, "%s", message.c_str());
+        }
+
+        inline void LogManager::write(int priority, const char *fmt, ...) {
+            if(priority > this->max_log_level)
+                return;
+
+            va_list ap;
+            va_start(ap, fmt);
+
+            #ifdef ENABLE_SYSTEMD_STATUS
+                if(this->enable_echo) {
+                    vfprintf(stdout, fmt, ap);
+                    if(fmt[std::strlen(fmt)-1] != '\n')
+                        fprintf(stdout, "\n");
+                }
+
+                sd_journal_printv(priority, fmt, ap);
+            #else
+                vsyslog(priority, fmt, ap);
+            #endif
+
+            va_end(ap);
         }
     }
 }
