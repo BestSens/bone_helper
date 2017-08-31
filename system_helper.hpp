@@ -11,7 +11,9 @@
 #include <string>
 #include <algorithm>
 #include <iostream>
+#include <stdexcept>
 #include <vector>
+#include <mutex>
 #include <cstdarg>
 #include <cstring>
 #include <dirent.h>
@@ -150,6 +152,8 @@ namespace bestsens {
             const int default_log_level = LOG_INFO;
             bool enable_echo = true;
             std::string process_name;
+
+            std::mutex mutex;
         };
 
         inline LogManager::LogManager(const char* process_name) {
@@ -195,6 +199,7 @@ namespace bestsens {
             va_list ap;
             va_start(ap, fmt);
 
+            this->mutex.lock();
             #ifdef ENABLE_SYSTEMD_STATUS
                 if(this->enable_echo) {
                     vfprintf(stdout, fmt, ap);
@@ -206,6 +211,7 @@ namespace bestsens {
             #else
                 vsyslog(priority, fmt, ap);
             #endif
+            this->mutex.unlock();
 
             va_end(ap);
         }
