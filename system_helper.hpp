@@ -147,6 +147,8 @@ namespace bestsens {
             void write(const std::string& message);
             void write(int priority, const char *fmt, ...);
             void write(const char *fmt, ...);
+
+            void auditlog(const char *fmt, ...);
         private:
             int max_log_level = LOG_INFO;
             const int default_log_level = LOG_INFO;
@@ -181,10 +183,6 @@ namespace bestsens {
             return this->write(this->default_log_level, message);
         }
 
-        inline void LogManager::auditlog(const std::string& message) {
-            return this->write(LOG_INFO, message);
-        }
-
         inline void LogManager::write(const char *fmt, ...) {
             va_list ap;
             va_start(ap, fmt);
@@ -217,6 +215,13 @@ namespace bestsens {
             #endif
             this->mutex.unlock();
 
+            va_end(ap);
+        }
+
+        inline void LogManager::auditlog(const char *fmt, ...) {
+            va_list ap;
+            va_start(ap, fmt);
+            this->write(LOG_INFO, fmt, ap);
             va_end(ap);
         }
     }
