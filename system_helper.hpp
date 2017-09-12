@@ -181,6 +181,10 @@ namespace bestsens {
             return this->write(this->default_log_level, message);
         }
 
+        inline void LogManager::auditlog(const std::string& message) {
+            return this->write(LOG_INFO, message);
+        }
+
         inline void LogManager::write(const char *fmt, ...) {
             va_list ap;
             va_start(ap, fmt);
