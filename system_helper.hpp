@@ -146,6 +146,7 @@ namespace bestsens {
             void write(int priority, const std::string& message);
             void write(const std::string& message);
             void write(int priority, const char *fmt, ...);
+            void write(int priority, const char *fmt, va_list ap);
             void write(const char *fmt, ...);
 
             void auditlog(const char *fmt, ...);
@@ -195,11 +196,15 @@ namespace bestsens {
         }
 
         inline void LogManager::write(int priority, const char *fmt, ...) {
-            if(priority > this->max_log_level)
-                return;
-
             va_list ap;
             va_start(ap, fmt);
+            this->write(priority, fmt, ap);
+            va_end(ap);
+        }
+
+        inline void LogManager::write(int priority, const char *fmt, va_list ap) {
+            if(priority > this->max_log_level)
+                return;
 
             this->mutex.lock();
             #ifdef ENABLE_SYSTEMD_STATUS
@@ -214,8 +219,6 @@ namespace bestsens {
                 vsyslog(priority, fmt, ap);
             #endif
             this->mutex.unlock();
-
-            va_end(ap);
         }
 
         inline void LogManager::auditlog(const char *fmt, ...) {
