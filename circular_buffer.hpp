@@ -227,15 +227,13 @@ namespace bestsens {
 		if(this->size == 0)
 			throw std::runtime_error("out of bounds");
 
+		this->mutex.lock();
+
 		int end;
 		int last_position;
 
 		if(amount == 0)
 			amount = -1;
-		else if(amount > this->item_count)
-			amount = this->item_count;
-
-		this->mutex.lock();
 
 		if(last_value > 0) {
 			int temp = this->base_id - last_value;
@@ -250,6 +248,9 @@ namespace bestsens {
 
 		} else
 			end = amount;
+
+		if(end > this->item_count)
+			end = this->item_count;
 
 		last_position = this->base_id;
 

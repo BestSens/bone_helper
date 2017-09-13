@@ -91,6 +91,14 @@ TEST_CASE("circular_buffer_test") {
             CHECK(buffer_test[0] == i);
         }
     }
+
+    SECTION("test empty") {
+        int test[BUFFER_SIZE];
+        int amount = 1800;
+        int ret_val = buffer_test.get(test, amount, 600);
+        CHECK(ret_val == 0);
+        CHECK(amount == 0);
+    }
 }
 
 TEST_CASE("circular buffer stress test", "[.]") {
