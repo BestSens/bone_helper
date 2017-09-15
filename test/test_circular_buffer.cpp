@@ -101,6 +101,26 @@ TEST_CASE("circular_buffer_test") {
     }
 }
 
+TEST_CASE("vector") {
+    bestsens::CircularBuffer<int> buffer_test(BUFFER_SIZE);
+
+    for(int i = 0; i < 10; i++)
+        REQUIRE(buffer_test.add(i) == 0);
+
+    for(unsigned int i = 0; i < 100; i++) {
+        int last_value = rand() % 99999;
+        std::vector<int> v = buffer_test.getVector(INT_MAX, last_value);
+
+        CHECK(v.size() == 10);
+
+        for(int j = 0; j < 10; j++) {
+            CHECK(v[j] == j);
+            if(v[j] != j)
+                break;
+        }
+    }
+}
+
 TEST_CASE("circular buffer stress test", "[.]") {
     bestsens::CircularBuffer<int> buffer_test(100000);
 

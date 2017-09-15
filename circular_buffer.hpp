@@ -211,13 +211,14 @@ namespace bestsens {
 
 	template < typename T >
 	std::vector<T> CircularBuffer<T>::getVector(int amount, int &last_value) {
-		T * target = (T*)malloc(amount * sizeof(T));
+		if(amount > this->item_count)
+			amount = this->item_count;
 
-		last_value = this->get(target, amount, last_value);
+		std::vector<T> vect(amount);
 
-		std::vector<T> vect(target, target + amount);
+		last_value = this->get(vect.data(), amount, last_value);
 
-		free(target);
+		vect.resize(amount);
 
 		return vect;
 	}
@@ -235,17 +236,12 @@ namespace bestsens {
 		if(amount == 0)
 			amount = -1;
 
-		if(last_value > 0) {
+		if(last_value > 0 && last_value <= this->base_id) {
 			int temp = this->base_id - last_value;
-
-			if(temp < 0)
-				temp = INT_MAX - last_value + this->base_id;
-
 			end = temp % this->size;
 
 			if(end < 0)
 				end += this->size;
-
 		} else
 			end = amount;
 
