@@ -221,11 +221,11 @@ namespace bestsens {
 
 		last_value = this->get(target, amount, last_value);
 
-		std::vector<T> vect(amount);
+		std::vector<T> vect;
+		vect.reserve(amount);
 
-		int i = 0;
 		for(T* item = target; item < target + amount; item++)
-			vect[i++] = T((const T)(*item));
+			vect.emplace_back(T((const T)(*item)));
 
 		free(target);
 
