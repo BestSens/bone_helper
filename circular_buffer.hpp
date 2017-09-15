@@ -214,11 +214,20 @@ namespace bestsens {
 		if(amount > this->item_count)
 			amount = this->item_count;
 
+		T * target = (T*)malloc(amount * sizeof(T));
+
+		if(target == NULL)
+			throw std::runtime_error("could not reserve memory");
+
+		last_value = this->get(target, amount, last_value);
+
 		std::vector<T> vect(amount);
 
-		last_value = this->get(vect.data(), amount, last_value);
+		int i = 0;
+		for(T* item = target; item < target + amount; item++)
+			vect[i++] = T((const T)(*item));
 
-		vect.resize(amount);
+		free(target);
 
 		return vect;
 	}
