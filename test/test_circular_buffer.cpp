@@ -107,17 +107,28 @@ TEST_CASE("vector") {
     for(int i = 0; i < 10; i++)
         REQUIRE(buffer_test.add(i) == 0);
 
-    for(unsigned int i = 0; i < 100; i++) {
-        int last_value = rand() % 99999;
-        std::vector<int> v = buffer_test.getVector(INT_MAX, last_value);
+    SECTION("test last_value") {
+        for(unsigned int i = 0; i < 100; i++) {
+            int last_value = rand() % 99999;
+            std::vector<int> v = buffer_test.getVector(INT_MAX, last_value);
 
-        CHECK(v.size() == 10);
+            REQUIRE(v.size() == 10);
 
-        for(int j = 0; j < 10; j++) {
-            CHECK(v[j] == j);
-            if(v[j] != j)
-                break;
+            for(int j = 0; j < 10; j++) {
+                CHECK(v[j] == j);
+                if(v[j] != j)
+                    break;
+            }
         }
+    }
+
+    SECTION("test amount") {
+        int last_value = 1;
+        std::vector<int> v = buffer_test.getVector(2, last_value);
+
+        REQUIRE(v.size() == 2);
+        CHECK(v[0] == 8);
+        CHECK(v[1] == 9);
     }
 }
 

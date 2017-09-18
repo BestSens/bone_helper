@@ -251,11 +251,15 @@ namespace bestsens {
 
 			if(end < 0)
 				end += this->size;
-		} else
+		} else {
 			end = amount;
+		}
 
 		if(end > this->item_count)
 			end = this->item_count;
+
+		if(end > amount)
+			end = amount;
 
 		last_position = this->base_id;
 
