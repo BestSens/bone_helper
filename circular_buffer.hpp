@@ -13,6 +13,7 @@
 #include <cstring>
 #include <climits>
 #include <mutex>
+#include <type_traits>
 #include <vector>
 
 namespace bestsens {
@@ -194,8 +195,17 @@ namespace bestsens {
 			len = this->size - offset;
 		}
 
-		std::memcpy(target, this->buffer + offset, len * sizeof(T));
-		std::memcpy(target + len, this->buffer, len2 * sizeof(T));
+		/*
+		 * use memcpy for performance in fundamental types
+		 * and copy for copying objects
+		 */
+		if(std::is_fundamental<T>()) {
+			std::memcpy(target, this->buffer + offset, len * sizeof(T));
+			std::memcpy(target + len, this->buffer, len2 * sizeof(T));
+		} else {
+			std::copy(this->buffer + offset, this->buffer + offset + len, target);
+			std::copy(this->buffer, this->buffer + len2, target + len);
+		}
 
 		int amount = len + len2;
 
@@ -214,20 +224,11 @@ namespace bestsens {
 		if(amount > this->item_count)
 			amount = this->item_count;
 
-		T * target = (T*)malloc(amount * sizeof(T));
+		std::vector<T> vect(amount);
 
-		if(target == NULL)
-			throw std::runtime_error("could not reserve memory");
+		last_value = this->get(vect.data(), amount, last_value);
 
-		last_value = this->get(target, amount, last_value);
-
-		std::vector<T> vect;
-		vect.reserve(amount);
-
-		for(T* item = target; item < target + amount; item++)
-			vect.emplace_back(T((const T)(*item)));
-
-		free(target);
+		vect.resize(amount);
 
 		return vect;
 	}
