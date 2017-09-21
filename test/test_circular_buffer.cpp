@@ -1,4 +1,5 @@
 #include "libs/catch/include/catch.hpp"
+#include "../../json/src/json.hpp"
 #include "../circular_buffer.hpp"
 
 #include <thread>
@@ -130,6 +131,100 @@ TEST_CASE("vector") {
         CHECK(v[0] == 8);
         CHECK(v[1] == 9);
     }
+}
+
+TEST_CASE("copy of non-fundamentals") {
+    struct Foo {
+    	double a;
+    	int b;
+    	char c;
+    };
+
+    struct Bar {
+    public:
+    	Bar() {
+    		foo = new Foo();
+    		foo->a = 3.1415;
+    		foo->b = 42;
+    		foo->c = 'H';
+    	}
+
+        Bar(const Bar& src) {
+            foo = new Foo();
+            foo->a = src.foo->a;
+            foo->b = src.foo->b;
+            foo->c = src.foo->c;
+        }
+
+        Bar& operator=(Bar src) {
+            foo = new Foo();
+            foo->a = src.foo->a;
+            foo->b = src.foo->b;
+            foo->c = src.foo->c;
+            return *this;
+        }
+
+    	~Bar() {
+    		delete foo;
+    	}
+
+    	Foo* foo;
+    };
+
+    bestsens::CircularBuffer<Bar> buffer_test(2);
+
+    Bar test;
+    test.foo->c = 'A';
+
+    Bar * test2 = new Bar(test);
+    CHECK(test2->foo->c == 'A');
+    CHECK(uintptr_t(test.foo) != uintptr_t(test2->foo));
+
+    buffer_test.add(test);
+    test.foo->c = 'B';
+    buffer_test.add(test);
+
+    std::vector<Bar> vect = buffer_test.getVector(2);
+    std::vector<Bar> vect2 = buffer_test.getVector(2);
+
+    REQUIRE(uintptr_t(vect[0].foo) != uintptr_t(test.foo));
+    REQUIRE(uintptr_t(vect[0].foo) != uintptr_t(vect2[0].foo));
+
+    CHECK(vect[0].foo->c == 'A');
+    CHECK(vect[1].foo->c == 'B');
+
+    test2->foo->c = 'C';
+    buffer_test.add(*test2);
+
+    vect = buffer_test.getVector(2);
+
+    REQUIRE(uintptr_t(vect[1].foo) != uintptr_t(test2->foo));
+    CHECK(vect[1].foo->c == 'C');
+
+    delete test2;
+
+    CHECK(vect[1].foo->c == 'C');
+}
+
+TEST_CASE("test json") {
+    using json = nlohmann::json;
+
+    bestsens::CircularBuffer<json> buffer_test(2);
+
+    {
+        json test = {{"test", {{"blah", 10}}}};
+        buffer_test.add(test);
+    }
+
+    std::vector<json> vect = buffer_test.getVector(2);
+
+    CHECK(vect[0]["test"]["blah"] == 10);
+    buffer_test.add({});
+    buffer_test.add({});
+    buffer_test.add({});
+    CHECK(vect[0]["test"]["blah"] == 10);
+
+    vect = buffer_test.getVector(2);
 }
 
 TEST_CASE("circular buffer stress test", "[.]") {

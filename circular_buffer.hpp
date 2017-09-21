@@ -195,17 +195,8 @@ namespace bestsens {
 			len = this->size - offset;
 		}
 
-		/*
-		 * use memcpy for performance in fundamental types
-		 * and copy for copying objects
-		 */
-		if(std::is_fundamental<T>()) {
-			std::memcpy(target, this->buffer + offset, len * sizeof(T));
-			std::memcpy(target + len, this->buffer, len2 * sizeof(T));
-		} else {
-			std::copy(this->buffer + offset, this->buffer + offset + len, target);
-			std::copy(this->buffer, this->buffer + len2, target + len);
-		}
+		std::copy(this->buffer + offset, this->buffer + offset + len, target);
+		std::copy(this->buffer, this->buffer + len2, target + len);
 
 		int amount = len + len2;
 

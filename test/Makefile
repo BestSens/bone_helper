@@ -12,7 +12,7 @@ $(BIN): $(OBJ)
 test_main.o: test_main.cpp libs/catch/include/catch.hpp
 	$(CXX) $(CPPFLAGS) -c $<
 
-test_circular_buffer.o: test_circular_buffer.cpp libs/catch/include/catch.hpp ../circular_buffer.hpp
+test_circular_buffer.o: test_circular_buffer.cpp libs/catch/include/catch.hpp ../circular_buffer.hpp ../../json/src/json.hpp
 	$(CXX) $(CPPFLAGS) -c $<
 
 test_netHelper.o: test_netHelper.cpp libs/catch/include/catch.hpp ../netHelper.hpp
