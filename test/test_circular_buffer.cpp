@@ -1,5 +1,4 @@
 #include "libs/catch/include/catch.hpp"
-#include "../../json/src/json.hpp"
 #include "../circular_buffer.hpp"
 
 #include <thread>
@@ -204,27 +203,6 @@ TEST_CASE("copy of non-fundamentals") {
     delete test2;
 
     CHECK(vect[1].foo->c == 'C');
-}
-
-TEST_CASE("test json") {
-    using json = nlohmann::json;
-
-    bestsens::CircularBuffer<json> buffer_test(2);
-
-    {
-        json test = {{"test", {{"blah", 10}}}};
-        buffer_test.add(test);
-    }
-
-    std::vector<json> vect = buffer_test.getVector(2);
-
-    CHECK(vect[0]["test"]["blah"] == 10);
-    buffer_test.add({});
-    buffer_test.add({});
-    buffer_test.add({});
-    CHECK(vect[0]["test"]["blah"] == 10);
-
-    vect = buffer_test.getVector(2);
 }
 
 TEST_CASE("circular buffer stress test", "[.]") {
