@@ -121,7 +121,7 @@ namespace bestsens {
 		if((this->buffer = (T*)calloc(this->size, sizeof(T))) == NULL)
 			throw std::runtime_error("error allocating buffer");
 
-		std::copy(this->buffer, src.buffer, src.size);
+		std::copy(src.buffer, src.buffer + src.size, this->buffer);
 	}
 
 	template < typename T >
