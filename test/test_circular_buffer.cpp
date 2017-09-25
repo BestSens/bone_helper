@@ -99,6 +99,12 @@ TEST_CASE("circular_buffer_test") {
         CHECK(ret_val == 0);
         CHECK(amount == 0);
     }
+
+    SECTION("test underflow") {
+        int test[BUFFER_SIZE];
+        int amount = 0;
+        CHECK_THROWS(buffer_test.get(test, amount, 0));
+    }
 }
 
 TEST_CASE("vector") {

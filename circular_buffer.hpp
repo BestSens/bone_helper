@@ -199,6 +199,9 @@ namespace bestsens {
 			len = this->size - offset;
 		}
 
+		if(len < 0 || len2 < 0)
+			throw std::runtime_error("out of bounds");
+
 		std::copy(this->buffer + offset, this->buffer + offset + len, target);
 		std::copy(this->buffer, this->buffer + len2, target + len);
 
