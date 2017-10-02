@@ -39,7 +39,7 @@ namespace bestsens {
 		std::vector<T> getVector(int amount, int &last_value);
 
 	private:
-		T * buffer;
+		std::vector<T> buffer;
 
 		int size;
 		int current_position;
@@ -80,14 +80,7 @@ namespace bestsens {
 			item_count = rhs.item_count;
 			base_id = rhs.base_id;
 
-			T * new_buffer;
-
-			new_buffer = (T*)calloc(rhs.size, sizeof(T));
-			std::memcpy(new_buffer, rhs.buffer, rhs.size);
-
-			free(this->buffer);
-
-			this->buffer = new_buffer;
+			this->buffer = rhs.buffer;
 		}
 
 		return *this;
@@ -104,10 +97,7 @@ namespace bestsens {
 		this->current_position = 0;
 		this->item_count = 0;
 		this->base_id = 0;
-
-		/* allocate buffer with zeros */
-		if((this->buffer = (T*)calloc(this->size, sizeof(T))) == NULL)
-			throw std::runtime_error("error allocating buffer");
+		this->buffer.resize(this->size);
 	}
 
 	template < typename T >
@@ -116,18 +106,11 @@ namespace bestsens {
 		this->current_position = src.current_position;
 		this->item_count = src.item_count;
 		this->base_id = src.base_id;
-
-		/* allocate buffer with zeros */
-		if((this->buffer = (T*)calloc(this->size, sizeof(T))) == NULL)
-			throw std::runtime_error("error allocating buffer");
-
-		std::copy(src.buffer, src.buffer + src.size, this->buffer);
+		this->buffer = src.buffer;
 	}
 
 	template < typename T >
-	CircularBuffer<T>::~CircularBuffer() {
-		free(this->buffer);
-	}
+	CircularBuffer<T>::~CircularBuffer() {}
 
 	template < typename T >
 	int CircularBuffer<T>::add(const T& value) {
@@ -157,9 +140,7 @@ namespace bestsens {
 		if(this->item_count == 0)
 			throw std::runtime_error("out of bounds");
 
-		T retval = T(*(this->buffer + ((this->current_position + id) % this->size)));
-
-		return retval;
+		return this->buffer[(this->current_position + id) % this->size];
 	}
 
 	template < typename T >
@@ -172,9 +153,7 @@ namespace bestsens {
 		if(offset < 0)
 			offset += this->size;
 
-		T retval = T(*(this->buffer + offset));
-
-		return retval;
+		return this->buffer[offset];
 	}
 
 	template < typename T >
@@ -202,8 +181,8 @@ namespace bestsens {
 		if(len < 0 || len2 < 0)
 			throw std::runtime_error("out of bounds");
 
-		std::copy(this->buffer + offset, this->buffer + offset + len, target);
-		std::copy(this->buffer, this->buffer + len2, target + len);
+		std::copy(this->buffer.data() + offset, this->buffer.data() + offset + len, target);
+		std::copy(this->buffer.data(), this->buffer.data() + len2, target + len);
 
 		int amount = len + len2;
 
