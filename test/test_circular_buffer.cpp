@@ -6,7 +6,7 @@
 #define BUFFER_SIZE 100
 
 TEST_CASE("circular_buffer_test") {
-    bestsens::CircularBuffer<int> buffer_test(BUFFER_SIZE);
+    bestsens::CircularBuffer<int, BUFFER_SIZE> buffer_test;
 
     SECTION("test") {
         int test[BUFFER_SIZE];
@@ -108,7 +108,7 @@ TEST_CASE("circular_buffer_test") {
 }
 
 TEST_CASE("vector") {
-    bestsens::CircularBuffer<int> buffer_test(BUFFER_SIZE);
+    bestsens::CircularBuffer<int, BUFFER_SIZE> buffer_test;
 
     for(int i = 0; i < 10; i++)
         REQUIRE(buffer_test.add(i) == 0);
@@ -176,7 +176,7 @@ TEST_CASE("copy of non-fundamentals") {
     	Foo* foo;
     };
 
-    bestsens::CircularBuffer<Bar> buffer_test(2);
+    bestsens::CircularBuffer<Bar, 2> buffer_test;
 
     Bar test;
     test.foo->c = 'A';
@@ -212,7 +212,7 @@ TEST_CASE("copy of non-fundamentals") {
 }
 
 TEST_CASE("circular buffer stress test", "[.]") {
-    bestsens::CircularBuffer<int> buffer_test(100000);
+    bestsens::CircularBuffer<int, 100000> buffer_test;
 
     std::array<std::thread, 50> inst_thread;
     std::array<std::thread, 50> inst_thread_read;
