@@ -196,11 +196,10 @@ namespace bestsens {
 		/*
 		 * receive actual data and parse
 		 */
-		char * str = (char*)malloc(data_len+1 * sizeof(char));
+        std::vector<uint8_t> str(data_len+1);
 
-        int t = this->recv(str, data_len);
+        int t = this->recv(str.data(), data_len);
 
-        int ret_val = 1;
 		if(t > 0 && t == data_len) {
 			str[t] = '\0';
 
@@ -209,33 +208,26 @@ namespace bestsens {
                     if(!this->use_msgpack){
                         response = json::parse(str);
                     } else {
-                        std::vector<uint8_t> msgpack;
-                        msgpack.assign(str, str + t);
+                        response = json::from_msgpack(str);
 
-                        response = json::from_msgpack(msgpack);
+                        return 1;
                     }
 
-    				if(response.empty()) {
+    				if(response.empty())
     					syslog(LOG_ERR, "Error");
-    					ret_val = 0;
-    				}
                 }
                 catch(const std::invalid_argument& ia) {
                     syslog(LOG_ERR, "%s", ia.what());
-                    syslog(LOG_ERR, "input string: \"%s\"", str);
-                    ret_val = 0;
+                    syslog(LOG_ERR, "input string: \"%s\"", str.data());
                 }
 			}
 		} else {
             syslog(LOG_CRIT, "could not receive all data");
-            syslog(LOG_CRIT, "input string: \"%s\"", str);
+            syslog(LOG_CRIT, "input string: \"%s\"", str.data());
             throw std::runtime_error("could not receive all data");
-            ret_val = 0;
         }
 
-		free(str);
-
-		return ret_val;
+		return 0;
 	}
 
 	netHelper::~netHelper() {
