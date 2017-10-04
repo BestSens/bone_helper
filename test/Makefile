@@ -1,4 +1,4 @@
-CPPFLAGS = -std=c++14 -O3 -Wall -fsanitize=address
+CPPFLAGS = -std=c++14 -O0 -g --coverage -Wall
 LDFLAGS = -lm -lpthread -lcrypto
 
 OBJ = test_main.o test_circular_buffer.o test_loopTimer.o
@@ -22,4 +22,4 @@ test_loopTimer.o: test_loopTimer.cpp libs/catch/include/catch.hpp ../loopTimer.h
 	$(CXX) $(CPPFLAGS) -c $<
 
 clean:
-	rm -f $(BIN) $(OBJ)
+	rm -f $(BIN) $(OBJ) *.gcov *.gcno *.gcda
