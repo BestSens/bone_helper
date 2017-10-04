@@ -14,6 +14,8 @@ TEST_CASE("circular_buffer_test") {
         int amount = BUFFER_SIZE;
         int last_position = 0;
 
+        CHECK_THROWS(buffer_test.get(0));
+
         /*
          * Test default add and get
          */
@@ -42,6 +44,10 @@ TEST_CASE("circular_buffer_test") {
          * Test last_position usage
          */
         CHECK(buffer_test.get(test2, amount, last_position) > 0);
+        CHECK(test2[0] == -1);
+
+        last_position = BUFFER_SIZE + 10;
+        buffer_test.get(test2, amount, last_position);
         CHECK(test2[0] == -1);
     }
 

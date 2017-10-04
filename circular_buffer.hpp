@@ -156,7 +156,7 @@ namespace bestsens {
 		if(offset < 0)
 			offset += N;
 
-		int len = end - start ;
+		int len = end - start;
 
 		if(len > N)
 			len = N;
@@ -213,9 +213,6 @@ namespace bestsens {
 		if(last_value > 0 && last_value <= this->base_id) {
 			int temp = this->base_id - last_value;
 			end = temp % N;
-
-			if(end < 0)
-				end += N;
 		} else {
 			end = amount;
 		}
