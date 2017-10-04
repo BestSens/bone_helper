@@ -24,7 +24,7 @@ test:
     stage: test
     script:
         - ./test -d yes
-        - gcov -r -n test_circular_buffer
+        - gcov -r -n test_circular_buffer test_loopTimer
 
 static:
     image: walberla/cppcheck
