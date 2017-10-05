@@ -205,16 +205,15 @@ namespace bestsens {
 
 			if(response != NULL) {
                 try{
-                    if(!this->use_msgpack){
+                    if(!this->use_msgpack)
                         response = json::parse(str);
-                    } else {
+                    else
                         response = json::from_msgpack(str);
-
-                        return 1;
-                    }
 
     				if(response.empty())
     					syslog(LOG_ERR, "Error");
+                    else
+                        return 1;
                 }
                 catch(const std::invalid_argument& ia) {
                     syslog(LOG_ERR, "%s", ia.what());
