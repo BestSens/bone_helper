@@ -110,7 +110,7 @@ namespace bestsens {
 		if(N == 0)
 			throw std::runtime_error("out of bounds");
 
-		this->mutex.lock();
+		std::lock_guard<std::mutex> lock(this->mutex);
 		this->buffer[this->current_position] = value;
 
 		this->current_position = (this->current_position + 1) % N;
@@ -119,8 +119,6 @@ namespace bestsens {
 			this->item_count++;
 
 		this->base_id = (this->base_id + 1) % INT_MAX;
-
-		this->mutex.unlock();
 
 		return 0;
 	}
@@ -202,7 +200,7 @@ namespace bestsens {
 
 	template < typename T, int N >
 	int CircularBuffer<T, N>::get(T * target, int &amount, int last_value) {
-		this->mutex.lock();
+		std::lock_guard<std::mutex> lock(this->mutex);
 
 		int end;
 		int last_position;
@@ -226,8 +224,6 @@ namespace bestsens {
 		last_position = this->base_id;
 
 		amount = getRange(target, 0, end);
-
-		this->mutex.unlock();
 
 		return last_position;
 	}
