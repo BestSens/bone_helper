@@ -56,6 +56,8 @@ namespace bestsens {
 		int send(const std::vector<uint8_t>& data);
 		int send_command(std::string command, json& response, json payload);
 
+		int set_timeout(const int timeout);
+
 		int get_sockfd();
 
 		static std::string sha512(std::string input);
@@ -158,6 +160,13 @@ namespace bestsens {
 
 	int netHelper::is_logged_in() {
 		return this->user_level;
+	}
+
+	int netHelper::set_timeout(const int timeout) {
+		struct timeval tv;
+		tv.tv_sec = timeout;
+		tv.tv_usec = 0;
+		return setsockopt(this->sockfd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
 	}
 
 	int netHelper::send_command(std::string command, json& response, json payload = {}) {
