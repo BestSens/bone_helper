@@ -83,7 +83,7 @@ namespace bestsens {
 		using netHelper::netHelper;
 	};
 
-	int netHelper::get_sockfd() {
+	inline int netHelper::get_sockfd() {
 		return this->sockfd;
 	}
 
@@ -112,7 +112,7 @@ namespace bestsens {
 		return std::string(hash_hex);
 	}
 
-	int netHelper::login(std::string user_name, std::string password, bool use_hash) {
+	inline int netHelper::login(std::string user_name, std::string password, bool use_hash) {
 		/*
 		 * request token
 		 */
@@ -158,18 +158,18 @@ namespace bestsens {
 		return this->user_level;
 	}
 
-	int netHelper::is_logged_in() {
+	inline int netHelper::is_logged_in() {
 		return this->user_level;
 	}
 
-	int netHelper::set_timeout(const int timeout) {
+	inline int netHelper::set_timeout(const int timeout) {
 		struct timeval tv;
 		tv.tv_sec = timeout;
 		tv.tv_usec = 0;
 		return setsockopt(this->sockfd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
 	}
 
-	int netHelper::send_command(std::string command, json& response, json payload = {}) {
+	inline int netHelper::send_command(std::string command, json& response, json payload = {}) {
 		json temp = {{"command", command}};
 
 		if(payload.is_object())
@@ -238,16 +238,16 @@ namespace bestsens {
 		return 0;
 	}
 
-	netHelper::~netHelper() {
+	inline netHelper::~netHelper() {
 		this->disconnect();
 		freeaddrinfo(this->res);
 	}
 
-	int netHelper::is_connected() {
+	inline int netHelper::is_connected() {
 		return this->connected;
 	}
 
-	int netHelper::connect() {
+	inline int netHelper::connect() {
 		if(this->connected)
 			return 1;
 
@@ -264,7 +264,7 @@ namespace bestsens {
 		return 0;
 	}
 
-	int netHelper::disconnect() {
+	inline int netHelper::disconnect() {
 		if(!this->connected)
 			return -1;
 
@@ -273,16 +273,16 @@ namespace bestsens {
 		return 0;
 	}
 
-	int netHelper::send(const char * data) {
+	inline int netHelper::send(const char * data) {
 		return this->send(std::string(data));
 	}
 
-	int netHelper::send(const std::vector<uint8_t>& data) {
+	inline int netHelper::send(const std::vector<uint8_t>& data) {
 		std::string s = std::string(data.begin(), data.end());
 		return this->send(s);
 	}
 
-	int netHelper::send(std::string data) {
+	inline int netHelper::send(std::string data) {
 		if(!this->connected)
 			return -1;
 
@@ -303,7 +303,7 @@ namespace bestsens {
 		return (int)t;
 	}
 
-	int netHelper::recv(void * buffer, size_t read_size) {
+	inline int netHelper::recv(void * buffer, size_t read_size) {
 		if(!this->connected)
 			return -1;
 
