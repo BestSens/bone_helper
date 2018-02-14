@@ -9,7 +9,7 @@
 #define JSONHELPER_HPP_
 
 #include <syslog.h>
-#include "../json/src/json.hpp"
+#include "../json/single_include/nlohmann/json.hpp"
 
 using json = nlohmann::json;
 
@@ -24,10 +24,7 @@ namespace bestsens {
 
             return result.unflatten();
         }
-        catch(const std::domain_error& ia) {
-            syslog(LOG_WARNING, "error merging json: %s", ia.what());
-        }
-        catch(const std::invalid_argument& ia) {
+        catch(const json::exception& ia) {
             syslog(LOG_WARNING, "error merging json: %s", ia.what());
         }
 

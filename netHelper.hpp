@@ -17,7 +17,7 @@
 #include <sys/types.h>
 #include <openssl/sha.h>
 
-#include "../json/src/json.hpp"
+#include "../json/single_include/nlohmann/json.hpp"
 
 using json = nlohmann::json;
 
@@ -224,7 +224,7 @@ namespace bestsens {
 					else
 						return 1;
 				}
-				catch(const std::invalid_argument& ia) {
+				catch(const json::exception& ia) {
 					syslog(LOG_ERR, "%s", ia.what());
 					syslog(LOG_ERR, "input string: \"%s\"", str.data());
 				}
