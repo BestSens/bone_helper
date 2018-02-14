@@ -14,6 +14,7 @@
 using json = nlohmann::json;
 
 namespace bestsens {
+	[[deprecated("use json::update instead")]]
 	inline json merge_json(const json &a, const json &b) {
 		try {
 			json result = a.flatten();
