@@ -227,6 +227,6 @@ namespace bestsens {
 
 		return last_position;
 	}
-}
+} //namespace bestsens
 
 #endif /* CIRCULAR_BUFFER_HPP_ */

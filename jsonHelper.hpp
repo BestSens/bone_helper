@@ -131,6 +131,6 @@ namespace bestsens {
 
 		return true;
 	}
-}
+} //namespace bestsens
 
 #endif

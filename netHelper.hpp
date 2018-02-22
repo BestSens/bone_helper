@@ -91,7 +91,7 @@ namespace bestsens {
 		unsigned int last_position;
 
 		try {
-			last_position = ((uint8_t)str[0] << 24) + ((uint8_t)str[1] << 16) + ((uint8_t)str[2] << 8) + ((uint8_t)str[3]);
+			last_position = (static_cast<uint8_t>(str[0]) << 24) + (static_cast<uint8_t>(str[1]) << 16) + (static_cast<uint8_t>(str[2]) << 8) + (static_cast<uint8_t>(str[3]));
 		} catch(...) {
 			last_position = 0;
 		}
@@ -103,7 +103,9 @@ namespace bestsens {
 		unsigned char hash[SHA512_DIGEST_LENGTH];
 		char hash_hex[SHA512_DIGEST_LENGTH*2+1];
 
-		SHA512((unsigned char*)input.c_str(), input.length(), hash);
+		char* input_str = const_cast<char*>(input.c_str());
+
+		SHA512(reinterpret_cast<unsigned char*>(input_str), input.length(), hash);
 
 		for(int i=0; i<SHA512_DIGEST_LENGTH; i++) {
 			sprintf(hash_hex + i*2, "%02x", hash[i]);
@@ -166,7 +168,7 @@ namespace bestsens {
 		struct timeval tv;
 		tv.tv_sec = timeout;
 		tv.tv_usec = 0;
-		return setsockopt(this->sockfd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
+		return setsockopt(this->sockfd, SOL_SOCKET, SO_RCVTIMEO, reinterpret_cast<const char *>(&tv), sizeof tv);
 	}
 
 	inline int netHelper::send_command(std::string command, json& response, json payload = {}) {
@@ -292,7 +294,7 @@ namespace bestsens {
 		 */
 		unsigned int t = 0;
 		while(t < data.length()) {
-			int count = ::send(this->sockfd, (const char*)data.c_str() + t, data.length() - t, 0);
+			int count = ::send(this->sockfd, data.c_str() + t, data.length() - t, 0);
 
 			if(count == 0)
 				break;
@@ -300,7 +302,7 @@ namespace bestsens {
 			t += count;
 		}
 
-		return (int)t;
+		return static_cast<int>(t);
 	}
 
 	inline int netHelper::recv(void * buffer, size_t read_size) {
@@ -313,7 +315,7 @@ namespace bestsens {
 		 */
 		unsigned int t = 0;
 		while(t < read_size) {
-			int count = ::recv(this->sockfd, (char *)buffer + t, read_size - t, 0);
+			int count = ::recv(this->sockfd, reinterpret_cast<char *>(buffer) + t, read_size - t, 0);
 
 			if(count == 0)
 				break;
@@ -321,8 +323,8 @@ namespace bestsens {
 			t += count;
 		}
 
-		return (int)t;
+		return static_cast<int>(t);
 	}
-}
+} // namespace bestsens
 
 #endif /* NETHELPER_HPP_ */
