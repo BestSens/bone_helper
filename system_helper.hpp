@@ -167,21 +167,17 @@ namespace bestsens {
 		inline void LogManager::setMaxLogLevel(int max_log_level) {
 			this->max_log_level = max_log_level;
 
-			#ifndef ENABLE_SYSTEMD_STATUS
 			setlogmask(LOG_UPTO(max_log_level));
-			#endif
 		}
 
 		inline void LogManager::setEcho(bool enable_echo) {
 			this->enable_echo = enable_echo;
 
-			#ifndef ENABLE_SYSTEMD_STATUS
 			closelog();
 			if(!this->enable_echo)
 				openlog(this->process_name.c_str(), LOG_NDELAY | LOG_PID, LOG_DAEMON);
 			else
 				openlog(this->process_name.c_str(), LOG_CONS | LOG_PERROR | LOG_NDELAY | LOG_PID, LOG_DAEMON);
-			#endif
 		}
 
 		inline void LogManager::write(const std::string& message) {
