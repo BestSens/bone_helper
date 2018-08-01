@@ -24,9 +24,10 @@
 #ifdef ENABLE_SYSTEMD_STATUS
 #include <systemd/sd-daemon.h>
 #include <systemd/sd-journal.h>
+#else
+#include <syslog.h>
 #endif
 
-#include <syslog.h>
 
 namespace bestsens {
 	namespace system_helper {

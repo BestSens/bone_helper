@@ -54,7 +54,6 @@ namespace bestsens {
 
 	loopTimer::~loopTimer() {
 		this->stop();
-		wait_on_tick();
 		this->timer_thread.join();
 	}
 
