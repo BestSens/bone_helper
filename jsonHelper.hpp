@@ -36,6 +36,15 @@ namespace bestsens {
 		return return_value;
 	}
 
+	template <typename T>
+	inline T value_ig_type(const json& input, const std::string& key, const T& default_value) {
+		try {
+			return input.value(key, default_value);
+		} catch(const json::type_error& e) {
+			return default_value;
+		}
+	}
+
 	inline bool is_json_number(const json& input, std::string key) {
 		return (input != NULL && input.count(key) > 0 && input.at(key).is_number());
 	}

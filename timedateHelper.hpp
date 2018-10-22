@@ -102,6 +102,19 @@ namespace bestsens {
 			return "";
 		}
 
+		std::string getTimezoneOffset() {
+			for(auto input : pipeSystemCommand("timedatectl status")) {
+				std::regex r("Time zone:.+([+-][0-9]{4})");
+				std::smatch match;
+
+				if(std::regex_search(input, match, r))
+					if(match.ready() && match.size() == 2)
+						return match[1];
+			}
+
+			return "";
+		}
+
 		void setTimesync(bool timesync_enabled) {
 			std::string cmd = std::string("sudo -n timedatectl set-ntp ") + (timesync_enabled ? "true" : "false");
 
