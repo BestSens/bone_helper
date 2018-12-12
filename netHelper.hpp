@@ -54,7 +54,7 @@ namespace bestsens {
 		int send(std::string data);
 		int send(const char * data);
 		int send(const std::vector<uint8_t>& data);
-		int send_command(std::string command, json& response, json payload);
+		int send_command(std::string command, json& response, json payload = {}, int api_version = 0);
 
 		int set_timeout(const int timeout);
 
@@ -169,11 +169,14 @@ namespace bestsens {
 		return setsockopt(this->sockfd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
 	}
 
-	inline int netHelper::send_command(std::string command, json& response, json payload = {}) {
+	inline int netHelper::send_command(std::string command, json& response, json payload, int api_version) {
 		json temp = {{"command", command}};
 
 		if(payload.is_object())
 			temp["payload"] = payload;
+
+       if(api_version > 0)
+            temp["api"] = api_version;
 
 		/*
 		 * send data to server
