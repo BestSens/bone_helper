@@ -221,8 +221,10 @@ namespace bestsens {
 				try{
 					if(!this->use_msgpack)
 						response = json::parse(str);
-					else
+					else {
+						str.erase(str.begin() + t);
 						response = json::from_msgpack(str);
+					}
 
 					if(response.empty())
 						syslog(LOG_ERR, "Error");
