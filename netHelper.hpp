@@ -335,6 +335,9 @@ namespace bestsens {
 		if(!this->connected)
 			return -1;
 
+		if(close(this->sockfd))
+			throw std::runtime_error("error closing socket");
+
 		this->connected = 0;
 
 		return 0;
