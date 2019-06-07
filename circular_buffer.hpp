@@ -38,6 +38,8 @@ namespace bestsens {
 		std::vector<T> getVector(int amount);
 		std::vector<T> getVector(int amount, int &last_value);
 
+		void clear();
+
 	private:
 		std::array<T, N> buffer;
 
@@ -227,6 +229,11 @@ namespace bestsens {
 
 		return last_position;
 	}
-}
+
+	template < typename T, int N >
+	void CircularBuffer<T, N>::clear() {
+		this->item_count = 0;
+	}
+} //namespace bestsens
 
 #endif /* CIRCULAR_BUFFER_HPP_ */
