@@ -11,6 +11,7 @@
 #include <sstream>
 #include <cstring>
 #include <netdb.h>
+#include <fcntl.h>
 #include <syslog.h>
 
 #include <sys/socket.h>
@@ -40,6 +41,8 @@ namespace bestsens {
 			if((this->sockfd = socket(this->res->ai_family, this->res->ai_socktype, this->res->ai_protocol)) == -1) {
 				syslog(LOG_CRIT, "socket");
 			}
+
+			this->set_timeout(this->timeout);
 		};
 		~netHelper();
 
@@ -67,6 +70,7 @@ namespace bestsens {
 	private:
 		int sockfd;
 		int connected = 0;
+		int timeout = 10;
 		struct addrinfo remote;
 		struct addrinfo * res;
 
@@ -163,6 +167,8 @@ namespace bestsens {
 	}
 
 	inline int netHelper::set_timeout(const int timeout) {
+		this->timeout = timeout;
+
 		struct timeval tv;
 		tv.tv_sec = timeout;
 		tv.tv_usec = 0;
@@ -254,13 +260,71 @@ namespace bestsens {
 		if(this->connected)
 			return 1;
 
+		// Set non-blocking 
+		long arg;
+		if((arg = fcntl(this->sockfd, F_GETFL, NULL)) < 0)
+			throw std::runtime_error("Error fcntl(..., F_GETFL)");
+
+		arg |= O_NONBLOCK; 
+		
+		if(fcntl(this->sockfd, F_SETFL, arg) < 0)
+			throw std::runtime_error("Error fcntl(..., F_GETFL)");
+
 		/*
 		 * connect to socket
 		 */
-		if(::connect(this->sockfd, this->res->ai_addr, this->res->ai_addrlen) == -1) {
+
+		int res = ::connect(this->sockfd, this->res->ai_addr, this->res->ai_addrlen);
+		fd_set myset;
+		int valopt;
+		struct timeval tv;
+
+		if(res < 0) {
+			if (errno == EINPROGRESS) {
+				do {
+					tv.tv_sec = this->timeout;
+					tv.tv_usec = 0;
+					FD_ZERO(&myset); 
+					FD_SET(this->sockfd, &myset);
+					res = select(this->sockfd+1, NULL, &myset, NULL, &tv);
+
+					if(res < 0 && errno != EINTR) {
+						syslog(LOG_CRIT, "Error connecting %d - %s", errno, strerror(errno));
+						return 1; 
+					} else if (res > 0) {
+						socklen_t lon = sizeof(int);
+						if(getsockopt(this->sockfd, SOL_SOCKET, SO_ERROR, (void*)(&valopt), &lon) < 0) { 
+							syslog(LOG_CRIT, "Error in getsockopt() %d - %s", errno, strerror(errno)); 
+							return 1; 
+						}
+
+						if(valopt) { 
+							syslog(LOG_CRIT, "Error in delayed connection() %d - %s", valopt, strerror(valopt)); 
+							return 1;  
+						}
+
+						break;
+					} else {
+						syslog(LOG_CRIT, "Timeout in select() - Cancelling!"); 
+						return 1;
+					}
+				} while(1);
+			}
+		} else {
 			syslog(LOG_CRIT, "error connecting to %s:%s", this->conn_target.c_str(), this->conn_port.c_str());
 			return 1;
 		}
+
+		// Set to blocking mode again... 
+		if((arg = fcntl(this->sockfd, F_GETFL, NULL)) < 0)
+			throw std::runtime_error("Error fcntl(..., F_GETFL)");
+
+		arg &= (~O_NONBLOCK); 
+
+		if(fcntl(this->sockfd, F_SETFL, arg) < 0)
+			throw std::runtime_error("Error fcntl(..., F_GETFL)");
+
+		// I hope that is all 
 
 		this->connected = 1;
 
