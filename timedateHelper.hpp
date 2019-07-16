@@ -14,6 +14,8 @@
 #include <memory>
 #include <regex>
 #include <iostream>
+#include <sys/types.h>
+#include <unistd.h>
 
 namespace bestsens {
 	namespace timedateHelper {
@@ -51,28 +53,36 @@ namespace bestsens {
 		}
 
 		std::string getDate() {
-			for(auto input : pipeSystemCommand("timedatectl status")) {
-				std::regex r("Local.*([0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2})");
-				std::smatch match;
+			std::time_t rawtime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+			std::tm tm = *std::localtime(&rawtime);
 
-				if(std::regex_search(input, match, r))
-					if(match.ready() && match.size() == 2)
-						return match[1];
-			}
+			char mbstr[100];
+			std::strftime(mbstr, sizeof(mbstr), "%F %T", &tm);
 
-			throw std::runtime_error("could not get current time");
-
-			return "";
+			return std::string(mbstr);
 		}
 
 		void setDate(const std::string& date) {
-			std::string cmd = std::string("sudo -n timedatectl set-time \"") + date + std::string("\"");
+			if(geteuid() == 0) { 
+				std::time_t rawtime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+				std::tm tm = *std::localtime(&rawtime);
+				
+				strptime(date.c_str(), "%F %T", &tm);
+				std::time_t newtime = std::mktime(&tm);
 
-			auto lines = pipeSystemCommand(cmd);
+				if(stime(&newtime) != 0) {
+					std::string error = std::string("could not set time: ") + strerror(errno);
+					throw std::runtime_error(error);
+				}
+			} else { // no root priviledges, try old sudo -n approach
+				std::string cmd = std::string("sudo -n timedatectl set-time \"") + date + std::string("\"");
 
-			if(lines.size() > 0) {
-				std::string error = std::string("could not set time: ") + lines[0];
-				throw std::runtime_error(error);
+				auto lines = pipeSystemCommand(cmd);
+
+				if(lines.size() > 0) {
+					std::string error = std::string("could not set time: ") + lines[0];
+					throw std::runtime_error(error);
+				}
 			}
 		}
 
@@ -88,31 +98,23 @@ namespace bestsens {
 		}
 
 		std::string getTimezone() {
-			for(auto input : pipeSystemCommand("timedatectl status")) {
-				std::regex r("Time zone:\\s*([a-zA-Z]+\\/[a-zA-Z]+)");
-				std::smatch match;
+			std::time_t rawtime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+			std::tm tm = *std::localtime(&rawtime);
 
-				if(std::regex_search(input, match, r))
-					if(match.ready() && match.size() == 2)
-						return match[1];
-			}
+			char mbstr[100];
+			std::strftime(mbstr, sizeof(mbstr), "%Z", &tm);
 
-			throw std::runtime_error("could not get timezone");
-
-			return "";
+			return std::string(mbstr);
 		}
 
 		std::string getTimezoneOffset() {
-			for(auto input : pipeSystemCommand("timedatectl status")) {
-				std::regex r("Time zone:.+([+-][0-9]{4})");
-				std::smatch match;
+			std::time_t rawtime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+			std::tm tm = *std::localtime(&rawtime);
 
-				if(std::regex_search(input, match, r))
-					if(match.ready() && match.size() == 2)
-						return match[1];
-			}
+			char mbstr[6];
+			std::strftime(mbstr, sizeof(mbstr), "%z", &tm);
 
-			return "";
+			return std::string(mbstr);
 		}
 
 		void setTimesync(bool timesync_enabled) {
