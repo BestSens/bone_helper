@@ -134,6 +134,17 @@ TEST_CASE("vector") {
         }
     }
 
+    SECTION("test last_value without change") {
+        int last_value = -1;
+        std::vector<int> v = buffer_test.getVector(11, last_value);
+
+        CHECK(v.size() == 10);
+        CHECK(last_value == 10);
+
+        v = buffer_test.getVector(INT_MAX, last_value);
+        CHECK(v.size() == 0);
+    }
+
     SECTION("test amount") {
         int last_value = 1;
         std::vector<int> v = buffer_test.getVector(2, last_value);
