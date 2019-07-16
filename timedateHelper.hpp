@@ -56,7 +56,7 @@ namespace bestsens {
 			std::time_t rawtime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 			std::tm tm = *std::localtime(&rawtime);
 
-			char mbstr[100];
+			char mbstr[20];
 			std::strftime(mbstr, sizeof(mbstr), "%F %T", &tm);
 
 			return std::string(mbstr);
@@ -66,10 +66,13 @@ namespace bestsens {
 			if(geteuid() == 0) { 
 				std::time_t rawtime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 				std::tm tm = *std::localtime(&rawtime);
-				
-				strptime(date.c_str(), "%F %T", &tm);
-				std::time_t newtime = std::mktime(&tm);
 
+				if(strptime(date.c_str(), "%F %T", &tm) == NULL) {
+					std::string error = std::string("could not set time: error parsing string");
+					throw std::runtime_error(error);
+				}
+
+				std::time_t newtime = std::mktime(&tm); 
 				if(stime(&newtime) != 0) {
 					std::string error = std::string("could not set time: ") + strerror(errno);
 					throw std::runtime_error(error);
@@ -101,7 +104,7 @@ namespace bestsens {
 			std::time_t rawtime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 			std::tm tm = *std::localtime(&rawtime);
 
-			char mbstr[100];
+			char mbstr[10];
 			std::strftime(mbstr, sizeof(mbstr), "%Z", &tm);
 
 			return std::string(mbstr);
