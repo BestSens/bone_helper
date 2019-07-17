@@ -40,23 +40,6 @@ namespace bestsens {
 			return lines;
 		}
 
-		/*
-		 * SOURCE: http://stackoverflow.com/a/2275160/481329
-		 */
-		std::vector<std::string> split(std::string const &input) {
-			std::istringstream buffer(input);
-			std::vector<std::string> ret((std::istream_iterator<std::string>(buffer)), std::istream_iterator<std::string>());
-			return ret;
-		}
-
-		bool hasEnding(std::string const &fullString, std::string const &ending) {
-			if (fullString.length() >= ending.length()) {
-				return (0 == fullString.compare (fullString.length() - ending.length(), ending.length(), ending));
-			} else {
-				return false;
-			}
-		}
-
 		std::string getDate() {
 			std::time_t rawtime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 			std::tm tm = *std::localtime(&rawtime);
