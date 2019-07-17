@@ -24,12 +24,6 @@
 
 namespace bestsens {
 	namespace timedateHelper {
-		struct {
-			std::mutex mtx;
-			sd_bus_error error = SD_BUS_ERROR_NULL;
-			sd_bus * bus = NULL;
-		} sdbus;
-
 		std::vector<std::string> pipeSystemCommand(const std::string& command) {
 			std::string cmd = command + " 2>&1";
 			std::array<char, 128> line;
@@ -112,48 +106,6 @@ namespace bestsens {
 		}
 
 		std::string getTimezone() {
-#ifdef ENABLE_SYSTEMD_STATUS
-			std::string timezone = "";
-
-			char * msg = 0;
-
-			std::lock_guard<std::mutex> lock(sdbus.mtx);
-			
-			try {
-				int r;
-
-				if(sdbus.bus == NULL) {
-					r = sd_bus_open_system(&sdbus.bus);
-					if(r < 0) 
-						throw std::runtime_error("failed to connect to system bus");
-				}
-
-				r = sd_bus_get_property_string(sdbus.bus,
-						"org.freedesktop.timedate1",
-						"/org/freedesktop/timedate1",
-						"org.freedesktop.timedate1",
-						"Timezone",
-						&sdbus.error,
-						&msg);
-
-				if(r < 0) {
-					std::string err = std::string("error getting property: ", sdbus.error.message);
-					throw std::runtime_error(err);
-				}
-
-				sdbus.error = SD_BUS_ERROR_NULL;
-
-				timezone = std::string(msg);
-			} catch(const std::exception& e) {
-				free(msg);
-
-				throw;
-			}
-
-			free(msg);
-
-			return timezone;
-#else
 			for(auto input : pipeSystemCommand("timedatectl status")) {
 				std::regex r("Time zone:\\s*([a-zA-Z]+\\/[a-zA-Z]+)");
 				std::smatch match;
@@ -166,7 +118,6 @@ namespace bestsens {
 			throw std::runtime_error("could not get timezone");
 
 			return "";
-#endif
 		}
 
 		std::string getTimezoneOffset() {
@@ -191,53 +142,6 @@ namespace bestsens {
 		}
 
 		bool getTimesync() {
-#ifdef ENABLE_SYSTEMD_STATUS
-			sd_bus_message * msg = NULL;
-			int timesync;
-
-			std::lock_guard<std::mutex> lock(sdbus.mtx);
-			
-			try {
-				int r;
-
-				if(sdbus.bus == NULL) {
-					r = sd_bus_open_system(&sdbus.bus);
-					if(r < 0) 
-						throw std::runtime_error("failed to connect to system bus");
-				}
-
-				r = sd_bus_get_property(sdbus.bus,
-						"org.freedesktop.timedate1",
-						"/org/freedesktop/timedate1",
-						"org.freedesktop.timedate1",
-						"NTP",
-						&sdbus.error,
-						&msg,
-						"b");
-
-				if(r < 0) {
-					std::string err = std::string("error getting property: ", sdbus.error.message);
-					throw std::runtime_error(err);
-				}
-
-				r = sd_bus_message_read(msg, "b", &timesync);
-
-				if(r < 0)
-					throw std::runtime_error("error getting property");
-			} catch(const std::exception& e) {
-				sd_bus_message_unref(msg);
-				msg = NULL;
-
-				throw;
-			}
-
-			sd_bus_message_unref(msg);
-			msg = NULL;
-
-			sdbus.error = SD_BUS_ERROR_NULL;
-
-			return timesync == 1;
-#else
 			for(auto input : pipeSystemCommand("timedatectl status")) {
 				std::regex r("Network time on:\\s*(yes|no)");
 				std::smatch match;
@@ -250,10 +154,83 @@ namespace bestsens {
 							return false;
 					}
 			}
-#endif
+
 			throw std::runtime_error("could not get timesync status");
 			return false;
 		}
+
+#ifdef ENABLE_SYSTEMD_STATUS
+		std::string getTimezone(sd_bus * bus) {
+			char * msg = 0;
+			sd_bus_error error = SD_BUS_ERROR_NULL;
+			std::string timezone = "";
+			
+			try {
+				int r = sd_bus_get_property_string(bus,
+						"org.freedesktop.timedate1",
+						"/org/freedesktop/timedate1",
+						"org.freedesktop.timedate1",
+						"Timezone",
+						&error,
+						&msg);
+
+				if(r < 0) {
+					std::string err = std::string("error getting property: ", error.message);
+					throw std::runtime_error(err);
+				}
+
+				timezone = std::string(msg);
+			} catch(const std::exception& e) {
+				sd_bus_error_free(&error);
+				free(msg);
+
+				throw;
+			}
+
+			sd_bus_error_free(&error);
+			free(msg);
+
+			return timezone;
+		}
+
+		bool getTimesync(sd_bus * bus) {
+			sd_bus_message * msg = NULL;
+			sd_bus_error error = SD_BUS_ERROR_NULL;
+			int timesync;
+			
+			try {
+				int r = sd_bus_get_property(bus,
+						"org.freedesktop.timedate1",
+						"/org/freedesktop/timedate1",
+						"org.freedesktop.timedate1",
+						"NTP",
+						&error,
+						&msg,
+						"b");
+
+				if(r < 0) {
+					std::string err = std::string("error getting property: ", error.message);
+					throw std::runtime_error(err);
+				}
+
+				r = sd_bus_message_read(msg, "b", &timesync);
+
+				if(r < 0)
+					throw std::runtime_error("error getting property");
+			} catch(const std::exception& e) {
+				sd_bus_error_free(&error);
+				sd_bus_message_unref(msg);
+				msg = NULL;
+
+				throw;
+			}
+
+			sd_bus_error_free(&error);
+			sd_bus_message_unref(msg);
+			msg = NULL;
+			return timesync == 1;
+		}
+#endif
 	} // namespace timedateHelper
 } // namespace bestsens
 
