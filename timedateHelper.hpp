@@ -154,13 +154,18 @@ namespace bestsens {
 
 			return timezone;
 #else
-			std::time_t rawtime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-			std::tm tm = *std::localtime(&rawtime);
+			for(auto input : pipeSystemCommand("timedatectl status")) {
+				std::regex r("Time zone:\\s*([a-zA-Z]+\\/[a-zA-Z]+)");
+				std::smatch match;
 
-			char mbstr[10];
-			std::strftime(mbstr, sizeof(mbstr), "%Z", &tm);
+				if(std::regex_search(input, match, r))
+					if(match.ready() && match.size() == 2)
+						return match[1];
+			}
 
-			return std::string(mbstr);
+			throw std::runtime_error("could not get timezone");
+
+			return "";
 #endif
 		}
 
