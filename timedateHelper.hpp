@@ -13,10 +13,10 @@
 #include <sstream>
 #include <memory>
 #include <regex>
+#include <mutex>
 #include <iostream>
 #include <sys/types.h>
 #include <unistd.h>
-#include <memory>
 
 #ifdef ENABLE_SYSTEMD_STATUS
 #include <systemd/sd-bus.h>
@@ -24,6 +24,12 @@
 
 namespace bestsens {
 	namespace timedateHelper {
+		struct {
+			std::mutex mtx;
+			sd_bus_error error = SD_BUS_ERROR_NULL;
+			sd_bus * bus = NULL;
+		} sdbus;
+
 		std::vector<std::string> pipeSystemCommand(const std::string& command) {
 			std::string cmd = command + " 2>&1";
 			std::array<char, 128> line;
@@ -109,41 +115,41 @@ namespace bestsens {
 #ifdef ENABLE_SYSTEMD_STATUS
 			std::string timezone = "";
 
-			sd_bus_error error = SD_BUS_ERROR_NULL;
-			sd_bus * bus = NULL;
 			char * msg = 0;
+
+			std::lock_guard<std::mutex> lock(sdbus.mtx);
 			
 			try {
 				int r;
 
-				r = sd_bus_open_system(&bus);
-				if(r < 0) 
-					throw std::runtime_error("failed to connect to system bus");
+				if(sdbus.bus == NULL) {
+					r = sd_bus_open_system(&sdbus.bus);
+					if(r < 0) 
+						throw std::runtime_error("failed to connect to system bus");
+				}
 
-				r = sd_bus_get_property_string(bus,
+				r = sd_bus_get_property_string(sdbus.bus,
 						"org.freedesktop.timedate1",
 						"/org/freedesktop/timedate1",
 						"org.freedesktop.timedate1",
 						"Timezone",
-						&error,
+						&sdbus.error,
 						&msg);
 
 				if(r < 0) {
-					std::string err = std::string("error getting property: ", error.message);
+					std::string err = std::string("error getting property: ", sdbus.error.message);
 					throw std::runtime_error(err);
 				}
 
+				sdbus.error = SD_BUS_ERROR_NULL;
+
 				timezone = std::string(msg);
 			} catch(const std::exception& e) {
-				sd_bus_error_free(&error);
-				sd_bus_unref(bus);
 				free(msg);
 
 				throw;
 			}
 
-			sd_bus_error_free(&error);
-			sd_bus_unref(bus);
 			free(msg);
 
 			return timezone;
@@ -181,29 +187,31 @@ namespace bestsens {
 
 		bool getTimesync() {
 #ifdef ENABLE_SYSTEMD_STATUS
-			sd_bus_error error = SD_BUS_ERROR_NULL;
-			sd_bus * bus = NULL;
 			sd_bus_message * msg = NULL;
 			int timesync;
+
+			std::lock_guard<std::mutex> lock(sdbus.mtx);
 			
 			try {
 				int r;
 
-				r = sd_bus_open_system(&bus);
-				if(r < 0) 
-					throw std::runtime_error("failed to connect to system bus");
+				if(sdbus.bus == NULL) {
+					r = sd_bus_open_system(&sdbus.bus);
+					if(r < 0) 
+						throw std::runtime_error("failed to connect to system bus");
+				}
 
-				r = sd_bus_get_property(bus,
+				r = sd_bus_get_property(sdbus.bus,
 						"org.freedesktop.timedate1",
 						"/org/freedesktop/timedate1",
 						"org.freedesktop.timedate1",
 						"NTP",
-						&error,
+						&sdbus.error,
 						&msg,
 						"b");
 
 				if(r < 0) {
-					std::string err = std::string("error getting property: ", error.message);
+					std::string err = std::string("error getting property: ", sdbus.error.message);
 					throw std::runtime_error(err);
 				}
 
@@ -212,18 +220,16 @@ namespace bestsens {
 				if(r < 0)
 					throw std::runtime_error("error getting property");
 			} catch(const std::exception& e) {
-				sd_bus_error_free(&error);
-				sd_bus_unref(bus);
 				sd_bus_message_unref(msg);
 				msg = NULL;
 
 				throw;
 			}
 
-			sd_bus_error_free(&error);
-			sd_bus_unref(bus);
 			sd_bus_message_unref(msg);
 			msg = NULL;
+
+			sdbus.error = SD_BUS_ERROR_NULL;
 
 			return timesync == 1;
 #else
