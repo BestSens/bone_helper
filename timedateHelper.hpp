@@ -161,8 +161,7 @@ namespace bestsens {
 							false);
 
 					if(r < 0) {
-						std::string err = std::string("error calling method: ", error.message);
-						throw std::runtime_error(err);
+						throw std::runtime_error(std::string(error.message));
 					}
 				} catch(const std::exception& e) {
 					sd_bus_error_free(&error);
@@ -196,8 +195,7 @@ namespace bestsens {
 							false);
 
 					if(r < 0) {
-						std::string err = std::string("error calling method: ", error.message);
-						throw std::runtime_error(err);
+						throw std::runtime_error(std::string(error.message));
 					}
 				} catch(const std::exception& e) {
 					sd_bus_error_free(&error);
@@ -229,8 +227,7 @@ namespace bestsens {
 						&msg);
 
 				if(r < 0) {
-					std::string err = std::string("error getting property: ", error.message);
-					throw std::runtime_error(err);
+					throw std::runtime_error(std::string(error.message));
 				}
 
 				timezone = std::string(msg);
@@ -263,14 +260,14 @@ namespace bestsens {
 						"b");
 
 				if(r < 0) {
-					std::string err = std::string("error getting property: ", error.message);
-					throw std::runtime_error(err);
+					throw std::runtime_error(std::string(error.message));
 				}
 
 				r = sd_bus_message_read(msg, "b", &timesync);
-
-				if(r < 0)
-					throw std::runtime_error("error getting property");
+				if(r < 0) {
+					std::string err = std::string("error getting property: ") + std::string(strerror(-r));
+					throw std::runtime_error(err);
+				}
 			} catch(const std::exception& e) {
 				sd_bus_error_free(&error);
 				sd_bus_message_unref(msg);
