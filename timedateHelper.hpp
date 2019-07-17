@@ -143,6 +143,77 @@ namespace bestsens {
 		}
 
 #ifdef ENABLE_SYSTEMD_STATUS
+		void setTimezone(sd_bus * bus, const std::string& timezone) {
+			if(geteuid() == 0) {
+				sd_bus_message * msg = NULL;
+				sd_bus_error error = SD_BUS_ERROR_NULL;
+
+				try {
+					int r = sd_bus_call_method(bus,
+							"org.freedesktop.timedate1",
+							"/org/freedesktop/timedate1",
+							"org.freedesktop.timedate1",
+							"SetTimezone",
+							&error,
+							&msg,
+							"sb",
+							timezone.c_str(),
+							false);
+
+					if(r < 0) {
+						std::string err = std::string("error calling method: ", error.message);
+						throw std::runtime_error(err);
+					}
+				} catch(const std::exception& e) {
+					sd_bus_error_free(&error);
+					free(msg);
+
+					throw;
+				}
+
+				sd_bus_error_free(&error);
+				free(msg);
+			} else {
+				setTimezone(timezone);
+			}
+		}
+
+		void setTimesync(sd_bus * bus, bool timesync_enabled) {
+			if(geteuid() == 0) {
+				sd_bus_message * msg = NULL;
+				sd_bus_error error = SD_BUS_ERROR_NULL;
+
+				try {
+					int r = sd_bus_call_method(bus,
+							"org.freedesktop.timedate1",
+							"/org/freedesktop/timedate1",
+							"org.freedesktop.timedate1",
+							"SetNTP",
+							&error,
+							&msg,
+							"bb",
+							timesync_enabled,
+							false);
+
+					if(r < 0) {
+						std::string err = std::string("error calling method: ", error.message);
+						throw std::runtime_error(err);
+					}
+				} catch(const std::exception& e) {
+					sd_bus_error_free(&error);
+					free(msg);
+
+					throw;
+				}
+
+				sd_bus_error_free(&error);
+				free(msg);
+			} else {
+				setTimesync(timesync_enabled);
+			}
+		}
+
+
 		std::string getTimezone(sd_bus * bus) {
 			char * msg = 0;
 			sd_bus_error error = SD_BUS_ERROR_NULL;
