@@ -35,6 +35,8 @@ namespace bestsens {
 		T getPosition(int pos);
 		int get(T * target, int &amount, int last_value = 0);
 
+		int size();
+
 		std::vector<T> getVector(int amount);
 		std::vector<T> getVector(int amount, int &last_value);
 
@@ -184,6 +186,11 @@ namespace bestsens {
 		int last_value = 0;
 
 		return this->getVector(amount, last_value);
+	}
+
+	template < typename T, int N >
+	int CircularBuffer<T, N>::size() {
+		return this->item_count;
 	}
 
 	template < typename T, int N >
