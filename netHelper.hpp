@@ -65,6 +65,7 @@ namespace bestsens {
 
 		static std::string sha512(std::string input);
 		static unsigned int getLastRawPosition(const unsigned char * str);
+		static unsigned int getLastRawPosition(const char * str);
 
 		int recv(void * buffer, size_t read_size);
 	private:
@@ -101,6 +102,10 @@ namespace bestsens {
 		}
 
 		return last_position;
+	}
+
+	inline unsigned int netHelper::getLastRawPosition(const char * str) {
+		return getLastRawPosition(reinterpret_cast<const unsigned char*>(str));
 	}
 
 	inline std::string netHelper::sha512(std::string input) {
