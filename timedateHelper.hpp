@@ -18,7 +18,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#ifdef ENABLE_SYSTEMD_STATUS
+#ifdef ENABLE_SYSTEMD_DBUS
 #include <systemd/sd-bus.h>
 #endif
 
@@ -142,7 +142,7 @@ namespace bestsens {
 			return false;
 		}
 
-#ifdef ENABLE_SYSTEMD_STATUS
+#ifdef ENABLE_SYSTEMD_DBUS
 		void setTimezone(sd_bus * bus, const std::string& timezone) {
 			if(geteuid() == 0) {
 				sd_bus_message * msg = NULL;
