@@ -132,6 +132,8 @@ namespace bestsens {
 	 */
 	template < typename T, int N >
 	T CircularBuffer<T, N>::get(int id) {
+		std::lock_guard<std::mutex> lock(this->mutex);
+
 		if(this->item_count == 0)
 			throw std::runtime_error("out of bounds");
 
@@ -140,6 +142,8 @@ namespace bestsens {
 
 	template < typename T, int N >
 	T CircularBuffer<T, N>::getPosition(int pos) {
+		std::lock_guard<std::mutex> lock(this->mutex);
+
 		if(pos >= this->item_count || this->item_count == 0)
 			throw std::runtime_error("out of bounds");
 
@@ -239,6 +243,8 @@ namespace bestsens {
 
 	template < typename T, int N >
 	void CircularBuffer<T, N>::clear() {
+		std::lock_guard<std::mutex> lock(this->mutex);
+		
 		this->item_count = 0;
 	}
 } //namespace bestsens
