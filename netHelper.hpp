@@ -13,6 +13,7 @@
 #include <netdb.h>
 #include <fcntl.h>
 #include <syslog.h>
+#include <unistd.h>
 
 #include <sys/socket.h>
 #include <sys/types.h>
