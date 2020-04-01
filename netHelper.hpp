@@ -367,7 +367,7 @@ namespace bestsens {
 
 			if(count <= 0 && error_counter++ > 10) {
 				if(error_counter++ > 10) {
-					logfile.write(LOG_CRIT, "error sending data: %d (%s)", errno, strerror(errno));
+					syslog(LOG_CRIT, "error sending data: %d (%s)", errno, strerror(errno));
 					break;
 				}
 			} else {
@@ -394,7 +394,7 @@ namespace bestsens {
 
 			if(count <= 0) {
 				if(error_counter++ > 10) {
-					logfile.write(LOG_CRIT, "error receiving data: %d (%s)", errno, strerror(errno));
+					syslog(LOG_CRIT, "error receiving data: %d (%s)", errno, strerror(errno));
 					break;
 				}
 			} else {
