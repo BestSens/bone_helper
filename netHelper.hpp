@@ -361,13 +361,19 @@ namespace bestsens {
 		 * or requested data len is reached
 		 */
 		unsigned int t = 0;
+		int error_counter = 0;
 		while(t < data.length()) {
 			int count = ::send(this->sockfd, (const char*)data.c_str() + t, data.length() - t, 0);
 
-			if(count == 0)
-				break;
-
-			t += count;
+			if(count <= 0 && error_counter++ > 10) {
+				if(error_counter++ > 10) {
+					logfile.write(LOG_CRIT, "error sending data: %d (%s)", errno, strerror(errno));
+					break;
+				}
+			} else {
+				error_counter = 0;
+				t += count;
+			}
 		}
 
 		return (int)t;
@@ -382,13 +388,19 @@ namespace bestsens {
 		 * or requested data len is reached
 		 */
 		unsigned int t = 0;
+		int error_counter = 0;
 		while(t < read_size) {
 			int count = ::recv(this->sockfd, (char *)buffer + t, read_size - t, 0);
 
-			if(count == 0)
-				break;
-
-			t += count;
+			if(count <= 0) {
+				if(error_counter++ > 10) {
+					logfile.write(LOG_CRIT, "error receiving data: %d (%s)", errno, strerror(errno));
+					break;
+				}
+			} else {
+				error_counter = 0;
+				t += count;
+			}
 		}
 
 		return (int)t;
