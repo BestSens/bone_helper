@@ -9,7 +9,7 @@
 #define JSONHELPER_HPP_
 
 #include <syslog.h>
-#include "../json/single_include/nlohmann/json.hpp"
+#include "nlohmann/json.hpp"
 
 using json = nlohmann::json;
 

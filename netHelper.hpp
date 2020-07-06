@@ -19,7 +19,7 @@
 #include <sys/types.h>
 #include <openssl/sha.h>
 
-#include "../json/single_include/nlohmann/json.hpp"
+#include "nlohmann/json.hpp"
 
 using json = nlohmann::json;
 
