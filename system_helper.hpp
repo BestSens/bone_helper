@@ -72,20 +72,11 @@ namespace bestsens {
 		}
 
 		inline void memcpy_swap_bo(void * dest, const void * src, std::size_t count) {
-			if(count % 4)
-				throw std::runtime_error("count must be a multiple of 4");
-
 			char * dest_char = reinterpret_cast<char *>(dest);
 			const char * src_char = reinterpret_cast<const char *>(src);
 
-			for(unsigned int i = 0; i + 4 <= count; i++) {
-				std::memcpy(dest_char + i + 0, src_char + i + 3, 1);
-				std::memcpy(dest_char + i + 1, src_char + i + 2, 1);
-				std::memcpy(dest_char + i + 2, src_char + i + 1, 1);
-				std::memcpy(dest_char + i + 3, src_char + i + 0, 1);
-
-				i += 4;
-			}
+			for(std::size_t i = 0; i < count; i++)
+				std::memcpy(dest_char + i, src_char + (count - i - 1), 1);
 		}
 
 		inline void memcpy_be(void * dest, const void * src, std::size_t count) {
