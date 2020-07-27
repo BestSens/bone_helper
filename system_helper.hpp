@@ -18,6 +18,7 @@
 #include <cstring>
 #include <dirent.h>
 #include <unistd.h>
+#include <endian.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -68,6 +69,39 @@ namespace bestsens {
 			close(STDIN_FILENO);
 			close(STDOUT_FILENO);
 			close(STDERR_FILENO);
+		}
+
+		inline void memcpy_swap_bo(void * dest, const void * src, std::size_t count) {
+			if(count % 4)
+				throw std::runtime_error("count must be a multiple of 4");
+
+			char * dest_char = reinterpret_cast<char *>(dest);
+			const char * src_char = reinterpret_cast<const char *>(src);
+
+			for(unsigned int i = 0; i + 4 <= count; i++) {
+				std::memcpy(dest_char + i + 0, src_char + i + 3, 1);
+				std::memcpy(dest_char + i + 1, src_char + i + 2, 1);
+				std::memcpy(dest_char + i + 2, src_char + i + 1, 1);
+				std::memcpy(dest_char + i + 3, src_char + i + 0, 1);
+
+				i += 4;
+			}
+		}
+
+		inline void memcpy_be(void * dest, const void * src, std::size_t count) {
+#if __BYTE_ORDER == __BIG_ENDIAN
+			std::memcpy(dest, src, count);
+#elif __BYTE_ORDER == __LITTLE_ENDIAN
+			memcpy_swap_bo(dest, src, count);
+#endif
+		}
+
+		inline void memcpy_le(void * dest, const void * src, std::size_t count) {
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+			std::memcpy(dest, src, count);
+#elif __BYTE_ORDER == __BIG_ENDIAN
+			memcpy_swap_bo(dest, src, count);
+#endif
 		}
 
 		/*
