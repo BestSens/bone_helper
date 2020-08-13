@@ -1,7 +1,7 @@
 CPPFLAGS = -std=c++14 -O0 -g --coverage -Wall
 LDFLAGS = -lm -lpthread -lcrypto
 
-OBJ = test_main.o test_circular_buffer.o test_loopTimer.o
+OBJ = test_main.o test_circular_buffer.o test_loopTimer.o test_stopwatch.o
 BIN = test
 
 .PHONY: clean
