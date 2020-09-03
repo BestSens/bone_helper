@@ -68,6 +68,9 @@ namespace bestsens {
 				}
 				else // is array
 				{
+					if(i >= static_cast<int>(to.size()))
+						break;
+					
 					to[i] = arithmetic_merge_json(it.value(), to[i], operation);
 				}
 			}
