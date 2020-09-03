@@ -11,6 +11,11 @@
 #include <syslog.h>
 #include "nlohmann/json.hpp"
 
+#define JSON_ARITHMETIC_ADD [](double a, double b){ return a + b; }
+#define JSON_ARITHMETIC_SUB [](double a, double b){ return a - b; }
+#define JSON_ARITHMETIC_MUL [](double a, double b){ return a * b; }
+#define JSON_ARITHMETIC_DIV [](double a, double b){ try { return a / b; } catch(...){} return a; }
+
 using json = nlohmann::json;
 
 namespace bestsens {
@@ -34,6 +39,70 @@ namespace bestsens {
 			return_value = b;
 
 		return return_value;
+	}
+
+	// Modified JSON Merge Patch (RFC 7396 - section 2)
+	// to combine two json objects arithmetically
+	//
+	// e. g. from = { "data": 1 } and to = { "data": 2 } with operation ADD
+	// leads to { "data": 3 }
+	template<typename Function>
+	static json arithmetic_merge_json(json from, json to, Function operation)
+	{
+		if(from.is_structured())
+		{
+			if(from.type() != to.type())
+			{
+				return to; // for type incompatibility just return old value
+			}
+			
+			int i = 0;
+			for(json::iterator it = from.begin(); it != from.end(); ++it, ++i)
+			{
+				if(from.is_object())
+				{
+					if(!it.value().is_null())
+					{
+						to[it.key()] = arithmetic_merge_json(it.value(), to[it.key()], operation);
+					}
+				}
+				else // is array
+				{
+					to[i] = arithmetic_merge_json(it.value(), to[i], operation);
+				}
+			}
+			return to;
+		}
+		
+		// combine from and to if they are numbers
+		if(from.is_number() && to.is_number())
+		{
+			double a = from.get<double>();
+			double b = to.get<double>();
+
+			return json(operation(a, b));
+		}
+		return to; // from is neither a number nor an object, return old value
+	}
+	
+	inline json arithmetic_add_json(json from, json to)
+	{
+		return arithmetic_merge_json(from, to, JSON_ARITHMETIC_ADD);
+	}
+	
+	inline json arithmetic_sub_json(json from, json to)
+	{
+		return arithmetic_merge_json(from, to, JSON_ARITHMETIC_SUB);
+	}
+	
+	inline json arithmetic_mul_json(json from, json to)
+	{
+		return arithmetic_merge_json(from, to, JSON_ARITHMETIC_MUL);
+	}
+	
+	inline json arithmetic_div_json(json from, json to)
+	{
+		return arithmetic_merge_json(from, to, JSON_ARITHMETIC_DIV);
 	}
 
 	template <typename T>
