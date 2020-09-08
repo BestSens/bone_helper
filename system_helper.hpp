@@ -148,7 +148,7 @@ namespace bestsens {
 				#endif
 			}
 
-			inline void status(const std::string& status) {
+			inline void status(__attribute__((unused)) const std::string& status) {
 				#ifdef ENABLE_SYSTEMD_STATUS
 				sd_notifyf(0, "STATUS=%s", status.c_str());
 				#endif
