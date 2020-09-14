@@ -10,6 +10,7 @@
 
 #include <sstream>
 #include <cstring>
+#include <mutex>
 #include <netdb.h>
 #include <fcntl.h>
 #include <syslog.h>
@@ -27,6 +28,8 @@ namespace bestsens {
 	class netHelper {
 	public:
 		netHelper(std::string conn_target, std::string conn_port, bool use_msgpack = false) : conn_target(conn_target), conn_port(conn_port), user_level(0), use_msgpack(use_msgpack) {
+			std::lock_guard<std::mutex> lock(this->sock_mtx);
+			
 			/*
 			 * socket configuration
 			 */
@@ -75,6 +78,8 @@ namespace bestsens {
 		int timeout = 10;
 		struct addrinfo remote;
 		struct addrinfo * res;
+
+		std::mutex sock_mtx;
 
 		std::string user_name;
 		std::string conn_target;
@@ -192,6 +197,8 @@ namespace bestsens {
         if(api_version > 0)
             temp["api"] = api_version;
 
+        std::lock_guard<std::mutex> lock(this->sock_mtx);
+
 		/*
 		 * send data to server
 		 */
@@ -284,6 +291,8 @@ namespace bestsens {
 		 * connect to socket
 		 */
 
+		std::lock_guard<std::mutex> lock(this->sock_mtx);
+
 		int res = ::connect(this->sockfd, this->res->ai_addr, this->res->ai_addrlen);
 		fd_set myset;
 		int valopt;
@@ -344,6 +353,8 @@ namespace bestsens {
 	inline int netHelper::disconnect() {
 		if(!this->connected)
 			return -1;
+
+		std::lock_guard<std::mutex> lock(this->sock_mtx);
 
 		if(close(this->sockfd))
 			throw std::runtime_error("error closing socket");
