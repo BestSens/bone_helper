@@ -30,8 +30,10 @@ namespace bestsens {
 
 		~CircularBuffer();
 
-		template < typename arg >
-		int add(arg&& value);
+		template < typename ... args >
+		int add(args&& ... value);
+		int add(const T& value);
+		int add(T&& value);
 
 		T get(int id) const;
 		T getPosition(int pos) const;
@@ -112,13 +114,13 @@ namespace bestsens {
 	CircularBuffer<T, N>::~CircularBuffer() {}
 
 	template < typename T, int N>
-	template < typename arg >
-	int CircularBuffer<T, N>::add(arg&& value) {
+	template < typename ... args >
+	int CircularBuffer<T, N>::add(args&& ... value) {
 		if(N == 0)
 			throw std::runtime_error("out of bounds");
 
 		std::lock_guard<std::mutex> lock(this->mutex);
-		this->buffer[this->current_position] = std::forward<arg>(value);
+		this->buffer[this->current_position] = T(std::forward<args>(value)...);
 
 		this->current_position = (this->current_position + 1) % N;
 
@@ -128,6 +130,16 @@ namespace bestsens {
 		this->base_id = (this->base_id + 1) % INT_MAX;
 
 		return 0;
+	}
+
+	template < typename T, int N>
+	int CircularBuffer<T, N>::add(const T& value) {
+		return this->add(value);
+	}
+
+	template < typename T, int N>
+	int CircularBuffer<T, N>::add(T&& value) {
+		return this->add(std::forward<T>(value));
 	}
 
 	/*
