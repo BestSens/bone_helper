@@ -26,21 +26,21 @@ namespace bestsens {
 
 		CircularBuffer& operator=(const CircularBuffer& rhs);
 		CircularBuffer& operator=(CircularBuffer&& rhs);
-		T operator[](int id);
+		T operator[](int id) const;
 
 		~CircularBuffer();
 
 		template < typename arg >
 		int add(arg&& value);
 
-		T get(int id);
-		T getPosition(int pos);
-		int get(T * target, int &amount, int last_value = 0);
+		T get(int id) const;
+		T getPosition(int pos) const;
+		int get(T * target, int &amount, int last_value = 0) const;
 
-		int size();
+		int size() const;
 
-		std::vector<T> getVector(int amount);
-		std::vector<T> getVector(int amount, int &last_value);
+		std::vector<T> getVector(int amount) const;
+		std::vector<T> getVector(int amount, int &last_value) const;
 
 		void clear();
 
@@ -52,9 +52,9 @@ namespace bestsens {
 
 		int base_id;
 
-		int getRange(T * target, int start, int end);
+		int getRange(T * target, int start, int end) const;
 
-		std::mutex mutex;
+		mutable std::mutex mutex;
 	};
 
 	template < typename T, int N >
@@ -89,7 +89,7 @@ namespace bestsens {
 	}
 
 	template < typename T, int N >
-	T CircularBuffer<T, N>::operator[](int id) {
+	T CircularBuffer<T, N>::operator[](int id) const {
 		return this->getPosition(id);
 	}
 
@@ -134,7 +134,7 @@ namespace bestsens {
 	 * return single value
 	 */
 	template < typename T, int N >
-	T CircularBuffer<T, N>::get(int id) {
+	T CircularBuffer<T, N>::get(int id) const {
 		std::lock_guard<std::mutex> lock(this->mutex);
 
 		if(this->item_count == 0)
@@ -144,7 +144,7 @@ namespace bestsens {
 	}
 
 	template < typename T, int N >
-	T CircularBuffer<T, N>::getPosition(int pos) {
+	T CircularBuffer<T, N>::getPosition(int pos) const {
 		std::lock_guard<std::mutex> lock(this->mutex);
 
 		if(pos >= this->item_count || this->item_count == 0)
@@ -159,7 +159,7 @@ namespace bestsens {
 	}
 
 	template < typename T, int N >
-	int CircularBuffer<T, N>::getRange(T * target, int start, int end) {
+	int CircularBuffer<T, N>::getRange(T * target, int start, int end) const {
 		int offset = (this->current_position - end) % N;
 
 		if(offset < 0)
@@ -189,19 +189,19 @@ namespace bestsens {
 	}
 
 	template < typename T, int N >
-	std::vector<T> CircularBuffer<T, N>::getVector(int amount) {
+	std::vector<T> CircularBuffer<T, N>::getVector(int amount) const {
 		int last_value = 0;
 
 		return this->getVector(amount, last_value);
 	}
 
 	template < typename T, int N >
-	int CircularBuffer<T, N>::size() {
+	int CircularBuffer<T, N>::size() const {
 		return this->item_count;
 	}
 
 	template < typename T, int N >
-	std::vector<T> CircularBuffer<T, N>::getVector(int amount, int &last_value) {
+	std::vector<T> CircularBuffer<T, N>::getVector(int amount, int &last_value) const {
 		if(amount > this->item_count)
 			amount = this->item_count;
 
@@ -215,7 +215,7 @@ namespace bestsens {
 	}
 
 	template < typename T, int N >
-	int CircularBuffer<T, N>::get(T * target, int &amount, int last_value) {
+	int CircularBuffer<T, N>::get(T * target, int &amount, int last_value) const {
 		std::lock_guard<std::mutex> lock(this->mutex);
 
 		int end;
