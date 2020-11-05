@@ -1,4 +1,4 @@
-#include "libs/catch/include/catch.hpp"
+#include "catch2/catch.hpp"
 #include "../circular_buffer.hpp"
 
 #include <thread>
@@ -198,7 +198,7 @@ TEST_CASE("copy of non-fundamentals") {
     Bar test;
     test.foo->c = 'A';
 
-    Bar * test2 = new Bar(test);
+    auto test2 = std::make_unique<Bar>(test);
     CHECK(test2->foo->c == 'A');
     CHECK(uintptr_t(test.foo) != uintptr_t(test2->foo));
 
@@ -221,10 +221,6 @@ TEST_CASE("copy of non-fundamentals") {
     vect = buffer_test.getVector(2);
 
     REQUIRE(uintptr_t(vect[1].foo) != uintptr_t(test2->foo));
-    CHECK(vect[1].foo->c == 'C');
-
-    delete test2;
-
     CHECK(vect[1].foo->c == 'C');
 }
 

@@ -212,6 +212,22 @@ namespace bestsens {
 
 		return true;
 	}
+
+	inline json get_filtered_values(const json& j, const std::vector<std::string>& filter) {
+		if(filter.size() == 0)
+			return j;
+
+		json result;
+
+		for(auto& e : j.items()) {
+			auto it = std::find(filter.begin(), filter.end(), e.key());
+
+			if(it != filter.end())
+				result[e.key()] = e.value();
+		}
+
+		return result;
+	}
 } //namespace bestsens
 
 #endif
