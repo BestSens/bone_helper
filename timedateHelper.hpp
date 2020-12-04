@@ -37,11 +37,6 @@ namespace bestsens {
 				lines.push_back(std::string(line.data()));
 			}
 
-			if(feof(pipe.get()))
-			{
-				spdlog::debug("pipeSystemCommand encountered end of file");
-			}
-
 			if(ferror(pipe.get()))
 			{
 				throw std::runtime_error(strerror(errno));
