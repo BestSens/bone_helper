@@ -137,12 +137,12 @@ namespace bestsens {
 
 		this->send_command("request_token", token_response, nullptr);
 
-		if(!token_response["payload"]["token"].is_string()) {
+		if(!token_response.at("payload").at("token").is_string()) {
 			syslog(LOG_ERR, "token request failed");
 			return 0;
 		}
 
-		std::string token = token_response["payload"]["token"];
+		std::string token = token_response.at("payload").at("token").get<std::string>();
 		std::string hashed_password;
 
 		if(use_hash)
@@ -167,10 +167,10 @@ namespace bestsens {
 
 		this->send_command("auth", login_response, payload);
 
-		if(login_response["payload"]["error"].is_string())
-			syslog(LOG_ERR, "login failed: %s", login_response["payload"]["error"].get<std::string>().c_str());
+		if(login_response.at("payload").at("error").is_string())
+			syslog(LOG_ERR, "login failed: %s", login_response.at("payload").at("error").get<std::string>().c_str());
 
-		this->user_level = login_response["payload"]["user_level"];
+		this->user_level = login_response.at("payload").at("user_level").get<int>();
 
 		return this->user_level;
 	}

@@ -47,7 +47,7 @@ namespace bestsens {
 	// e. g. from = { "data": 1 } and to = { "data": 2 } with operation ADD
 	// leads to { "data": 3 }
 	template<typename Function>
-	static json arithmetic_merge_json(json from, json to, Function operation)
+	static json arithmetic_merge_json(const json& from, json to, Function operation)
 	{
 		if(from.is_structured())
 		{
@@ -57,7 +57,7 @@ namespace bestsens {
 			}
 			
 			int i = 0;
-			for(json::iterator it = from.begin(); it != from.end(); ++it, ++i)
+			for(json::const_iterator it = from.begin(); it != from.end(); ++it, ++i)
 			{
 				if(from.is_object())
 				{
@@ -88,22 +88,22 @@ namespace bestsens {
 		return to; // from is neither a number nor an object, return old value
 	}
 	
-	inline json arithmetic_add_json(json from, json to)
+	inline json arithmetic_add_json(const json& from, const json& to)
 	{
 		return arithmetic_merge_json(from, to, JSON_ARITHMETIC_ADD);
 	}
 	
-	inline json arithmetic_sub_json(json from, json to)
+	inline json arithmetic_sub_json(const json& from, const json& to)
 	{
 		return arithmetic_merge_json(from, to, JSON_ARITHMETIC_SUB);
 	}
 	
-	inline json arithmetic_mul_json(json from, json to)
+	inline json arithmetic_mul_json(const json& from, const json& to)
 	{
 		return arithmetic_merge_json(from, to, JSON_ARITHMETIC_MUL);
 	}
 	
-	inline json arithmetic_div_json(json from, json to)
+	inline json arithmetic_div_json(const json& from, const json& to)
 	{
 		return arithmetic_merge_json(from, to, JSON_ARITHMETIC_DIV);
 	}
@@ -143,7 +143,7 @@ namespace bestsens {
 
 	inline bool checkedUpdateFromJSON(const json& j, const std::string& name, int& value) {
 		if(is_json_number(j, name))
-			value = j[name];
+			value = j.at(name).get<int>();
 		else
 			return false;
 
@@ -161,7 +161,7 @@ namespace bestsens {
 
 	inline bool checkedUpdateFromJSON(const json& j, const std::string& name, double& value) {
 		if(is_json_number(j, name))
-			value = j[name];
+			value = j.at(name).get<double>();
 		else
 			return false;
 
@@ -179,7 +179,7 @@ namespace bestsens {
 
 	inline bool checkedUpdateFromJSON(const json& j, const std::string& name, bool& value) {
 		if(is_json_bool(j, name))
-			value = j[name];
+			value = j.at(name).get<bool>();
 		else
 			return false;
 
@@ -197,7 +197,7 @@ namespace bestsens {
 
 	inline bool checkedUpdateFromJSON(const json& j, const std::string& name, std::string& value) {
 		if(is_json_string(j, name))
-			value = j[name];
+			value = j.at(name).get<std::string>();
 		else
 			return false;
 
