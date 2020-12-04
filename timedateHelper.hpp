@@ -32,9 +32,19 @@ namespace bestsens {
 
 			if(!pipe) throw std::runtime_error("popen() failed!");
 
-			while(!feof(pipe.get())) {
-				if(fgets(line.data(), 128, pipe.get()) != NULL)
-					lines.push_back(std::string(line.data()));
+			while(fgets(line.data(), 128, pipe.get()) != NULL)
+			{
+				lines.push_back(std::string(line.data()));
+			}
+
+			if(feof(pipe.get()))
+			{
+				spdlog::debug("pipeSystemCommand encountered end of file");
+			}
+
+			if(ferror(pipe.get()))
+			{
+				throw std::runtime_error(strerror(errno));
 			}
 
 			return lines;
