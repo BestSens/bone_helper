@@ -1,9 +1,16 @@
 CPPFLAGS = -std=c++14 -MMD -MP
 
+# Warnings
+CPPFLAGS += -Wall -Wextra -Wpedantic
+
 ifndef DEBUG
 	CPPFLAGS += -O2 -DNDEBUG
 else
-	CPPFLAGS += -O1 -DDEBUG -Wall -g -rdynamic -funwind-tables -fno-inline
+	CPPFLAGS += -Og -DDEBUG -g -ggdb3 -rdynamic -funwind-tables -fno-inline
+endif
+
+ifdef MUTE_WARNINGS
+	CPPFLAGS += -Wno-all
 endif
 
 OBJ = loopTimer.o
@@ -21,7 +28,7 @@ $(OBJ): compiler_flags
 compiler_flags: force
 	echo '$(CXX) $(CPPFLAGS)' | cmp -s - $@ || echo '$(CXX) $(CPPFLAGS)' > $@
 
-%.o: %.cpp
+%.o: %.cpp compiler_flags
 	$(CXX) -c $(CPPFLAGS) $< -o $@
 
 -include $(DEPFILES)
