@@ -16,3 +16,6 @@ test/test
 *.gcda
 *.gcno
 *.gcov
+*.a
+compiler_flags
+*.d
