@@ -45,6 +45,29 @@ namespace bestsens {
 			return lines;
 		}
 
+		struct command_cache_t {
+			std::vector<std::string> lines;
+			bool is_dirty = true;
+			std::time_t last_update;
+			std::mutex lines_mtx;
+
+			std::vector<std::string> get() {
+				std::lock_guard<std::mutex> lock(this->lines_mtx);
+
+				if(this->is_dirty || (std::time(nullptr) - this->last_update) > 30) {
+					this->lines = pipeSystemCommand("timedatectl status");
+					this->is_dirty = false;
+					this->last_update = std::time(nullptr);
+				}
+
+				return this->lines;
+			}
+
+			void makeDirty() {
+				this->is_dirty = true;
+			}
+		} command_cache;
+
 		std::string getDate() {
 			std::time_t rawtime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 			std::tm tm = *std::localtime(&rawtime);
@@ -91,10 +114,12 @@ namespace bestsens {
 				std::string error = std::string("could not set timezone: ") + lines[0];
 				throw std::runtime_error(error);
 			}
+
+			command_cache.makeDirty();
 		}
 
 		std::string getTimezone() {
-			for(auto input : pipeSystemCommand("timedatectl status")) {
+			for(auto input : command_cache.get()) {
 				std::regex r("Time zone:\\s*([a-zA-Z]+\\/[a-zA-Z]+)");
 				std::smatch match;
 
@@ -127,10 +152,12 @@ namespace bestsens {
 				std::string error = std::string("could not set timeync: ") + lines[0];
 				throw std::runtime_error(error);
 			}
+
+			command_cache.makeDirty();
 		}
 
 		bool getTimesync() {
-			for(auto input : pipeSystemCommand("timedatectl status")) {
+			for(auto input : command_cache.get()) {
 				std::regex r("Network time on:\\s*(yes|no)");
 				std::smatch match;
 
