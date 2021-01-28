@@ -13,11 +13,12 @@
 #include <condition_variable>
 #include <mutex>
 #include <iostream>
+#include <atomic>
 
 namespace bestsens {
 	class loopTimer {
 	public:
-		loopTimer(std::chrono::microseconds wait_time, int start_value);
+		loopTimer(std::chrono::microseconds wait_time, int start_value = 0);
 		loopTimer(int wait_time_ms, int start_value) : loopTimer(std::chrono::milliseconds(wait_time_ms), start_value) {};
 		~loopTimer();
 
@@ -28,16 +29,16 @@ namespace bestsens {
 		int set_wait_time(std::chrono::microseconds wait_time);
 		std::chrono::microseconds get_wait_time();
 	private:
-		bool ready;
+		std::atomic<bool> ready;
 		std::mutex m;
 		std::condition_variable cv;
 
 		std::thread timer_thread;
 		std::chrono::microseconds wait_time;
 
-		int running;
+		std::atomic<bool> running;
 
-		static int kill;
+		static std::atomic<bool> kill;
 		static std::condition_variable cv_trigger;
 		static std::mutex m_trigger;
 

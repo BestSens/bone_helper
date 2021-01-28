@@ -1,60 +1,78 @@
 #include "loopTimer.hpp"
-
 namespace bestsens
 {
-	loopTimer::loopTimer(std::chrono::microseconds wait_time, int start_value = 0) {
+	loopTimer::loopTimer(std::chrono::microseconds wait_time, int start_value) {
 		this->wait_time = wait_time;
-
 		this->start(start_value);
 	}
 
 	loopTimer::~loopTimer() {
 		this->stop();
-		this->timer_thread.join();
+		if(this->timer_thread.joinable())
+		{
+			this->timer_thread.join();
+		}
 	}
 
 	void loopTimer::kill_all() {
-		std::lock_guard<std::mutex> lk(loopTimer::m_trigger);
-		loopTimer::kill = 1;
+		{
+			std::lock_guard<std::mutex> lk(loopTimer::m_trigger);
+			loopTimer::kill = true;
+		}
 		loopTimer::cv_trigger.notify_all();
 	}
 
 	void loopTimer::stop() {
-		std::lock_guard<std::mutex> lk(loopTimer::m_trigger);
-		this->running = 0;
+		{
+			std::lock_guard<std::mutex> lk(loopTimer::m_trigger);
+			this->running = false;
+		}
 		loopTimer::cv_trigger.notify_all();
 	}
 
 	void loopTimer::start(int start_value = 0) {
-		this->running = 1;
+		if(loopTimer::kill)
+		{
+			return;
+		}
+		this->running = true;
 
 		this->ready = (start_value == 1);
 		new (&this->timer_thread) std::thread([this] {
-			while(this->running) {
-				int exit = 0;
+			bool exit = false;
+
+			auto predicate = [this,&exit](){
+				return !exit || loopTimer::kill || !this->running;
+			};
+
+			while(!exit) {
+				auto expires = std::chrono::steady_clock::now() + this->wait_time;
 				{
 					std::unique_lock<std::mutex> lk(loopTimer::m_trigger);
-					auto expires = std::chrono::steady_clock::now() + this->wait_time;
 
-					if(loopTimer::cv_trigger.wait_until(lk, expires, [this](){return loopTimer::kill == 1 || this->running == 0;}) == true)
-						exit = 1;
+					if(loopTimer::cv_trigger.wait_until(lk, expires, predicate) == true)
+						exit = true;
 				}
 
 				{
 					std::lock_guard<std::mutex> lk(this->m);
 					this->ready = true;
-					this->cv.notify_all();
 				}
+				this->cv.notify_all();
 
 				if(exit)
 					break;
 			}
 
-			this->ready = true;
+			{
+				std::lock_guard<std::mutex> lk(this->m);
+				this->ready = true;
+			}
+			this->cv.notify_all();
 		});
 	}
 
-	int loopTimer::kill = 0;
+	std::atomic<bool> loopTimer::kill{false};
 	std::condition_variable loopTimer::cv_trigger;
 	std::mutex loopTimer::m_trigger;
 

@@ -1,4 +1,4 @@
-CPPFLAGS = -std=c++14 -MMD -MP
+CPPFLAGS = -std=c++14 -pthread -MMD -MP
 
 # Warnings
 CPPFLAGS += -Wall -Wextra -Wpedantic
