@@ -68,4 +68,25 @@ TEST_CASE("loopTimer_test") {
 
     runtime = runtime2 - runtime1;
     CHECK(std::chrono::duration<double>(runtime).count() == Approx(0.2).epsilon(0.05));
+
+    SECTION("destruction")
+    {
+        bestsens::loopTimer lt1(std::chrono::seconds(1), 0);
+        std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+        bestsens::loopTimer lt2(std::chrono::seconds(1), 0);
+        std::this_thread::sleep_for(std::chrono::milliseconds(150));
+        bestsens::loopTimer lt3(std::chrono::seconds(1), 0);
+        std::this_thread::sleep_for(std::chrono::milliseconds(1050));
+        bestsens::loopTimer lt4(std::chrono::seconds(1), 0);
+        std::this_thread::sleep_for(std::chrono::milliseconds(150));
+        bestsens::loopTimer lt5(std::chrono::seconds(1), 0);
+        std::this_thread::sleep_for(std::chrono::milliseconds(1500));
+        {
+            bestsens::loopTimer lt6(std::chrono::seconds(1), 0);
+            std::this_thread::sleep_for(std::chrono::milliseconds(150));
+            bestsens::loopTimer lt7(std::chrono::seconds(1), 0);
+            std::this_thread::sleep_for(std::chrono::milliseconds(150));
+        }
+        bestsens::loopTimer lt8(std::chrono::seconds(1), 0);
+    }
 }

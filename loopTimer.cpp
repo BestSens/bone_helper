@@ -41,11 +41,11 @@ namespace bestsens
 		new (&this->timer_thread) std::thread([this] {
 			bool exit = false;
 
-			auto predicate = [this,&exit](){
-				return !exit || loopTimer::kill || !this->running;
+			auto predicate = [this]() -> bool {
+				return loopTimer::kill || !this->running;
 			};
 
-			while(!exit) {
+			while(this->running) {
 				auto expires = std::chrono::steady_clock::now() + this->wait_time;
 				{
 					std::unique_lock<std::mutex> lk(loopTimer::m_trigger);
