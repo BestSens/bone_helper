@@ -167,8 +167,10 @@ namespace bestsens {
 
 		this->send_command("auth", login_response, payload);
 
-		if(login_response.at("payload").at("error").is_string())
-			syslog(LOG_ERR, "login failed: %s", login_response.at("payload").at("error").get<std::string>().c_str());
+		try {
+			if(login_response.at("payload").at("error").is_string())
+				syslog(LOG_ERR, "login failed: %s", login_response.at("payload").at("error").get<std::string>().c_str());
+		} catch(...) {}
 
 		this->user_level = login_response.at("payload").at("user_level").get<int>();
 
