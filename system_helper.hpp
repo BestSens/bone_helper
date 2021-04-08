@@ -159,6 +159,44 @@ namespace bestsens {
 				sd_notifyf(0, "STATUS=%s\nERRNO=%d", strerror(errno), errno);
 				#endif
 			}
+
+			class MultiWatchdog {
+			public:
+				MultiWatchdog();
+				~MultiWatchdog();
+				void trigger();
+			private:
+				int own_entry = 0;
+				static std::vector<int*> watchdog_list;
+				static std::mutex list_mtx;
+			};
+
+			inline MultiWatchdog::MultiWatchdog() {
+				std::lock_guard<std::mutex> lock(list_mtx);
+				watchdog_list.push_back(&own_entry);
+			}
+
+			inline MultiWatchdog::~MultiWatchdog() {
+				std::lock_guard<std::mutex> lock(list_mtx);
+
+				auto it = std::find(watchdog_list.begin(), watchdog_list.end(), &own_entry);
+
+				if(it != watchdog_list.end())
+					watchdog_list.erase(it);
+			}
+
+			inline void MultiWatchdog::trigger() {
+				std::lock_guard<std::mutex> lock(list_mtx);
+				own_entry = 1;
+
+				for(const auto &e : watchdog_list) 
+					if(*e == 0) return;
+
+				watchdog();
+
+				for(auto &e : watchdog_list)
+					if(*e != -1) *e = 0;
+			}
 		} // namespace systemd
 
 		class LogManager {
