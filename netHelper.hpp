@@ -13,7 +13,6 @@
 #include <mutex>
 #include <netdb.h>
 #include <fcntl.h>
-#include <syslog.h>
 #include <unistd.h>
 
 #include <sys/socket.h>
@@ -21,6 +20,7 @@
 #include <openssl/sha.h>
 
 #include "nlohmann/json.hpp"
+#include "spdlog/spdlog.h"
 
 using json = nlohmann::json;
 
@@ -43,7 +43,7 @@ namespace bestsens {
 			 * open socket
 			 */
 			if((this->sockfd = socket(this->res->ai_family, this->res->ai_socktype, this->res->ai_protocol)) == -1) {
-				syslog(LOG_CRIT, "socket");
+				spdlog::critical("socket");
 			}
 
 			this->set_timeout(this->timeout);
@@ -138,7 +138,7 @@ namespace bestsens {
 		this->send_command("request_token", token_response, nullptr);
 
 		if(!token_response.at("payload").at("token").is_string()) {
-			syslog(LOG_ERR, "token request failed");
+			spdlog::error("token request failed");
 			return 0;
 		}
 
@@ -248,18 +248,18 @@ namespace bestsens {
 					}
 
 					if(response.empty())
-						syslog(LOG_ERR, "Error");
+						spdlog::error("Error");
 					else
 						return 1;
 				}
 				catch(const json::exception& ia) {
-					syslog(LOG_ERR, "%s", ia.what());
-					syslog(LOG_ERR, "input string: \"%s\"", str.data());
+					spdlog::error("{}", ia.what());
+					spdlog::error("input string: \"{}\"", str.data());
 				}
 			}
 		} else {
-			syslog(LOG_CRIT, "could not receive all data");
-			syslog(LOG_CRIT, "input string: \"%s\"", str.data());
+			spdlog::critical("could not receive all data");
+			spdlog::critical("input string: \"{}\"", str.data());
 			throw std::runtime_error("could not receive all data");
 		}
 
@@ -310,29 +310,29 @@ namespace bestsens {
 					res = select(this->sockfd+1, NULL, &myset, NULL, &tv);
 
 					if(res < 0 && errno != EINTR) {
-						syslog(LOG_CRIT, "Error connecting %d - %s", errno, strerror(errno));
+						spdlog::critical("Error connecting {} - {}", errno, strerror(errno));
 						return 1; 
 					} else if (res > 0) {
 						socklen_t lon = sizeof(int);
 						if(getsockopt(this->sockfd, SOL_SOCKET, SO_ERROR, (void*)(&valopt), &lon) < 0) { 
-							syslog(LOG_CRIT, "Error in getsockopt() %d - %s", errno, strerror(errno)); 
+							spdlog::critical("Error in getsockopt() {} - {}", errno, strerror(errno)); 
 							return 1; 
 						}
 
 						if(valopt) { 
-							syslog(LOG_CRIT, "Error in delayed connection() %d - %s", valopt, strerror(valopt)); 
+							spdlog::critical("Error in delayed connection() {} - {}", valopt, strerror(valopt)); 
 							return 1;  
 						}
 
 						break;
 					} else {
-						syslog(LOG_CRIT, "Timeout in select() - Cancelling!"); 
+						spdlog::critical("Timeout in select() - Cancelling!"); 
 						return 1;
 					}
 				} while(1);
 			}
 		} else {
-			syslog(LOG_CRIT, "error connecting to %s:%s", this->conn_target.c_str(), this->conn_port.c_str());
+			spdlog::critical("error connecting to {}:{}", this->conn_target, this->conn_port);
 			return 1;
 		}
 
@@ -390,7 +390,7 @@ namespace bestsens {
 
 			if(count <= 0 && error_counter++ > 10) {
 				if(error_counter++ > 10) {
-					syslog(LOG_CRIT, "error sending data: %d (%s)", errno, strerror(errno));
+					spdlog::critical("error sending data: {} ({})", errno, strerror(errno));
 					break;
 				}
 			} else {
@@ -417,7 +417,7 @@ namespace bestsens {
 
 			if(count <= 0) {
 				if(error_counter++ > 10) {
-					syslog(LOG_CRIT, "error receiving data: %d (%s)", errno, strerror(errno));
+					spdlog::critical("error receiving data: {} ({})", errno, strerror(errno));
 					break;
 				}
 			} else {
