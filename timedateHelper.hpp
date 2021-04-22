@@ -24,7 +24,15 @@
 
 namespace bestsens {
 	namespace timedateHelper {
-		std::vector<std::string> pipeSystemCommand(const std::string& command) {
+		struct timedateinfo_t {
+			std::string date;
+			std::string timezone;
+			std::string timezone_offset;
+			std::string timeservers;
+			bool timesync_enabled;
+		};
+
+		inline std::vector<std::string> pipeSystemCommand(const std::string& command) {
 			std::string cmd = command + " 2>&1";
 			std::array<char, 128> line;
 			std::vector<std::string> lines;
@@ -45,30 +53,7 @@ namespace bestsens {
 			return lines;
 		}
 
-		struct command_cache_t {
-			std::vector<std::string> lines;
-			bool is_dirty = true;
-			std::time_t last_update;
-			std::mutex lines_mtx;
-
-			std::vector<std::string> get() {
-				std::lock_guard<std::mutex> lock(this->lines_mtx);
-
-				if(this->is_dirty || (std::time(nullptr) - this->last_update) > 30) {
-					this->lines = pipeSystemCommand("timedatectl status");
-					this->is_dirty = false;
-					this->last_update = std::time(nullptr);
-				}
-
-				return this->lines;
-			}
-
-			void makeDirty() {
-				this->is_dirty = true;
-			}
-		} command_cache;
-
-		std::string getDate() {
+		inline std::string getDate() {
 			std::time_t rawtime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 			std::tm tm = *std::localtime(&rawtime);
 
@@ -78,7 +63,40 @@ namespace bestsens {
 			return std::string(mbstr);
 		}
 
-		void setDate(const std::string& date) {
+		inline std::string getTimezoneOffset() {
+			std::time_t rawtime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+			std::tm tm = *std::localtime(&rawtime);
+
+			char mbstr[6];
+			std::strftime(mbstr, sizeof(mbstr), "%z", &tm);
+
+			return std::string(mbstr);
+		}
+
+		inline timedateinfo_t getTimeDateInfo() {
+			timedateinfo_t ti;
+
+			for(auto input : pipeSystemCommand("timedatectl status")) {
+				std::regex tzrgx("Time zone:\\s*([a-zA-Z]+\\/[a-zA-Z]+)");
+				std::regex tsrgx("Network time on:\\s*(yes|no)");
+				std::smatch match;
+
+				if(std::regex_search(input, match, tzrgx)) {
+					if(match.ready() && match.size() == 2)
+						ti.timezone = match[1];
+				} else if(std::regex_search(input, match, tsrgx)) {
+					if(match.ready() && match.size() == 2) {
+						ti.timesync_enabled = match[1].compare("yes") == 0;
+					}
+				}
+			}
+
+			ti.date = getDate();
+			ti.timezone_offset = getTimezoneOffset();
+			return ti;
+		}
+
+		inline void setDate(const std::string& date) {
 			if(geteuid() == 0) { 
 				std::time_t rawtime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 				std::tm tm = *std::localtime(&rawtime);
@@ -105,7 +123,7 @@ namespace bestsens {
 			}
 		}
 
-		void setTimezone(const std::string& timezone) {
+		inline void setTimezone(const std::string& timezone) {
 			std::string cmd = std::string("sudo -n timedatectl set-timezone \"") + timezone + std::string("\"");
 
 			auto lines = pipeSystemCommand(cmd);
@@ -114,12 +132,10 @@ namespace bestsens {
 				std::string error = std::string("could not set timezone: ") + lines[0];
 				throw std::runtime_error(error);
 			}
-
-			command_cache.makeDirty();
 		}
 
-		std::string getTimezone() {
-			for(auto input : command_cache.get()) {
+		inline std::string getTimezone() {
+			for(auto input : pipeSystemCommand("timedatectl status")) {
 				std::regex r("Time zone:\\s*([a-zA-Z]+\\/[a-zA-Z]+)");
 				std::smatch match;
 
@@ -133,17 +149,7 @@ namespace bestsens {
 			return "";
 		}
 
-		std::string getTimezoneOffset() {
-			std::time_t rawtime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-			std::tm tm = *std::localtime(&rawtime);
-
-			char mbstr[6];
-			std::strftime(mbstr, sizeof(mbstr), "%z", &tm);
-
-			return std::string(mbstr);
-		}
-
-		void setTimesync(bool timesync_enabled) {
+		inline void setTimesync(bool timesync_enabled) {
 			std::string cmd = std::string("sudo -n timedatectl set-ntp ") + (timesync_enabled ? "true" : "false");
 
 			auto lines = pipeSystemCommand(cmd);
@@ -152,12 +158,10 @@ namespace bestsens {
 				std::string error = std::string("could not set timeync: ") + lines[0];
 				throw std::runtime_error(error);
 			}
-
-			command_cache.makeDirty();
 		}
 
-		bool getTimesync() {
-			for(auto input : command_cache.get()) {
+		inline bool getTimesync() {
+			for(auto input : pipeSystemCommand("timedatectl status")) {
 				std::regex r("Network time on:\\s*(yes|no)");
 				std::smatch match;
 
@@ -175,7 +179,7 @@ namespace bestsens {
 		}
 
 #ifdef ENABLE_SYSTEMD_DBUS
-		void setTimezone(sd_bus * bus, const std::string& timezone) {
+		inline void setTimezone(sd_bus * bus, const std::string& timezone) {
 			if(geteuid() == 0) {
 				sd_bus_message * msg = NULL;
 				sd_bus_error error = SD_BUS_ERROR_NULL;
@@ -209,7 +213,7 @@ namespace bestsens {
 			}
 		}
 
-		void setTimesync(sd_bus * bus, bool timesync_enabled) {
+		inline void setTimesync(sd_bus * bus, bool timesync_enabled) {
 			if(geteuid() == 0) {
 				sd_bus_message * msg = NULL;
 				sd_bus_error error = SD_BUS_ERROR_NULL;
@@ -244,7 +248,7 @@ namespace bestsens {
 		}
 
 
-		std::string getTimezone(sd_bus * bus) {
+		inline std::string getTimezone(sd_bus * bus) {
 			char * msg = 0;
 			sd_bus_error error = SD_BUS_ERROR_NULL;
 			std::string timezone = "";
@@ -276,7 +280,7 @@ namespace bestsens {
 			return timezone;
 		}
 
-		bool getTimesync(sd_bus * bus) {
+		inline bool getTimesync(sd_bus * bus) {
 			sd_bus_message * msg = NULL;
 			sd_bus_error error = SD_BUS_ERROR_NULL;
 			int timesync;
@@ -312,6 +316,15 @@ namespace bestsens {
 			sd_bus_message_unref(msg);
 			msg = NULL;
 			return timesync == 1;
+		}
+
+		inline timedateinfo_t getTimeDateInfo(sd_bus * bus) {
+			timedateinfo_t ti;
+			ti.timezone = getTimezone(bus);
+			ti.timesync = getTimesync(bus);
+			ti.date = getDate();
+			ti.timezone_offset = getTimezoneOffset();
+			return ti;
 		}
 #endif
 	} // namespace timedateHelper
