@@ -11,7 +11,8 @@
 #include <iostream>
 #include <cstdlib>
 #include <cstring>
-#include <climits>
+#include <limits>
+#include <cassert>
 #include <mutex>
 #include <type_traits>
 #include <vector>
@@ -35,6 +36,8 @@ namespace bestsens {
 
 		T get(int id) const;
 		T getPosition(int pos) const;
+		int getBaseID() const;
+		int getNewDataAmount(int last_value = 0) const;
 		int get(T * target, int &amount, int last_value = 0) const;
 
 		int size() const;
@@ -124,7 +127,7 @@ namespace bestsens {
 		if(this->item_count < N)
 			this->item_count++;
 
-		this->base_id = (this->base_id + 1) % INT_MAX;
+		this->base_id = (this->base_id + 1) % std::numeric_limits<int>::max();
 
 		return 0;
 	}
@@ -142,7 +145,7 @@ namespace bestsens {
 		if(this->item_count < N)
 			this->item_count++;
 
-		this->base_id = (this->base_id + 1) % INT_MAX;
+		this->base_id = (this->base_id + 1) % std::numeric_limits<int>::max();
 
 		return 0;
 	}
@@ -215,6 +218,27 @@ namespace bestsens {
 	template < typename T, int N >
 	int CircularBuffer<T, N>::size() const {
 		return this->item_count;
+	}
+
+	template < typename T, int N >
+	int CircularBuffer<T, N>::getBaseID() const {
+		return this->base_id;
+	}
+
+	template < typename T, int N >
+	int CircularBuffer<T, N>::getNewDataAmount(int last_value) const {
+		auto subtractWithRollover = [](int a, int b) {
+		    assert(a > 0 && b > 0);
+
+		    if(a - b < 0)
+		        return (std::numeric_limits<int>::max() - b) + a + 1;
+
+		    return a - b;
+		};
+
+		int difference = subtractWithRollover(this->base_id, last_value);
+		
+		return std::min(difference, this->item_count);
 	}
 
 	template < typename T, int N >
