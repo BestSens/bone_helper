@@ -173,13 +173,13 @@ namespace bestsens {
 
 			inline MultiWatchdog::MultiWatchdog() {
 				std::lock_guard<std::mutex> lock(list_mtx);
-				watchdog_list.push_back(&own_entry);
+				watchdog_list.push_back(&this->own_entry);
 			}
 
 			inline MultiWatchdog::~MultiWatchdog() {
 				std::lock_guard<std::mutex> lock(list_mtx);
 
-				auto it = std::find(watchdog_list.begin(), watchdog_list.end(), &own_entry);
+				auto it = std::find(watchdog_list.begin(), watchdog_list.end(), &this->own_entry);
 
 				if(it != watchdog_list.end())
 					watchdog_list.erase(it);
@@ -187,7 +187,7 @@ namespace bestsens {
 
 			inline void MultiWatchdog::trigger() {
 				std::lock_guard<std::mutex> lock(list_mtx);
-				own_entry = 1;
+				this->own_entry = 1;
 
 				for(const auto &e : watchdog_list) 
 					if(*e == 0) return;
