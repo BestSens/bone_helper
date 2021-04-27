@@ -2,6 +2,7 @@
 #include "../circular_buffer.hpp"
 
 #include <thread>
+#include <limits>
 
 #define BUFFER_SIZE 100
 
@@ -122,7 +123,7 @@ TEST_CASE("vector") {
     SECTION("test last_value") {
         for(unsigned int i = 0; i < 100; i++) {
             int last_value = rand() % 99999;
-            std::vector<int> v = buffer_test.getVector(INT_MAX, last_value);
+            std::vector<int> v = buffer_test.getVector(std::numeric_limits<int>::max(), last_value);
 
             REQUIRE(v.size() == 10);
 
@@ -141,7 +142,7 @@ TEST_CASE("vector") {
         CHECK(v.size() == 10);
         CHECK(last_value == 10);
 
-        v = buffer_test.getVector(INT_MAX, last_value);
+        v = buffer_test.getVector(std::numeric_limits<int>::max(), last_value);
         CHECK(v.size() == 0);
     }
 
