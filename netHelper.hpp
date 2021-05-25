@@ -67,6 +67,8 @@ namespace bestsens {
 
 		int get_sockfd();
 
+		std::mutex& get_mutex();
+
 		static std::string sha512(std::string input);
 		static unsigned int getLastRawPosition(const unsigned char * str);
 		static unsigned int getLastRawPosition(const char * str);
@@ -96,6 +98,10 @@ namespace bestsens {
 
 	inline int netHelper::get_sockfd() {
 		return this->sockfd;
+	}
+
+	inline auto netHelper::get_mutex() -> std::mutex& {
+		return this->sock_mtx;
 	}
 
 	inline unsigned int netHelper::getLastRawPosition(const unsigned char * str) {

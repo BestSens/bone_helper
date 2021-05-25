@@ -1,8 +1,5 @@
 CPPFLAGS = -std=c++14 -pthread -MMD -MP
 
-# Warnings
-CPPFLAGS += -Wall -Wextra -Wpedantic
-
 ifndef DEBUG
 	CPPFLAGS += -O2 -DNDEBUG
 else
@@ -11,6 +8,8 @@ endif
 
 ifdef MUTE_WARNINGS
 	CPPFLAGS += -Wno-all
+else
+	CPPFLAGS += -Wall -Wextra -Wpedantic
 endif
 
 OBJ = loopTimer.o
