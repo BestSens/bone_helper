@@ -169,7 +169,7 @@ namespace bestsens {
 
 		try {
 			if(login_response.at("payload").at("error").is_string())
-				syslog(LOG_ERR, "login failed: %s", login_response.at("payload").at("error").get<std::string>().c_str());
+				spdlog::error("login failed: {}", login_response.at("payload").at("error").get<std::string>());
 		} catch(...) {}
 
 		this->user_level = login_response.at("payload").at("user_level").get<int>();
