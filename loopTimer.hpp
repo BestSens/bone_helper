@@ -12,7 +12,6 @@
 #include <chrono>
 #include <condition_variable>
 #include <mutex>
-#include <syslog.h>
 #include <iostream>
 
 namespace bestsens {
