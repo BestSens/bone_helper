@@ -243,8 +243,14 @@ namespace bestsens {
 
 	template < typename T, int N >
 	std::vector<T> CircularBuffer<T, N>::getVector(int amount, int &last_value) const {
-		if(amount > this->item_count)
-			amount = this->item_count;
+		amount = [&amount, this]{
+			std::lock_guard<std::mutex> lock(this->mutex);
+
+			if (amount > this->item_count)
+				return this->item_count;
+
+			return amount;
+		}();
 
 		std::vector<T> vect(amount);
 
