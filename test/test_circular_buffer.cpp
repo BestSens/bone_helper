@@ -112,6 +112,16 @@ TEST_CASE("circular_buffer_test") {
 		int amount = 0;
 		CHECK_THROWS(buffer_test.get(test, amount, 0));
 	}
+
+	SECTION("test getPosition") {
+		for(int i = 0; i < 200; i++)
+			buffer_test.add(i);
+
+		CHECK(buffer_test.getPosition(0) == 199);
+		CHECK(buffer_test.getPosition(1) == 198);
+		CHECK(buffer_test.getPosition(99) == 100);
+		CHECK_THROWS(buffer_test.getPosition(100));
+	}
 }
 
 TEST_CASE("vector") {
