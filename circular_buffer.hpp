@@ -41,6 +41,7 @@ namespace bestsens {
 		int get(T * target, int &amount, int last_value = 0) const;
 
 		int size() const;
+		int max_size() const;
 
 		std::vector<T> getVector(int amount) const;
 		std::vector<T> getVector(int amount, int &last_value) const;
@@ -218,6 +219,11 @@ namespace bestsens {
 	template < typename T, int N >
 	int CircularBuffer<T, N>::size() const {
 		return this->item_count;
+	}
+
+	template < typename T, int N >
+	int CircularBuffer<T, N>::max_size() const {
+		return N;
 	}
 
 	template < typename T, int N >
