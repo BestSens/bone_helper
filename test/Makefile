@@ -1,4 +1,4 @@
-CPPFLAGS = -std=c++14 -O0 -g --coverage -Wall -Ilibs/json/single_include/ -Ilibs/catch/single_include/
+CPPFLAGS = -std=c++14 -O0 -g -Wall -Ilibs/json/single_include/ -Ilibs/catch/single_include/
 LDFLAGS = -lm -lpthread -lcrypto
 
 OBJ = test_main.o test_circular_buffer.o test_loopTimer.o test_stopwatch.o test_jsonHelper.o $(PARENT_PATH)/bone_helper.a

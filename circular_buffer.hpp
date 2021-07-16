@@ -274,8 +274,7 @@ namespace bestsens {
 		if (amount > this->item_count)
 			amount = this->item_count;
 
-		std::vector<T> vect;
-		vect.reserve(amount);
+		std::vector<T> vect(amount);
 
 		last_value = this->get(vect.data(), amount, last_value);
 
