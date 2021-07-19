@@ -26,17 +26,17 @@ namespace bestsens {
 
 		static void kill_all();
 
-		int set_wait_time(std::chrono::microseconds wait_time);
-		std::chrono::microseconds get_wait_time();
+		auto set_wait_time(std::chrono::microseconds wait_time) -> int;
+		auto get_wait_time() -> std::chrono::microseconds;
 	private:
-		std::atomic<bool> ready;
+		std::atomic<bool> ready{false};
 		std::mutex m;
 		std::condition_variable cv;
 
 		std::thread timer_thread;
 		std::chrono::microseconds wait_time;
 
-		std::atomic<bool> running;
+		std::atomic<bool> running{false};
 
 		static std::atomic<bool> kill;
 		static std::condition_variable cv_trigger;

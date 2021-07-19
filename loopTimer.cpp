@@ -1,8 +1,7 @@
 #include "loopTimer.hpp"
 namespace bestsens
 {
-	loopTimer::loopTimer(std::chrono::microseconds wait_time, int start_value) {
-		this->wait_time = wait_time;
+	loopTimer::loopTimer(std::chrono::microseconds wait_time, int start_value) : wait_time{wait_time} {
 		this->start(start_value);
 	}
 
@@ -50,7 +49,7 @@ namespace bestsens
 				{
 					std::unique_lock<std::mutex> lk(loopTimer::m_trigger);
 
-					if(loopTimer::cv_trigger.wait_until(lk, expires, predicate) == true)
+					if(loopTimer::cv_trigger.wait_until(lk, expires, predicate))
 						exit = true;
 				}
 
@@ -85,13 +84,13 @@ namespace bestsens
 		this->ready = false;
 	}
 
-	int loopTimer::set_wait_time(std::chrono::microseconds wait_time) {
+	auto loopTimer::set_wait_time(std::chrono::microseconds wait_time) -> int {
 		this->wait_time = wait_time;
 
 		return 0;
 	}
 
-	std::chrono::microseconds loopTimer::get_wait_time() {
+	auto loopTimer::get_wait_time() -> std::chrono::microseconds {
 		return this->wait_time;
 	}
 }
