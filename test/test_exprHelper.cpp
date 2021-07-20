@@ -1,5 +1,6 @@
 #include "catch2/catch.hpp"
-#include "../exprHelper.hpp"
+
+#include "bone_helper/exprHelper.hpp"
 
 TEST_CASE("exprHelper_test") {
     bestsens::exprHelper * expr = new bestsens::exprHelper();

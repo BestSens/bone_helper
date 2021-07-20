@@ -1,4 +1,4 @@
-CPPFLAGS = -std=c++14 -O0 -g -Wall -Ilibs/json/single_include/ -Ilibs/catch/single_include/
+CPPFLAGS = -std=c++14 -O0 -MMD -MP -g -Wall -Ilibs/json/single_include/ -Ilibs/catch/single_include/ -I../include/
 LDFLAGS = -lm -lpthread -lcrypto
 
 OBJ = test_main.o test_circular_buffer.o test_loopTimer.o test_stopwatch.o test_jsonHelper.o $(PARENT_PATH)/bone_helper.a
@@ -16,16 +16,16 @@ $(BIN): $(OBJ)
 test_main.o: test_main.cpp
 	$(CXX) $(CPPFLAGS) -c $<
 
-test_circular_buffer.o: test_circular_buffer.cpp ../circular_buffer.hpp
+test_circular_buffer.o: test_circular_buffer.cpp
 	$(CXX) $(CPPFLAGS) -c $<
 
-test_netHelper.o: test_netHelper.cpp ../netHelper.hpp
+test_netHelper.o: test_netHelper.cpp
 	$(CXX) $(CPPFLAGS) -c $<
 
-test_loopTimer.o: test_loopTimer.cpp ../loopTimer.hpp
+test_loopTimer.o: test_loopTimer.cpp
 	$(CXX) $(CPPFLAGS) -c $<
 
-test_jsonHelper.o: test_jsonHelper.cpp ../jsonHelper.hpp
+test_jsonHelper.o: test_jsonHelper.cpp
 	$(CXX) $(CPPFLAGS) -c $<
 
 $(PARENT_PATH)/bone_helper.a:
@@ -37,5 +37,5 @@ $(PARENT_PATH)/bone_helper.a:
 -include $(DEPFILES)
 
 clean:
-	rm -f $(BIN) $(OBJ) *.gcov *.gcno *.gcda
+	rm -f $(BIN) $(OBJ) $(DEPFILES)
 	$(MAKE) clean -C $(PARENT_PATH)

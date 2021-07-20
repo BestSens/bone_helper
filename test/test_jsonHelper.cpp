@@ -1,8 +1,9 @@
 #include "catch2/catch.hpp"
-#include "../jsonHelper.hpp"
 
 #include <iostream>
 #include <vector>
+
+#include "bone_helper/jsonHelper.hpp"
 
 using json = nlohmann::json;
 using namespace bestsens;

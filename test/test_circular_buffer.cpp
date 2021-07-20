@@ -1,8 +1,9 @@
 #include "catch2/catch.hpp"
-#include "../circular_buffer.hpp"
 
-#include <thread>
 #include <limits>
+#include <thread>
+
+#include "bone_helper/circular_buffer.hpp"
 
 #define BUFFER_SIZE 100
 

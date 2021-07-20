@@ -1,6 +1,8 @@
 #include "catch2/catch.hpp"
+
 #include <chrono>
-#include "../loopTimer.hpp"
+
+#include "bone_helper/loopTimer.hpp"
 
 TEST_CASE("loopTimer_test") {
     /*

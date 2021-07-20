@@ -1,5 +1,6 @@
-#include "libs/catch/include/catch.hpp"
-#include "../netHelper.hpp"
+#include "catch2/catch.hpp"
+
+#include "bone_helper/netHelper.hpp"
 
 TEST_CASE("netHelper_test") {
     /*
