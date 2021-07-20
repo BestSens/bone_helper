@@ -21,9 +21,9 @@ namespace bestsens {
 	template < typename T, int N >
 	class CircularBuffer {
 	public:
-		CircularBuffer();
-		CircularBuffer(const CircularBuffer& src);
-		CircularBuffer(CircularBuffer&& src);
+		CircularBuffer() noexcept;
+		CircularBuffer(const CircularBuffer& src) noexcept;
+		CircularBuffer(CircularBuffer&& src) noexcept;
 
 		CircularBuffer& operator=(const CircularBuffer& rhs);
 		CircularBuffer& operator=(CircularBuffer&& rhs);
@@ -63,7 +63,7 @@ namespace bestsens {
 	};
 
 	template < typename T, int N >
-	CircularBuffer<T, N>::CircularBuffer(CircularBuffer&& src) {
+	CircularBuffer<T, N>::CircularBuffer(CircularBuffer&& src) noexcept {
 		std::swap(this->current_position, src.current_position);
 		std::swap(this->item_count, src.item_count);
 		std::swap(this->base_id, src.base_id);
@@ -99,14 +99,14 @@ namespace bestsens {
 	}
 
 	template < typename T, int N >
-	CircularBuffer<T, N>::CircularBuffer() {
+	CircularBuffer<T, N>::CircularBuffer() noexcept {
 		this->current_position = 0;
 		this->item_count = 0;
 		this->base_id = 0;
 	}
 
 	template < typename T, int N >
-	CircularBuffer<T, N>::CircularBuffer(const CircularBuffer& src) {
+	CircularBuffer<T, N>::CircularBuffer(const CircularBuffer& src) noexcept {
 		this->current_position = src.current_position;
 		this->item_count = src.item_count;
 		this->base_id = src.base_id;
