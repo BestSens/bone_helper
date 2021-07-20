@@ -7,7 +7,6 @@ before_script:
     - cd test
 
 stages:
-    - static test
     - build
     - test
 
@@ -24,10 +23,3 @@ test:
     stage: test
     script:
         - ./test -d yes
-        - gcov -r -n test_circular_buffer test_loopTimer
-
-static:
-    image: walberla/cppcheck
-    stage: static test
-    script:
-        - cppcheck --enable=warning,style,performance -j 2 ../netHelper.hpp ../loopTimer.hpp ../circular_buffer.hpp
