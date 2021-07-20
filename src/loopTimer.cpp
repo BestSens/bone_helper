@@ -1,6 +1,6 @@
-#include "loopTimer.hpp"
-namespace bestsens
-{
+#include "bone_helper/loopTimer.hpp"
+
+namespace bestsens{
 	loopTimer::loopTimer(std::chrono::microseconds wait_time, int start_value) : wait_time{wait_time} {
 		this->start(start_value);
 	}
@@ -93,4 +93,4 @@ namespace bestsens
 	auto loopTimer::get_wait_time() -> std::chrono::microseconds {
 		return this->wait_time;
 	}
-}
+}  // bestsens

@@ -1,4 +1,4 @@
-CPPFLAGS = -std=c++14 -pthread -MMD -MP
+CPPFLAGS = -std=c++14 -pthread -MMD -MP -Iinclude/
 
 ifndef DEBUG
 	CPPFLAGS += -O2 -DNDEBUG
@@ -27,7 +27,7 @@ $(OBJ): compiler_flags
 compiler_flags: force
 	echo '$(CXX) $(CPPFLAGS)' | cmp -s - $@ || echo '$(CXX) $(CPPFLAGS)' > $@
 
-%.o: %.cpp compiler_flags
+%.o: src/%.cpp compiler_flags
 	$(CXX) -c $(CPPFLAGS) $< -o $@
 
 -include $(DEPFILES)
