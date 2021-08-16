@@ -8,15 +8,17 @@
 #ifndef TIMEDATEHELPER_HPP_
 #define TIMEDATEHELPER_HPP_
 
-#include <string>
-#include <vector>
-#include <sstream>
-#include <memory>
-#include <regex>
-#include <mutex>
-#include <iostream>
 #include <sys/types.h>
 #include <unistd.h>
+
+#include <ctime>
+#include <iostream>
+#include <memory>
+#include <mutex>
+#include <regex>
+#include <sstream>
+#include <string>
+#include <vector>
 
 #ifdef ENABLE_SYSTEMD_DBUS
 #include <systemd/sd-bus.h>
@@ -97,17 +99,19 @@ namespace bestsens {
 		}
 
 		inline void setDate(const std::string& date) {
-			if(geteuid() == 0) { 
-				std::time_t rawtime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+			if (geteuid() == 0) { 
+				const std::time_t rawtime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 				std::tm tm = *std::localtime(&rawtime);
 
-				if(strptime(date.c_str(), "%F %T", &tm) == NULL) {
+				if (strptime(date.c_str(), "%F %T", &tm) == NULL) {
 					std::string error = std::string("could not set time: error parsing string");
 					throw std::runtime_error(error);
 				}
 
-				std::time_t newtime = std::mktime(&tm); 
-				if(stime(&newtime) != 0) {
+				const std::time_t newtime = std::mktime(&tm);
+				const struct timespec newtime_ts = {newtime, 0};
+
+				if (clock_settime(CLOCK_REALTIME, &newtime_ts) != 0) {
 					std::string error = std::string("could not set time: ") + strerror(errno);
 					throw std::runtime_error(error);
 				}
@@ -116,7 +120,7 @@ namespace bestsens {
 
 				auto lines = pipeSystemCommand(cmd);
 
-				if(lines.size() > 0) {
+				if (lines.size() > 0) {
 					std::string error = std::string("could not set time: ") + lines[0];
 					throw std::runtime_error(error);
 				}
