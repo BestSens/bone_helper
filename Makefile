@@ -12,7 +12,7 @@ else
 	CPPFLAGS += -Wall -Wextra -Wpedantic
 endif
 
-OBJ = loopTimer.o
+OBJ = loopTimer.o stdlib_backports.o
 BIN = bone_helper.a
 
 DEPFILES := $(OBJ:.o=.d)
