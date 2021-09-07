@@ -11,7 +11,8 @@
 #include <iostream>
 #include <cstdlib>
 #include <cstring>
-#include <climits>
+#include <limits>
+#include <cassert>
 #include <mutex>
 #include <type_traits>
 #include <vector>
@@ -20,23 +21,31 @@ namespace bestsens {
 	template < typename T, int N >
 	class CircularBuffer {
 	public:
-		CircularBuffer();
-		CircularBuffer(const CircularBuffer& src);
-		CircularBuffer(CircularBuffer&& src);
+		CircularBuffer() noexcept;
+		CircularBuffer(const CircularBuffer& src) noexcept;
+		CircularBuffer(CircularBuffer&& src) noexcept;
 
 		CircularBuffer& operator=(const CircularBuffer& rhs);
 		CircularBuffer& operator=(CircularBuffer&& rhs);
-		T operator[](int id);
+		T operator[](int id) const;
 
 		~CircularBuffer();
 
 		int add(const T& value);
-		T get(int id);
-		T getPosition(int pos);
-		int get(T * target, int &amount, int last_value = 0);
+		int add(T&& value);
+		int add(const std::vector<T>& values);
 
-		std::vector<T> getVector(int amount);
-		std::vector<T> getVector(int amount, int &last_value);
+		T get(int id) const;
+		T getPosition(int pos) const;
+		int getBaseID() const;
+		int getNewDataAmount(int last_value = 0) const;
+		int get(T * target, int &amount, int last_value = 0) const;
+
+		int size() const;
+		int max_size() const;
+
+		std::vector<T> getVector(int amount) const;
+		std::vector<T> getVector(int amount, int &last_value) const;
 
 		void clear();
 
@@ -48,13 +57,13 @@ namespace bestsens {
 
 		int base_id;
 
-		int getRange(T * target, int start, int end);
+		int getRange(T * target, int start, int end) const;
 
-		std::mutex mutex;
+		mutable std::mutex mutex;
 	};
 
 	template < typename T, int N >
-	CircularBuffer<T, N>::CircularBuffer(CircularBuffer&& src) {
+	CircularBuffer<T, N>::CircularBuffer(CircularBuffer&& src) noexcept {
 		std::swap(this->current_position, src.current_position);
 		std::swap(this->item_count, src.item_count);
 		std::swap(this->base_id, src.base_id);
@@ -85,19 +94,19 @@ namespace bestsens {
 	}
 
 	template < typename T, int N >
-	T CircularBuffer<T, N>::operator[](int id) {
+	T CircularBuffer<T, N>::operator[](int id) const {
 		return this->getPosition(id);
 	}
 
 	template < typename T, int N >
-	CircularBuffer<T, N>::CircularBuffer() {
+	CircularBuffer<T, N>::CircularBuffer() noexcept {
 		this->current_position = 0;
 		this->item_count = 0;
 		this->base_id = 0;
 	}
 
 	template < typename T, int N >
-	CircularBuffer<T, N>::CircularBuffer(const CircularBuffer& src) {
+	CircularBuffer<T, N>::CircularBuffer(const CircularBuffer& src) noexcept {
 		this->current_position = src.current_position;
 		this->item_count = src.item_count;
 		this->base_id = src.base_id;
@@ -108,8 +117,26 @@ namespace bestsens {
 	CircularBuffer<T, N>::~CircularBuffer() {}
 
 	template < typename T, int N >
+	int CircularBuffer<T, N>::add(T&& value) {
+		if (N == 0)
+			throw std::runtime_error("out of bounds");
+
+		std::lock_guard<std::mutex> lock(this->mutex);
+		this->buffer[this->current_position] = std::forward<T>(value);
+
+		this->current_position = (this->current_position + 1) % N;
+
+		if (this->item_count < N)
+			this->item_count++;
+
+		this->base_id = (this->base_id + 1) % std::numeric_limits<int>::max();
+
+		return 0;
+	}
+
+	template < typename T, int N >
 	int CircularBuffer<T, N>::add(const T& value) {
-		if(N == 0)
+		if (N == 0)
 			throw std::runtime_error("out of bounds");
 
 		std::lock_guard<std::mutex> lock(this->mutex);
@@ -120,7 +147,28 @@ namespace bestsens {
 		if(this->item_count < N)
 			this->item_count++;
 
-		this->base_id = (this->base_id + 1) % INT_MAX;
+		this->base_id = (this->base_id + 1) % std::numeric_limits<int>::max();
+
+		return 0;
+	}
+
+	template < typename T, int N >
+	int CircularBuffer<T, N>::add(const std::vector<T>& values) {
+		if (N == 0)
+			throw std::runtime_error("out of bounds");
+
+		std::lock_guard<std::mutex> lock(this->mutex);
+
+		for (const auto& e : values) {
+			this->buffer[this->current_position] = e;
+
+			this->current_position = (this->current_position + 1) % N;
+
+			if(this->item_count < N)
+				this->item_count++;
+
+			this->base_id = (this->base_id + 1) % std::numeric_limits<int>::max();
+		}
 
 		return 0;
 	}
@@ -129,7 +177,9 @@ namespace bestsens {
 	 * return single value
 	 */
 	template < typename T, int N >
-	T CircularBuffer<T, N>::get(int id) {
+	T CircularBuffer<T, N>::get(int id) const {
+		std::lock_guard<std::mutex> lock(this->mutex);
+
 		if(this->item_count == 0)
 			throw std::runtime_error("out of bounds");
 
@@ -137,7 +187,9 @@ namespace bestsens {
 	}
 
 	template < typename T, int N >
-	T CircularBuffer<T, N>::getPosition(int pos) {
+	T CircularBuffer<T, N>::getPosition(int pos) const {
+		std::lock_guard<std::mutex> lock(this->mutex);
+
 		if(pos >= this->item_count || this->item_count == 0)
 			throw std::runtime_error("out of bounds");
 
@@ -150,7 +202,7 @@ namespace bestsens {
 	}
 
 	template < typename T, int N >
-	int CircularBuffer<T, N>::getRange(T * target, int start, int end) {
+	int CircularBuffer<T, N>::getRange(T * target, int start, int end) const {
 		int offset = (this->current_position - end) % N;
 
 		if(offset < 0)
@@ -180,15 +232,46 @@ namespace bestsens {
 	}
 
 	template < typename T, int N >
-	std::vector<T> CircularBuffer<T, N>::getVector(int amount) {
+	std::vector<T> CircularBuffer<T, N>::getVector(int amount) const {
 		int last_value = 0;
 
 		return this->getVector(amount, last_value);
 	}
 
 	template < typename T, int N >
-	std::vector<T> CircularBuffer<T, N>::getVector(int amount, int &last_value) {
-		if(amount > this->item_count)
+	int CircularBuffer<T, N>::size() const {
+		return this->item_count;
+	}
+
+	template < typename T, int N >
+	int CircularBuffer<T, N>::max_size() const {
+		return N;
+	}
+
+	template < typename T, int N >
+	int CircularBuffer<T, N>::getBaseID() const {
+		return this->base_id;
+	}
+
+	template < typename T, int N >
+	int CircularBuffer<T, N>::getNewDataAmount(int last_value) const {
+		auto subtractWithRollover = [](int a, int b) {
+		    assert(a > 0 && b > 0);
+
+		    if(a - b < 0)
+		        return (std::numeric_limits<int>::max() - b) + a + 1;
+
+		    return a - b;
+		};
+
+		int difference = subtractWithRollover(this->base_id, last_value);
+		
+		return std::min(difference, this->item_count);
+	}
+
+	template < typename T, int N >
+	std::vector<T> CircularBuffer<T, N>::getVector(int amount, int &last_value) const {
+		if (amount > this->item_count)
 			amount = this->item_count;
 
 		std::vector<T> vect(amount);
@@ -201,7 +284,7 @@ namespace bestsens {
 	}
 
 	template < typename T, int N >
-	int CircularBuffer<T, N>::get(T * target, int &amount, int last_value) {
+	int CircularBuffer<T, N>::get(T * target, int &amount, int last_value) const {
 		std::lock_guard<std::mutex> lock(this->mutex);
 
 		int end;
@@ -232,6 +315,8 @@ namespace bestsens {
 
 	template < typename T, int N >
 	void CircularBuffer<T, N>::clear() {
+		std::lock_guard<std::mutex> lock(this->mutex);
+		
 		this->item_count = 0;
 	}
 } //namespace bestsens

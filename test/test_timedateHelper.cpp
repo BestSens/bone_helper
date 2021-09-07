@@ -1,5 +1,6 @@
-#include "libs/catch/include/catch.hpp"
-#include "../timedateHelper.hpp"
+#include "catch2/catch.hpp"
+
+#include "bone_helper/timedateHelper.hpp"
 
 using namespace bestsens;
 

@@ -10,15 +10,17 @@
 
 #include <sstream>
 #include <cstring>
+#include <mutex>
 #include <netdb.h>
 #include <fcntl.h>
-#include <syslog.h>
+#include <unistd.h>
 
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <openssl/sha.h>
 
-#include "../json/src/json.hpp"
+#include "nlohmann/json.hpp"
+#include "spdlog/spdlog.h"
 
 using json = nlohmann::json;
 
@@ -26,6 +28,8 @@ namespace bestsens {
 	class netHelper {
 	public:
 		netHelper(std::string conn_target, std::string conn_port, bool use_msgpack = false) : conn_target(conn_target), conn_port(conn_port), user_level(0), use_msgpack(use_msgpack) {
+			std::lock_guard<std::mutex> lock(this->sock_mtx);
+			
 			/*
 			 * socket configuration
 			 */
@@ -39,7 +43,7 @@ namespace bestsens {
 			 * open socket
 			 */
 			if((this->sockfd = socket(this->res->ai_family, this->res->ai_socktype, this->res->ai_protocol)) == -1) {
-				syslog(LOG_CRIT, "socket");
+				spdlog::critical("socket");
 			}
 
 			this->set_timeout(this->timeout);
@@ -63,8 +67,11 @@ namespace bestsens {
 
 		int get_sockfd();
 
+		std::mutex& get_mutex();
+
 		static std::string sha512(std::string input);
 		static unsigned int getLastRawPosition(const unsigned char * str);
+		static unsigned int getLastRawPosition(const char * str);
 
 		int recv(void * buffer, size_t read_size);
 	private:
@@ -73,6 +80,8 @@ namespace bestsens {
 		int timeout = 10;
 		struct addrinfo remote;
 		struct addrinfo * res;
+
+		std::mutex sock_mtx;
 
 		std::string user_name;
 		std::string conn_target;
@@ -91,11 +100,15 @@ namespace bestsens {
 		return this->sockfd;
 	}
 
+	inline auto netHelper::get_mutex() -> std::mutex& {
+		return this->sock_mtx;
+	}
+
 	inline unsigned int netHelper::getLastRawPosition(const unsigned char * str) {
 		unsigned int last_position;
 
 		try {
-			last_position = ((uint8_t)str[0] << 24) + ((uint8_t)str[1] << 16) + ((uint8_t)str[2] << 8) + ((uint8_t)str[3]);
+			last_position = (static_cast<uint8_t>(str[0]) << 24) + (static_cast<uint8_t>(str[1]) << 16) + (static_cast<uint8_t>(str[2]) << 8) + (static_cast<uint8_t>(str[3]));
 		} catch(...) {
 			last_position = 0;
 		}
@@ -103,11 +116,17 @@ namespace bestsens {
 		return last_position;
 	}
 
+	inline unsigned int netHelper::getLastRawPosition(const char * str) {
+		return getLastRawPosition(reinterpret_cast<const unsigned char*>(str));
+	}
+
 	inline std::string netHelper::sha512(std::string input) {
 		unsigned char hash[SHA512_DIGEST_LENGTH];
 		char hash_hex[SHA512_DIGEST_LENGTH*2+1];
 
-		SHA512((unsigned char*)input.c_str(), input.length(), hash);
+		char* input_str = const_cast<char*>(input.c_str());
+
+		SHA512(reinterpret_cast<unsigned char*>(input_str), input.length(), hash);
 
 		for(int i=0; i<SHA512_DIGEST_LENGTH; i++) {
 			sprintf(hash_hex + i*2, "%02x", hash[i]);
@@ -124,12 +143,12 @@ namespace bestsens {
 
 		this->send_command("request_token", token_response, nullptr);
 
-		if(!token_response["payload"]["token"].is_string()) {
-			syslog(LOG_ERR, "token request failed");
+		if(!token_response.at("payload").at("token").is_string()) {
+			spdlog::error("token request failed");
 			return 0;
 		}
 
-		std::string token = token_response["payload"]["token"];
+		std::string token = token_response.at("payload").at("token").get<std::string>();
 		std::string hashed_password;
 
 		if(use_hash)
@@ -154,10 +173,12 @@ namespace bestsens {
 
 		this->send_command("auth", login_response, payload);
 
-		if(login_response["payload"]["error"].is_string())
-			syslog(LOG_ERR, "login failed: %s", login_response["payload"]["error"].get<std::string>().c_str());
+		try {
+			if(login_response.at("payload").at("error").is_string())
+				spdlog::error("login failed: {}", login_response.at("payload").at("error").get<std::string>());
+		} catch(...) {}
 
-		this->user_level = login_response["payload"]["user_level"];
+		this->user_level = login_response.at("payload").at("user_level").get<int>();
 
 		return this->user_level;
 	}
@@ -172,7 +193,7 @@ namespace bestsens {
 		struct timeval tv;
 		tv.tv_sec = timeout;
 		tv.tv_usec = 0;
-		return setsockopt(this->sockfd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
+		return setsockopt(this->sockfd, SOL_SOCKET, SO_RCVTIMEO, reinterpret_cast<const char *>(&tv), sizeof tv);
 	}
 
 	inline int netHelper::send_command(std::string command, json& response, json payload, int api_version) {
@@ -181,8 +202,10 @@ namespace bestsens {
 		if(payload.is_object())
 			temp["payload"] = payload;
 
-       if(api_version > 0)
+        if(api_version > 0)
             temp["api"] = api_version;
+
+        std::lock_guard<std::mutex> lock(this->sock_mtx);
 
 		/*
 		 * send data to server
@@ -225,22 +248,24 @@ namespace bestsens {
 				try{
 					if(!this->use_msgpack)
 						response = json::parse(str);
-					else
+					else {
+						str.erase(str.begin() + t);
 						response = json::from_msgpack(str);
+					}
 
 					if(response.empty())
-						syslog(LOG_ERR, "Error");
+						spdlog::error("Error");
 					else
 						return 1;
 				}
-				catch(const std::invalid_argument& ia) {
-					syslog(LOG_ERR, "%s", ia.what());
-					syslog(LOG_ERR, "input string: \"%s\"", str.data());
+				catch(const json::exception& ia) {
+					spdlog::error("{}", ia.what());
+					spdlog::error("input string: \"{}\"", str.data());
 				}
 			}
 		} else {
-			syslog(LOG_CRIT, "could not receive all data");
-			syslog(LOG_CRIT, "input string: \"%s\"", str.data());
+			spdlog::critical("could not receive all data");
+			spdlog::critical("input string: \"{}\"", str.data());
 			throw std::runtime_error("could not receive all data");
 		}
 
@@ -274,6 +299,8 @@ namespace bestsens {
 		 * connect to socket
 		 */
 
+		std::lock_guard<std::mutex> lock(this->sock_mtx);
+
 		int res = ::connect(this->sockfd, this->res->ai_addr, this->res->ai_addrlen);
 		fd_set myset;
 		int valopt;
@@ -289,29 +316,29 @@ namespace bestsens {
 					res = select(this->sockfd+1, NULL, &myset, NULL, &tv);
 
 					if(res < 0 && errno != EINTR) {
-						syslog(LOG_CRIT, "Error connecting %d - %s", errno, strerror(errno));
+						spdlog::critical("Error connecting {} - {}", errno, strerror(errno));
 						return 1; 
 					} else if (res > 0) {
 						socklen_t lon = sizeof(int);
 						if(getsockopt(this->sockfd, SOL_SOCKET, SO_ERROR, (void*)(&valopt), &lon) < 0) { 
-							syslog(LOG_CRIT, "Error in getsockopt() %d - %s", errno, strerror(errno)); 
+							spdlog::critical("Error in getsockopt() {} - {}", errno, strerror(errno)); 
 							return 1; 
 						}
 
 						if(valopt) { 
-							syslog(LOG_CRIT, "Error in delayed connection() %d - %s", valopt, strerror(valopt)); 
+							spdlog::critical("Error in delayed connection() {} - {}", valopt, strerror(valopt)); 
 							return 1;  
 						}
 
 						break;
 					} else {
-						syslog(LOG_CRIT, "Timeout in select() - Cancelling!"); 
+						spdlog::critical("Timeout in select() - Cancelling!"); 
 						return 1;
 					}
 				} while(1);
 			}
 		} else {
-			syslog(LOG_CRIT, "error connecting to %s:%s", this->conn_target.c_str(), this->conn_port.c_str());
+			spdlog::critical("error connecting to {}:{}", this->conn_target, this->conn_port);
 			return 1;
 		}
 
@@ -334,6 +361,8 @@ namespace bestsens {
 	inline int netHelper::disconnect() {
 		if(!this->connected)
 			return -1;
+
+		std::lock_guard<std::mutex> lock(this->sock_mtx);
 
 		if(close(this->sockfd))
 			throw std::runtime_error("error closing socket");
@@ -363,11 +392,11 @@ namespace bestsens {
 		unsigned int t = 0;
 		int error_counter = 0;
 		while(t < data.length()) {
-			int count = ::send(this->sockfd, (const char*)data.c_str() + t, data.length() - t, 0);
+			int count = ::send(this->sockfd, data.c_str() + t, data.length() - t, 0);
 
 			if(count <= 0 && error_counter++ > 10) {
 				if(error_counter++ > 10) {
-					syslog(LOG_CRIT, "error sending data: %d (%s)", errno, strerror(errno));
+					spdlog::critical("error sending data: {} ({})", errno, strerror(errno));
 					break;
 				}
 			} else {
@@ -376,7 +405,7 @@ namespace bestsens {
 			}
 		}
 
-		return (int)t;
+		return static_cast<int>(t);
 	}
 
 	inline int netHelper::recv(void * buffer, size_t read_size) {
@@ -390,11 +419,11 @@ namespace bestsens {
 		unsigned int t = 0;
 		int error_counter = 0;
 		while(t < read_size) {
-			int count = ::recv(this->sockfd, (char *)buffer + t, read_size - t, 0);
+			int count = ::recv(this->sockfd, reinterpret_cast<char *>(buffer) + t, read_size - t, 0);
 
 			if(count <= 0) {
 				if(error_counter++ > 10) {
-					syslog(LOG_CRIT, "error receiving data: %d (%s)", errno, strerror(errno));
+					spdlog::critical("error receiving data: {} ({})", errno, strerror(errno));
 					break;
 				}
 			} else {
@@ -403,8 +432,8 @@ namespace bestsens {
 			}
 		}
 
-		return (int)t;
+		return static_cast<int>(t);
 	}
-}
+} // namespace bestsens
 
 #endif /* NETHELPER_HPP_ */

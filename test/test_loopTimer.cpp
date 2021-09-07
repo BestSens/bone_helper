@@ -1,13 +1,15 @@
-#include "libs/catch/include/catch.hpp"
+#include "catch2/catch.hpp"
+
 #include <chrono>
-#include "../loopTimer.hpp"
+
+#include "bone_helper/loopTimer.hpp"
 
 TEST_CASE("loopTimer_test") {
     /*
      * check first timer with delayed start
      */
+    auto timer = std::make_unique<bestsens::loopTimer>(std::chrono::milliseconds(100), 0);
     auto calculation_start = std::chrono::steady_clock::now();
-    bestsens::loopTimer * timer = new bestsens::loopTimer(std::chrono::milliseconds(100), 0);
 
     /*
      * check first tick
@@ -28,8 +30,8 @@ TEST_CASE("loopTimer_test") {
     /*
      * check second timer with direct start
      */
+    auto timer2 = std::make_unique<bestsens::loopTimer>(std::chrono::milliseconds(100), 1);
     calculation_start = std::chrono::steady_clock::now();
-    bestsens::loopTimer * timer2 = new bestsens::loopTimer(std::chrono::milliseconds(100), 1);
 
     /*
      * check first tick
@@ -67,5 +69,26 @@ TEST_CASE("loopTimer_test") {
     auto runtime2 = calculation_end - calculation_start;
 
     runtime = runtime2 - runtime1;
-    CHECK(std::chrono::duration<double>(runtime).count() == Approx(0.2).epsilon(0.025));
+    CHECK(std::chrono::duration<double>(runtime).count() == Approx(0.2).epsilon(0.05));
+
+    SECTION("destruction")
+    {
+        bestsens::loopTimer lt1(std::chrono::seconds(1), 0);
+        std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+        bestsens::loopTimer lt2(std::chrono::seconds(1), 0);
+        std::this_thread::sleep_for(std::chrono::milliseconds(150));
+        bestsens::loopTimer lt3(std::chrono::seconds(1), 0);
+        std::this_thread::sleep_for(std::chrono::milliseconds(1050));
+        bestsens::loopTimer lt4(std::chrono::seconds(1), 0);
+        std::this_thread::sleep_for(std::chrono::milliseconds(150));
+        bestsens::loopTimer lt5(std::chrono::seconds(1), 0);
+        std::this_thread::sleep_for(std::chrono::milliseconds(1500));
+        {
+            bestsens::loopTimer lt6(std::chrono::seconds(1), 0);
+            std::this_thread::sleep_for(std::chrono::milliseconds(150));
+            bestsens::loopTimer lt7(std::chrono::seconds(1), 0);
+            std::this_thread::sleep_for(std::chrono::milliseconds(150));
+        }
+        bestsens::loopTimer lt8(std::chrono::seconds(1), 0);
+    }
 }
