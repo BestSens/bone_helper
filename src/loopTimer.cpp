@@ -31,12 +31,11 @@ namespace bestsens{
 
 	void loopTimer::start(int start_value = 0) {
 		if(loopTimer::kill)
-		{
 			return;
-		}
-		this->running = true;
 
+		this->running = true;
 		this->ready = (start_value == 1);
+
 		new (&this->timer_thread) std::thread([this] {
 			bool exit = false;
 
@@ -44,29 +43,27 @@ namespace bestsens{
 				return loopTimer::kill || !this->running;
 			};
 
-			while(this->running) {
-				auto expires = std::chrono::steady_clock::now() + this->wait_time;
+			while (!exit) {
+				const auto expires = std::chrono::steady_clock::now() + this->wait_time;
+				
 				{
 					std::unique_lock<std::mutex> lk(loopTimer::m_trigger);
-
-					if(loopTimer::cv_trigger.wait_until(lk, expires, predicate))
-						exit = true;
+					exit = loopTimer::cv_trigger.wait_until(lk, expires, predicate);
 				}
 
 				{
 					std::lock_guard<std::mutex> lk(this->m);
 					this->ready = true;
 				}
-				this->cv.notify_all();
 
-				if(exit)
-					break;
+				this->cv.notify_all();
 			}
 
 			{
 				std::lock_guard<std::mutex> lk(this->m);
 				this->ready = true;
 			}
+
 			this->cv.notify_all();
 		});
 	}
@@ -78,7 +75,7 @@ namespace bestsens{
 	void loopTimer::wait_on_tick() {
 		std::unique_lock<std::mutex> lk(this->m);
 
-		while(!this->ready && !loopTimer::kill)
+		while (!this->ready && !loopTimer::kill)
 			this->cv.wait(lk);
 
 		this->ready = false;
