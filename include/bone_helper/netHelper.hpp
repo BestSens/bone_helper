@@ -22,9 +22,9 @@
 #include "nlohmann/json.hpp"
 #include "spdlog/spdlog.h"
 
-using json = nlohmann::json;
-
 namespace bestsens {
+	using json = nlohmann::json;
+
 	class netHelper {
 	public:
 		netHelper(std::string conn_target, std::string conn_port, bool use_msgpack = false) : conn_target(conn_target), conn_port(conn_port), user_level(0), use_msgpack(use_msgpack) {
