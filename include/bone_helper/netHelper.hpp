@@ -28,7 +28,7 @@ namespace bestsens {
 
 	class netHelper {
 	public:
-		netHelper(std::string conn_target, std::string conn_port, bool use_msgpack = false) : conn_target(conn_target), conn_port(conn_port), user_level(0), use_msgpack(use_msgpack) {
+		netHelper(std::string conn_target, std::string conn_port, bool use_msgpack = false, bool silent = false) : conn_target(conn_target), conn_port(conn_port), user_level(0), use_msgpack(use_msgpack), silent(silent) {
 			std::lock_guard<std::mutex> lock(this->sock_mtx);
 			
 			/*
@@ -44,7 +44,7 @@ namespace bestsens {
 			 * open socket
 			 */
 			if((this->sockfd = socket(this->res->ai_family, this->res->ai_socktype, this->res->ai_protocol)) == -1) {
-				spdlog::critical("socket");
+				if (!this->silent) spdlog::critical("socket");
 			}
 
 			this->set_timeout(this->timeout);
@@ -89,7 +89,8 @@ namespace bestsens {
 		std::string conn_port;
 
 		int user_level;
-		bool use_msgpack = false;
+		bool use_msgpack{false};
+		bool silent{false};
 	};
 
 	class jsonNetHelper : public netHelper {
@@ -138,23 +139,23 @@ namespace bestsens {
 		this->send_command("request_token", token_response, nullptr);
 
 		if(!token_response.at("payload").at("token").is_string()) {
-			spdlog::error("token request failed");
+			if (!this->silent) spdlog::error("token request failed");
 			return 0;
 		}
 
-		std::string token = token_response.at("payload").at("token").get<std::string>();
-		std::string hashed_password;
+		const auto token = token_response.at("payload").at("token").get<std::string>();
+		const auto hashed_password = [&]() -> std::string {
+			if (use_hash)
+				return password;
 
-		if(use_hash)
-			hashed_password = password;
-		else
-			hashed_password = this->sha512(password);
+			return this->sha512(password);
+		}();
 
 		/*
 		 * sign token
 		 */
-		std::string concat = hashed_password + token;
-		std::string login_token = this->sha512(concat);
+		const auto concat = hashed_password + token;
+		const auto login_token = this->sha512(concat);
 
 		/*
 		 * do login
@@ -169,7 +170,7 @@ namespace bestsens {
 
 		try {
 			if(login_response.at("payload").at("error").is_string())
-				spdlog::error("login failed: {}", login_response.at("payload").at("error").get<std::string>());
+				if (!this->silent) spdlog::error("login failed: {}", login_response.at("payload").at("error").get<std::string>());
 		} catch(...) {}
 
 		this->user_level = login_response.at("payload").at("user_level").get<int>();
@@ -232,31 +233,36 @@ namespace bestsens {
 
 		int t = this->recv(str.data(), data_len);
 
-		if(t > 0 && t == data_len) {
+		if (t > 0 && t == data_len) {
 			str[t] = '\0';
 
-			if(response != NULL) {
-				try{
-					if(!this->use_msgpack)
+			if (response != NULL) {
+				try {
+					if (!this->use_msgpack)
 						response = json::parse(str);
 					else {
 						str.erase(str.begin() + t);
 						response = json::from_msgpack(str);
 					}
 
-					if(response.empty())
-						spdlog::error("Error");
-					else
+					if (response.empty()) {
+						if (!this->silent) spdlog::error("Error");
+					} else {
 						return 1;
-				}
-				catch(const json::exception& ia) {
-					spdlog::error("{}", ia.what());
-					spdlog::error("input string: \"{}\"", str.data());
+					}
+				} catch(const json::exception& ia) {
+					if (!this->silent) {
+						spdlog::error("{}", ia.what());
+						spdlog::error("input string: \"{}\"", str.data());
+					}
 				}
 			}
 		} else {
-			spdlog::critical("could not receive all data");
-			spdlog::critical("input string: \"{}\"", str.data());
+			if (!this->silent) {
+				spdlog::critical("could not receive all data");
+				spdlog::critical("input string: \"{}\"", str.data());
+			}
+
 			throw std::runtime_error("could not receive all data");
 		}
 
@@ -307,29 +313,29 @@ namespace bestsens {
 					res = select(this->sockfd+1, NULL, &myset, NULL, &tv);
 
 					if(res < 0 && errno != EINTR) {
-						spdlog::critical("Error connecting {} - {}", errno, strerror(errno));
+						if (!this->silent) spdlog::critical("Error connecting {} - {}", errno, strerror(errno));
 						return 1; 
 					} else if (res > 0) {
 						socklen_t lon = sizeof(int);
 						if(getsockopt(this->sockfd, SOL_SOCKET, SO_ERROR, (void*)(&valopt), &lon) < 0) { 
-							spdlog::critical("Error in getsockopt() {} - {}", errno, strerror(errno)); 
+							if (!this->silent) spdlog::critical("Error in getsockopt() {} - {}", errno, strerror(errno)); 
 							return 1; 
 						}
 
 						if(valopt) { 
-							spdlog::critical("Error in delayed connection() {} - {}", valopt, strerror(valopt)); 
+							if (!this->silent) spdlog::critical("Error in delayed connection() {} - {}", valopt, strerror(valopt)); 
 							return 1;  
 						}
 
 						break;
 					} else {
-						spdlog::critical("Timeout in select() - Cancelling!"); 
+						if (!this->silent) spdlog::critical("Timeout in select() - Cancelling!"); 
 						return 1;
 					}
 				} while(1);
 			}
 		} else {
-			spdlog::critical("error connecting to {}:{}", this->conn_target, this->conn_port);
+			if (!this->silent) spdlog::critical("error connecting to {}:{}", this->conn_target, this->conn_port);
 			return 1;
 		}
 
@@ -377,7 +383,7 @@ namespace bestsens {
 			return -1;
 
 		/*
-		 * send data untill buffer is empty
+		 * send data until buffer is empty
 		 * or requested data len is reached
 		 */
 		unsigned int t = 0;
@@ -387,7 +393,7 @@ namespace bestsens {
 
 			if(count <= 0 && error_counter++ > 10) {
 				if(error_counter++ > 10) {
-					spdlog::critical("error sending data: {} ({})", errno, strerror(errno));
+					if (!this->silent) spdlog::critical("error sending data: {} ({})", errno, strerror(errno));
 					break;
 				}
 			} else {
@@ -414,7 +420,7 @@ namespace bestsens {
 
 			if(count <= 0) {
 				if(error_counter++ > 10) {
-					spdlog::critical("error receiving data: {} ({})", errno, strerror(errno));
+					if (!this->silent) spdlog::critical("error receiving data: {} ({})", errno, strerror(errno));
 					break;
 				}
 			} else {
