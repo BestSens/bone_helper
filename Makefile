@@ -12,6 +12,14 @@ else
 	CPPFLAGS += -Wall -Wextra -Wpedantic
 endif
 
+ifdef systemd
+	CPPFLAGS += -DENABLE_SYSTEMD_STATUS
+else
+	ifdef ENABLE_SYSTEMD_STATUS
+		CPPFLAGS += -DENABLE_SYSTEMD_STATUS
+	endif
+endif
+
 OBJ = loopTimer.o stdlib_backports.o system_helper.o
 BIN = bone_helper.a
 
