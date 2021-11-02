@@ -8,17 +8,18 @@
 #ifndef NETHELPER_HPP_
 #define NETHELPER_HPP_
 
-#include <sstream>
-#include <cstring>
-#include <mutex>
-#include <netdb.h>
 #include <fcntl.h>
-#include <unistd.h>
-
+#include <netdb.h>
+#include <openssl/sha.h>
 #include <sys/socket.h>
 #include <sys/types.h>
-#include <openssl/sha.h>
+#include <unistd.h>
 
+#include <cstring>
+#include <mutex>
+
+#include "fmt/format.h"
+#include "fmt/ranges.h"
 #include "nlohmann/json.hpp"
 #include "spdlog/spdlog.h"
 
@@ -69,7 +70,7 @@ namespace bestsens {
 
 		std::mutex& get_mutex();
 
-		static std::string sha512(std::string input);
+		static auto sha512(const std::string& input) -> std::string;
 		static unsigned int getLastRawPosition(const unsigned char * str);
 		static unsigned int getLastRawPosition(const char * str);
 
@@ -120,19 +121,12 @@ namespace bestsens {
 		return getLastRawPosition(reinterpret_cast<const unsigned char*>(str));
 	}
 
-	inline std::string netHelper::sha512(std::string input) {
-		unsigned char hash[SHA512_DIGEST_LENGTH];
-		char hash_hex[SHA512_DIGEST_LENGTH*2+1];
+	inline auto netHelper::sha512(const std::string& input) -> std::string {
+		std::array<unsigned char, SHA512_DIGEST_LENGTH> hash;
 
-		char* input_str = const_cast<char*>(input.c_str());
+		SHA512(reinterpret_cast<const unsigned char*>(input.c_str()), input.length(), hash.data());
 
-		SHA512(reinterpret_cast<unsigned char*>(input_str), input.length(), hash);
-
-		for(int i=0; i<SHA512_DIGEST_LENGTH; i++) {
-			sprintf(hash_hex + i*2, "%02x", hash[i]);
-		}
-
-		return std::string(hash_hex);
+		return fmt::format("{:02x}", fmt::join(hash, ""));
 	}
 
 	inline int netHelper::login(std::string user_name, std::string password, bool use_hash) {
@@ -211,10 +205,7 @@ namespace bestsens {
 		 * send data to server
 		 */
 		if(!this->use_msgpack) {
-			std::stringstream data_stream;
-			data_stream << temp << "\r\n";
-
-			this->send(data_stream.str());
+			this->send(fmt::format("{}\r\n", temp.dump()));
 		} else {
 			std::vector<uint8_t> v_msgpack = json::to_msgpack(temp);
 			v_msgpack.push_back('\r');
