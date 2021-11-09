@@ -10,7 +10,6 @@
 
 #include <fcntl.h>
 #include <netdb.h>
-#include <openssl/sha.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -18,6 +17,7 @@
 #include <cstring>
 #include <mutex>
 
+#include "bone_helper/sha512.hpp"
 #include "fmt/format.h"
 #include "fmt/ranges.h"
 #include "nlohmann/json.hpp"
@@ -123,11 +123,7 @@ namespace bestsens {
 	}
 
 	inline auto netHelper::sha512(const std::string& input) -> std::string {
-		std::array<unsigned char, SHA512_DIGEST_LENGTH> hash;
-
-		SHA512(reinterpret_cast<const unsigned char*>(input.c_str()), input.length(), hash.data());
-
-		return fmt::format("{:02x}", fmt::join(hash, ""));
+		return sw::sha512::calculate(input);
 	}
 
 	inline int netHelper::login(std::string user_name, std::string password, bool use_hash) {
