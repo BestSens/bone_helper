@@ -11,7 +11,6 @@
 *.lastbuildstate
 *.user
 *.o
-*.txt
 test/test
 *.gcda
 *.gcno
