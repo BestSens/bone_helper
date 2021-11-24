@@ -44,6 +44,8 @@ if(NOT GIT_COMMIT_HASH)
 	)
 endif()
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 configure_file(version_info.hpp.in version_info.hpp)
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
