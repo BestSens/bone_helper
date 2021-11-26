@@ -16,6 +16,12 @@ endif()
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 option(ENABLE_SYSTEMD "enable linking of systemd" ON)
+option(BUILD_TESTS "enable building of tests" ON)
+option(AUTORUN_TESTS "enable automatic runs of tests when building Release builds" ON)
+
+if(CMAKE_CROSSCOMPILING)
+	set(BUILD_TESTS OFF)
+endif()
 
 find_program(CCACHE_FOUND ccache)
 if(CCACHE_FOUND)
@@ -49,7 +55,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 configure_file(version_info.hpp.in version_info.hpp)
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
-if(${CMAKE_CROSSCOMPILING})
+if(CMAKE_CROSSCOMPILING)
 	set(THREADS_PTHREAD_ARG "2" CACHE STRING "Forcibly set by CMakeLists.txt." FORCE)
 endif()
 
