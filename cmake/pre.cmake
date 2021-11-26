@@ -23,6 +23,10 @@ if(CMAKE_CROSSCOMPILING)
 	set(BUILD_TESTS OFF)
 endif()
 
+if(BUILD_TESTS)
+	message(STATUS "building tests enabled")
+endif()
+
 find_program(CCACHE_FOUND ccache)
 if(CCACHE_FOUND)
 	message(STATUS "ccache enabled")
