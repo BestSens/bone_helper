@@ -4,3 +4,6 @@
 [submodule "test/libs/json"]
 	path = test/libs/json
 	url = https://github.com/nlohmann/json.git
+[submodule "libs/tinydir"]
+	path = libs/tinydir
+	url = https://github.com/cxong/tinydir.git

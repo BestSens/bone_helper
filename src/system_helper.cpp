@@ -7,7 +7,6 @@
 
 #include "bone_helper/system_helper.hpp"
 
-#include <dirent.h>
 #include <endian.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -29,6 +28,7 @@
 #endif
 
 #include "bone_helper/stdlib_backports.hpp"
+#include "tinydir.h"
 
 namespace bestsens {
 	namespace system_helper {
@@ -80,10 +80,6 @@ namespace bestsens {
 #endif
 		}
 
-		/*
-		 * © 2009 http://www.mdawson.net/misc/readDirectory.php
-		 * TODO: make custom implementation to avoid potential copyright problems
-		 */
 		auto readDirectory(const std::string &directory_location, const std::string &start_string,
 						   const std::string &extension, bool full_path = true) -> std::vector<std::string> {
 			std::vector<std::string> result;
@@ -91,18 +87,24 @@ namespace bestsens {
 			std::string lc_extension;
 			std::transform(extension.begin(), extension.end(), lc_extension.begin(), ::tolower);
 
-			DIR *dir = nullptr;
-			struct dirent *ent = nullptr;
+			tinydir_dir dir;
 
-			if ((dir = opendir(directory_location.c_str())) == nullptr)
+			if (tinydir_open(&dir, directory_location.c_str()) != 0)
 				throw std::runtime_error("error opening directory");
 
 			try {
-				while ((ent = readdir(dir)) != nullptr) { // NOLINT(concurrency-mt-unsafe)
-					const std::string entry(static_cast<char *>(ent->d_name));
+				while (dir.has_next) {
+					tinydir_file file;
 
-					std::string lc_entry;
-					std::transform(entry.begin(), entry.end(), lc_entry.begin(), ::tolower);
+					tinydir_readfile(&dir, &file);
+					tinydir_next(&dir);
+
+					if (file.is_dir)
+						continue;
+
+					const std::string entry(file.name);
+					std::string lc_entry(entry);
+					std::transform(lc_entry.begin(), lc_entry.end(), lc_entry.begin(), ::tolower);
 
 					if (backports::startsWith(lc_entry, start_string) && backports::endsWith(lc_entry, lc_extension)) {
 						if (full_path)
@@ -113,7 +115,7 @@ namespace bestsens {
 				}
 			} catch (...) {}
 
-			if (closedir(dir) != 0) { throw std::runtime_error("error closing directory"); }
+			tinydir_close(&dir);
 
 			std::sort(result.begin(), result.end());
 

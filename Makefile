@@ -1,4 +1,4 @@
-CPPFLAGS = -std=c++14 -pthread -MMD -MP -Iinclude/
+CPPFLAGS = -std=c++14 -pthread -MMD -MP -Iinclude/ -Ilibs/tinydir/
 
 ifndef DEBUG
 	CPPFLAGS += -O2 -DNDEBUG
