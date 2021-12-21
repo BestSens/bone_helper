@@ -86,8 +86,8 @@ namespace bestsens {
 
 			std::vector<std::string> result;
 
-			std::string lc_extension;
-			std::transform(extension.begin(), extension.end(), lc_extension.begin(), ::tolower);
+			std::string lc_extension(extension);
+			std::transform(lc_extension.begin(), lc_extension.end(), lc_extension.begin(), ::tolower);
 
 			tinydir_dir dir;
 
