@@ -28,6 +28,7 @@
 #endif
 
 #include "bone_helper/stdlib_backports.hpp"
+#include "bone_helper/strnatcmp.hpp"
 #include "tinydir.h"
 
 namespace bestsens {
@@ -80,8 +81,9 @@ namespace bestsens {
 #endif
 		}
 
-		auto readDirectory(const std::string &directory_location, const std::string &start_string,
-						   const std::string &extension, bool full_path = true) -> std::vector<std::string> {
+		auto readDirectoryUnsorted(const std::string &directory_location, const std::string &start_string,
+								   const std::string &extension, bool full_path = true) -> std::vector<std::string> {
+
 			std::vector<std::string> result;
 
 			std::string lc_extension;
@@ -117,7 +119,23 @@ namespace bestsens {
 
 			tinydir_close(&dir);
 
+			return result;
+		}
+
+		auto readDirectory(const std::string &directory_location, const std::string &start_string,
+						   const std::string &extension, bool full_path = true) -> std::vector<std::string> {
+
+			auto result = readDirectoryUnsorted(directory_location, start_string, extension, full_path);
 			std::sort(result.begin(), result.end());
+
+			return result;
+		}
+
+		auto readDirectoryNatural(const std::string &directory_location, const std::string &start_string,
+						   const std::string &extension, bool full_path = true) -> std::vector<std::string> {
+
+			auto result = readDirectoryUnsorted(directory_location, start_string, extension, full_path);
+			std::sort(result.begin(), result.end(), compareNat);
 
 			return result;
 		}

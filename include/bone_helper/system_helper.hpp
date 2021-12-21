@@ -30,6 +30,12 @@ namespace bestsens {
 		auto readDirectory(const std::string &directory_location, const std::string &start_string,
 						   const std::string &extension, bool full_path) -> std::vector<std::string>;
 
+		auto readDirectoryUnsorted(const std::string &directory_location, const std::string &start_string,
+								   const std::string &extension, bool full_path) -> std::vector<std::string>;
+
+		auto readDirectoryNatural(const std::string &directory_location, const std::string &start_string,
+								  const std::string &extension, bool full_path) -> std::vector<std::string>;
+
 		namespace systemd {
 			void ready();
 			void watchdog();
