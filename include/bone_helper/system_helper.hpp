@@ -46,6 +46,8 @@ namespace bestsens {
 			public:
 				MultiWatchdog();
 				~MultiWatchdog();
+				void enable();
+				void disable();
 				void trigger();
 			private:
 				int own_entry{0};

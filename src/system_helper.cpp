@@ -168,29 +168,37 @@ namespace bestsens {
 			std::mutex MultiWatchdog::list_mtx;
 			std::vector<int*> MultiWatchdog::watchdog_list;
 
+			void MultiWatchdog::enable() {
+				std::lock_guard<std::mutex> lock(this->list_mtx);
+				this->watchdog_list.push_back(&this->own_entry);
+			}
+
+			void MultiWatchdog::disable() {
+				std::lock_guard<std::mutex> lock(this->list_mtx);
+
+				auto it = std::find(this->watchdog_list.begin(), this->watchdog_list.end(), &this->own_entry);
+
+				if (it != this->watchdog_list.end()) this->watchdog_list.erase(it);
+			}
+
 			MultiWatchdog::MultiWatchdog() {
-				std::lock_guard<std::mutex> lock(list_mtx);
-				watchdog_list.push_back(&this->own_entry);
+				this->enable();
 			}
 
 			MultiWatchdog::~MultiWatchdog() {
-				std::lock_guard<std::mutex> lock(list_mtx);
-
-				auto it = std::find(watchdog_list.begin(), watchdog_list.end(), &this->own_entry);
-
-				if (it != watchdog_list.end()) watchdog_list.erase(it);
+				this->disable();
 			}
 
 			void MultiWatchdog::trigger() {
-				std::lock_guard<std::mutex> lock(list_mtx);
+				std::lock_guard<std::mutex> lock(this->list_mtx);
 				this->own_entry = 1;
 
-				for (const auto &e : watchdog_list)
+				for (const auto &e : this->watchdog_list)
 					if (*e == 0) return;
 
 				watchdog();
 
-				for (auto &e : watchdog_list)
+				for (auto &e : this->watchdog_list)
 					if (*e != -1) *e = 0;
 			}
 		}  // namespace systemd
