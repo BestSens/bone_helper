@@ -45,7 +45,7 @@ namespace bestsens {
 		int max_size() const;
 
 		std::vector<T> getVector(int amount) const;
-		std::vector<T> getVector(int amount, int &last_value) const;
+		std::vector<T> getVector(int amount, int &last_value, bool exactly = false) const;
 
 		void clear();
 
@@ -270,7 +270,14 @@ namespace bestsens {
 	}
 
 	template < typename T, int N >
-	std::vector<T> CircularBuffer<T, N>::getVector(int amount, int &last_value) const {
+	std::vector<T> CircularBuffer<T, N>::getVector(int amount, int &last_value, bool exactly) const {
+		if (exactly) {
+			const auto amount_available = this->getNewDataAmount(last_value);
+
+			if (amount_available < amount)
+				return {};
+		}
+
 		if (amount > this->item_count)
 			amount = this->item_count;
 
