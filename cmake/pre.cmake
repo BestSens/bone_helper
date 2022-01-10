@@ -30,8 +30,8 @@ endif()
 find_program(CCACHE_FOUND ccache)
 if(CCACHE_FOUND)
 	message(STATUS "ccache enabled")
-    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
-    set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
+	set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
+	set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
 endif(CCACHE_FOUND)
 
 if(NOT GIT_BRANCH)
@@ -56,7 +56,26 @@ endif()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-configure_file(version_info.hpp.in version_info.hpp)
+# depend on deleted version_info.hpp.temp to force rebuiling every time
+add_custom_target(version_header ALL DEPENDS 
+	${CMAKE_CURRENT_BINARY_DIR}/version_info.hpp
+	${CMAKE_CURRENT_BINARY_DIR}/version_info.hpp.temp
+)
+
+add_custom_command(OUTPUT
+	${CMAKE_CURRENT_BINARY_DIR}/version_info.hpp
+	${CMAKE_CURRENT_BINARY_DIR}/version_info.hpp.temp
+	COMMAND ${CMAKE_COMMAND}
+	-DCMAKE_PROJECT_VERSION_MAJOR=${CMAKE_PROJECT_VERSION_MAJOR}
+	-DCMAKE_PROJECT_VERSION_MINOR=${CMAKE_PROJECT_VERSION_MINOR}
+	-DCMAKE_PROJECT_VERSION_PATCH=${CMAKE_PROJECT_VERSION_PATCH}
+	-DGIT_BRANCH=${GIT_BRANCH}
+	-DGIT_COMMIT_HASH=${GIT_COMMIT_HASH}
+	-P ${CMAKE_CURRENT_LIST_DIR}/create_version_info.cmake)
+
+set_source_files_properties(${CMAKE_CURRENT_BINARY_DIR}/version_info.hpp
+	PROPERTIES GENERATED TRUE
+	HEADER_FILE_ONLY TRUE)
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 if(CMAKE_CROSSCOMPILING)
