@@ -92,7 +92,7 @@ namespace bestsens {
 			tinydir_dir dir;
 
 			if (tinydir_open(&dir, directory_location.c_str()) != 0)
-				throw std::runtime_error("error opening directory");
+				throw std::runtime_error("error opening directory" + directory_location);
 
 			try {
 				while (dir.has_next) {
@@ -108,7 +108,7 @@ namespace bestsens {
 					std::string lc_entry(entry);
 					std::transform(lc_entry.begin(), lc_entry.end(), lc_entry.begin(), ::tolower);
 
-					if (backports::startsWith(lc_entry, start_string) && backports::endsWith(lc_entry, lc_extension)) {
+					if (backports::startsWith(entry, start_string) && backports::endsWith(lc_entry, lc_extension)) {
 						if (full_path)
 							result.push_back(directory_location + "/" + entry);
 						else
