@@ -20,7 +20,7 @@ else
 	endif
 endif
 
-OBJ = loopTimer.o stdlib_backports.o system_helper.o
+OBJ = loopTimer.o stdlib_backports.o system_helper.o netHelper.o
 BIN = bone_helper.a
 
 DEPFILES := $(OBJ:.o=.d)
