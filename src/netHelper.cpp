@@ -18,6 +18,7 @@
 #include <string>
 
 #include "bone_helper/sha512.hpp"
+#include "bone_helper/system_helper.hpp"
 #include "fmt/format.h"
 #include "fmt/ranges.h"
 #include "nlohmann/json.hpp"
@@ -26,12 +27,8 @@
 namespace bestsens {
 	using json = nlohmann::json;
 
-	netHelper::netHelper(const std::string& conn_target, const std::string& conn_port, bool use_msgpack, bool silent) {
-		this->conn_target = conn_target;
-		this->conn_port = conn_port;
-		this->use_msgpack = use_msgpack;
-		this->silent = silent;
-
+	netHelper::netHelper(std::string conn_target, std::string conn_port, bool use_msgpack, bool silent)
+		: conn_target(std::move(conn_target)), conn_port(std::move(conn_port)), use_msgpack(use_msgpack), silent(silent) {
 		std::lock_guard<std::mutex> lock(this->sock_mtx);
 		
 		/*
@@ -56,12 +53,12 @@ namespace bestsens {
 		this->set_timeout(this->timeout);
 	}
 
-	netHelper::~netHelper() {
+	netHelper::~netHelper() noexcept {
 		this->disconnect();
 		freeaddrinfo(this->res);
 	}
 
-	auto netHelper::get_sockfd() -> int {
+	auto netHelper::get_sockfd() const -> int {
 		return this->sockfd;
 	}
 
@@ -83,7 +80,7 @@ namespace bestsens {
 	}
 
 	auto netHelper::getLastRawPosition(const char* str) -> unsigned int {
-		return getLastRawPosition(reinterpret_cast<const unsigned char*>(str));
+		return getLastRawPosition(reinterpret_cast<const unsigned char*>(str)); //NOLINT (cppcoreguidelines-pro-type-reinterpret-cast)
 	}
 
 	auto netHelper::sha512(const std::string& input) -> std::string {
@@ -140,20 +137,20 @@ namespace bestsens {
 		return this->user_level;
 	}
 
-	auto netHelper::is_logged_in() -> int {
+	auto netHelper::is_logged_in() const -> int {
 		return this->user_level;
 	}
 
 	auto netHelper::set_timeout(const int timeout) -> int {
 		this->timeout = timeout;
 
-		struct timeval tv;
+		struct timeval tv{};
 		tv.tv_sec = timeout;
 		tv.tv_usec = 0;
-		return setsockopt(this->sockfd, SOL_SOCKET, SO_RCVTIMEO, reinterpret_cast<const char*>(&tv), sizeof tv);
+		return setsockopt(this->sockfd, SOL_SOCKET, SO_RCVTIMEO, reinterpret_cast<const char*>(&tv), sizeof tv); //NOLINT (cppcoreguidelines-pro-type-reinterpret-cast)
 	}
 
-	auto netHelper::send_command(const std::string& command, json& response, json payload, int api_version) -> int {
+	auto netHelper::send_command(const std::string& command, json& response, const json& payload, int api_version) -> int {
 		json temp = {{"command", command}};
 
 		if (payload.is_object())
@@ -180,12 +177,12 @@ namespace bestsens {
 		/*
 		 * receive data length
 		 */
-		int data_len = 0;
-		char len_buffer[9];
+		unsigned long data_len = 0;
+		std::array<char, 9> len_buffer{};
 
-		if (this->recv(&len_buffer, 8) == 8) {
+		if (this->recv(len_buffer.data(), 8) == 8) {
 			len_buffer[8] = '\0';
-			data_len = strtoul(len_buffer, NULL, 16);
+			data_len = strtoul(static_cast<char*>(len_buffer.data()), nullptr, 16);
 		}
 
 		/*
@@ -193,30 +190,28 @@ namespace bestsens {
 		 */
 		std::vector<uint8_t> str(data_len+1);
 
-		int t = this->recv(str.data(), data_len);
+		const auto t = this->recv(str.data(), data_len);
 
-		if (t > 0 && t == data_len) {
+		if (t > 0 && static_cast<unsigned long>(t) == data_len) {
 			str[t] = '\0';
 
-			if (response != NULL) {
-				try {
-					if (!this->use_msgpack)
-						response = json::parse(str);
-					else {
-						str.erase(str.begin() + t);
-						response = json::from_msgpack(str);
-					}
+			try {
+				if (!this->use_msgpack)
+					response = json::parse(str);
+				else {
+					str.erase(str.begin() + t);
+					response = json::from_msgpack(str);
+				}
 
-					if (response.empty()) {
-						if (!this->silent) spdlog::error("Error");
-					} else {
-						return 1;
-					}
-				} catch(const json::exception& ia) {
-					if (!this->silent) {
-						spdlog::error("{}", ia.what());
-						spdlog::error("input string: \"{}\"", str.data());
-					}
+				if (response.empty()) {
+					if (!this->silent) spdlog::error("Error");
+				} else {
+					return 1;
+				}
+			} catch(const json::exception& ia) {
+				if (!this->silent) {
+					spdlog::error("{}", ia.what());
+					spdlog::error("input string: \"{}\"", str.data());
 				}
 			}
 		} else {
@@ -231,7 +226,7 @@ namespace bestsens {
 		return 0;
 	}
 
-	auto netHelper::is_connected() -> int {
+	auto netHelper::is_connected() const -> bool {
 		return this->connected;
 	}
 
@@ -240,8 +235,8 @@ namespace bestsens {
 			return 1;
 
 		// Set non-blocking 
-		long arg;
-		if ((arg = fcntl(this->sockfd, F_GETFL, NULL)) < 0)
+		long arg{0};
+		if ((arg = fcntl(this->sockfd, F_GETFL, nullptr)) < 0)
 			throw std::runtime_error("Error fcntl(..., F_GETFL)");
 
 		arg |= O_NONBLOCK; 
@@ -255,32 +250,35 @@ namespace bestsens {
 
 		std::lock_guard<std::mutex> lock(this->sock_mtx);
 
-		int res = ::connect(this->sockfd, this->res->ai_addr, this->res->ai_addrlen);
+		auto res = ::connect(this->sockfd, this->res->ai_addr, this->res->ai_addrlen);
 		fd_set myset;
-		int valopt;
-		struct timeval tv;
+		int valopt{0};
+		struct timeval tv{};
 
 		if (res < 0) {
 			if (errno == EINPROGRESS) {
 				do {
 					tv.tv_sec = this->timeout;
 					tv.tv_usec = 0;
-					FD_ZERO(&myset); 
-					FD_SET(this->sockfd, &myset);
-					res = select(this->sockfd+1, NULL, &myset, NULL, &tv);
+					FD_ZERO(&myset); // NOLINT(readability-isolate-declaration)
+					FD_SET(this->sockfd, &myset); // NOLINT(cppcoreguidelines-pro-bounds-constant-array-index)
+					res = select(this->sockfd+1, nullptr, &myset, nullptr, &tv);
 
 					if (res < 0 && errno != EINTR) {
-						if (!this->silent) spdlog::critical("Error connecting {} - {}", errno, strerror(errno));
-						return 1; 
+						if (!this->silent)
+							spdlog::critical("Error connecting {} - {}", errno, bestsens::strerror(errno));
+						return 1;
 					} else if (res > 0) {
 						socklen_t lon = sizeof(int);
-						if (getsockopt(this->sockfd, SOL_SOCKET, SO_ERROR, (void*)(&valopt), &lon) < 0) { 
-							if (!this->silent) spdlog::critical("Error in getsockopt() {} - {}", errno, strerror(errno)); 
+						if (getsockopt(this->sockfd, SOL_SOCKET, SO_ERROR, (void*)(&valopt), &lon) < 0) {
+							if (!this->silent)
+								spdlog::critical("Error in getsockopt() {} - {}", errno, bestsens::strerror(errno));
 							return 1; 
 						}
 
-						if (valopt) { 
-							if (!this->silent) spdlog::critical("Error in delayed connection() {} - {}", valopt, strerror(valopt)); 
+						if (valopt != 0) {
+							if (!this->silent)
+								spdlog::critical("Error in delayed connection() {} - {}", valopt, bestsens::strerror(valopt));
 							return 1;  
 						}
 
@@ -289,7 +287,7 @@ namespace bestsens {
 						if (!this->silent) spdlog::critical("Timeout in select() - Cancelling!"); 
 						return 1;
 					}
-				} while(1);
+				} while(true);
 			}
 		} else {
 			if (!this->silent) spdlog::critical("error connecting to {}:{}", this->conn_target, this->conn_port);
@@ -307,35 +305,32 @@ namespace bestsens {
 
 		// I hope that is all 
 
-		this->connected = 1;
+		this->connected = true;
 
 		return 0;
 	}
 
-	auto netHelper::disconnect() -> int {
+	void netHelper::disconnect() noexcept {
 		if (!this->connected)
-			return -1;
+			return;
 
 		std::lock_guard<std::mutex> lock(this->sock_mtx);
 
-		if (close(this->sockfd))
-			throw std::runtime_error("error closing socket");
+		close(this->sockfd);
 
-		this->connected = 0;
-
-		return 0;
+		this->connected = false;
 	}
 
-	auto netHelper::send(const char * data) -> int {
+	auto netHelper::send(const char * data) const -> int {
 		return this->send(std::string(data));
 	}
 
-	auto netHelper::send(const std::vector<uint8_t>& data) -> int {
-		std::string s(data.begin(), data.end());
+	auto netHelper::send(const std::vector<uint8_t>& data) const -> int {
+		const std::string s(data.begin(), data.end());
 		return this->send(s);
 	}
 
-	auto netHelper::send(const std::string& data) -> int {
+	auto netHelper::send(const std::string& data) const -> int {
 		if (!this->connected)
 			return -1;
 
@@ -350,7 +345,7 @@ namespace bestsens {
 
 			if (count <= 0 && error_counter++ > 10) {
 				if (error_counter++ > 10) {
-					if (!this->silent) spdlog::critical("error sending data: {} ({})", errno, strerror(errno));
+					if (!this->silent) spdlog::critical("error sending data: {} ({})", errno, bestsens::strerror(errno));
 					break;
 				}
 			} else {
@@ -362,7 +357,7 @@ namespace bestsens {
 		return static_cast<int>(t);
 	}
 
-	auto netHelper::recv(void * buffer, size_t read_size) -> int {
+	auto netHelper::recv(void * buffer, size_t read_size) const -> int {
 		if (!this->connected)
 			return -1;
 
@@ -373,11 +368,11 @@ namespace bestsens {
 		unsigned int t = 0;
 		int error_counter = 0;
 		while (t < read_size) {
-			const auto count = ::recv(this->sockfd, reinterpret_cast<char *>(buffer) + t, read_size - t, 0);
+			const auto count = ::recv(this->sockfd, static_cast<char *>(buffer) + t, read_size - t, 0);
 
 			if (count <= 0) {
 				if (error_counter++ > 10) {
-					if (!this->silent) spdlog::critical("error receiving data: {} ({})", errno, strerror(errno));
+					if (!this->silent) spdlog::critical("error receiving data: {} ({})", errno, bestsens::strerror(errno));
 					break;
 				}
 			} else {

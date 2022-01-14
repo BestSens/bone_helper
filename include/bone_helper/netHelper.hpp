@@ -20,27 +20,26 @@
 namespace bestsens {
 	class netHelper {
 	public:
-		netHelper(const std::string& conn_target, const std::string& conn_port, bool use_msgpack = false,
-				  bool silent = false);
-		~netHelper();
+		netHelper(std::string conn_target, std::string conn_port, bool use_msgpack = false, bool silent = false);
+		~netHelper() noexcept;
 
 		auto connect() -> int;
-		auto disconnect() -> int;
+		void disconnect() noexcept;
 		auto login(const std::string& user_name, const std::string& password, bool use_hash = 1) -> int;
 
-		auto is_logged_in() -> int;
+		auto is_logged_in() const -> int;
 
-		auto is_connected() -> int;
+		auto is_connected() const -> bool;
 
-		auto send(const std::string& data) -> int;
-		auto send(const char * data) -> int;
-		auto send(const std::vector<uint8_t>& data) -> int;
-		auto send_command(const std::string& command, nlohmann::json& response, nlohmann::json payload = {},
+		auto send(const std::string& data) const -> int;
+		auto send(const char * data) const -> int;
+		auto send(const std::vector<uint8_t>& data) const -> int;
+		auto send_command(const std::string& command, nlohmann::json& response, const nlohmann::json& payload = {},
 						  int api_version = 0) -> int;
 
 		auto set_timeout(const int timeout) -> int;
 
-		auto get_sockfd() -> int;
+		auto get_sockfd() const -> int;
 
 		auto get_mutex() -> std::mutex&;
 
@@ -48,13 +47,13 @@ namespace bestsens {
 		static auto getLastRawPosition(const unsigned char * str) -> unsigned int;
 		static auto getLastRawPosition(const char * str) -> unsigned int;
 
-		auto recv(void * buffer, size_t read_size) -> int;
+		auto recv(void * buffer, size_t read_size) const -> int;
 	private:
 		int sockfd{-1};
-		int connected{0};
+		bool connected{false};
 		int timeout{10};
-		struct addrinfo remote;
-		struct addrinfo * res;
+		struct addrinfo remote{};
+		struct addrinfo * res{nullptr};
 
 		std::mutex sock_mtx;
 
