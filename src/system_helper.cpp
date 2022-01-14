@@ -95,16 +95,16 @@ namespace bestsens {
 				throw std::runtime_error("error opening directory" + directory_location);
 
 			try {
-				while (dir.has_next) {
+				while (dir.has_next != 0) {
 					tinydir_file file;
 
 					tinydir_readfile(&dir, &file);
 					tinydir_next(&dir);
 
-					if (file.is_dir)
+					if (file.is_dir != 0)
 						continue;
 
-					const std::string entry(file.name);
+					const std::string entry(static_cast<char*>(file.name));
 					std::string lc_entry(entry);
 					std::transform(lc_entry.begin(), lc_entry.end(), lc_entry.begin(), ::tolower);
 
@@ -169,16 +169,16 @@ namespace bestsens {
 			std::vector<int*> MultiWatchdog::watchdog_list;
 
 			void MultiWatchdog::enable() {
-				std::lock_guard<std::mutex> lock(this->list_mtx);
-				this->watchdog_list.push_back(&this->own_entry);
+				std::lock_guard<std::mutex> lock(MultiWatchdog::list_mtx);
+				MultiWatchdog::watchdog_list.push_back(&this->own_entry);
 			}
 
 			void MultiWatchdog::disable() {
-				std::lock_guard<std::mutex> lock(this->list_mtx);
+				std::lock_guard<std::mutex> lock(MultiWatchdog::list_mtx);
 
-				auto it = std::find(this->watchdog_list.begin(), this->watchdog_list.end(), &this->own_entry);
+				auto it = std::find(MultiWatchdog::watchdog_list.begin(), MultiWatchdog::watchdog_list.end(), &this->own_entry);
 
-				if (it != this->watchdog_list.end()) this->watchdog_list.erase(it);
+				if (it != MultiWatchdog::watchdog_list.end()) MultiWatchdog::watchdog_list.erase(it);
 			}
 
 			MultiWatchdog::MultiWatchdog() {
@@ -190,15 +190,15 @@ namespace bestsens {
 			}
 
 			void MultiWatchdog::trigger() {
-				std::lock_guard<std::mutex> lock(this->list_mtx);
+				std::lock_guard<std::mutex> lock(MultiWatchdog::list_mtx);
 				this->own_entry = 1;
 
-				for (const auto &e : this->watchdog_list)
+				for (const auto &e : MultiWatchdog::watchdog_list)
 					if (*e == 0) return;
 
 				watchdog();
 
-				for (auto &e : this->watchdog_list)
+				for (auto &e : MultiWatchdog::watchdog_list)
 					if (*e != -1) *e = 0;
 			}
 		}  // namespace systemd

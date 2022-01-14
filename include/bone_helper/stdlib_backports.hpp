@@ -56,12 +56,12 @@ namespace backports {
 		return !cmp_less(t, u);
 	}
 
-	bool endsWith(const std::string& str, const std::string& suffix);
-	bool startsWith(const std::string& str, const std::string& prefix);
-	bool endsWith(const std::string& str, const char* suffix, unsigned suffixLen);
-	bool endsWith(const std::string& str, const char* suffix);
-	bool startsWith(const std::string& str, const char* prefix, unsigned prefixLen);
-	bool startsWith(const std::string& str, const char* prefix);
+	auto endsWith(const std::string& str, const std::string& suffix) -> bool;
+	auto startsWith(const std::string& str, const std::string& prefix) -> bool;
+	auto endsWith(const std::string& str, const char* suffix, unsigned suffix_len) -> bool;
+	auto endsWith(const std::string& str, const char* suffix) -> bool;
+	auto startsWith(const std::string& str, const char* prefix, unsigned prefix_len) -> bool;
+	auto startsWith(const std::string& str, const char* prefix) -> bool;
 }  // namespace backports
 
 #endif /* CPP_BACKPORTS_HPP_ */
