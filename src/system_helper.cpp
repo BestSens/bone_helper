@@ -170,7 +170,7 @@ namespace bestsens {
 
 			void error(__attribute__((unused)) int errno) {
 #ifdef ENABLE_SYSTEMD_STATUS
-				sd_notifyf(0, "STATUS=%s\nERRNO=%d", strerror(errno), errno);
+				sd_notifyf(0, "STATUS=%s\nERRNO=%d", bestsens::strerror(errno).c_str(), errno);
 #endif
 			}
 
