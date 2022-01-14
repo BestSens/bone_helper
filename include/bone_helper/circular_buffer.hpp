@@ -18,6 +18,40 @@
 #include <vector>
 
 namespace bestsens {
+	template <typename T>
+	auto subtractWithRollover(const T& a, const T& b, const T& limit = std::numeric_limits<T>::max()) -> T {
+		assert(a >= 0 && b >= 0);
+		assert(a <= limit && b <= limit);
+
+		if (a - b < 0)
+			return (limit - b) + a + 1;
+
+		return a - b;
+	}
+
+	template <typename T>
+	auto addWithRollover(const T& a, const T& b, const T& limit = std::numeric_limits<T>::max()) -> T {
+		assert(a >= 0 && b >= 0);
+		assert(a <= limit && b <= limit);
+
+		const auto diff_to_overflow = limit - a;
+
+		if (diff_to_overflow < b)
+			return b - diff_to_overflow - 1;
+		
+		return a + b;	
+	}
+
+	template <typename T>
+	void incrementWithRollover(T& a, const T& limit = std::numeric_limits<T>::max()) {
+		a = addWithRollover(a, 1, limit);
+	}
+
+	template <typename T>
+	void decrementWithRollover(T& a, const T& limit = std::numeric_limits<T>::max()) {
+		a = subtractWithRollover(a, 1, limit);
+	}
+
 	template < typename T, int N >
 	class CircularBuffer {
 	public:
@@ -129,7 +163,7 @@ namespace bestsens {
 		if (this->item_count < N)
 			this->item_count++;
 
-		this->base_id = (this->base_id + 1) % std::numeric_limits<int>::max();
+		incrementWithRollover(this->base_id);
 
 		return 0;
 	}
@@ -147,7 +181,7 @@ namespace bestsens {
 		if(this->item_count < N)
 			this->item_count++;
 
-		this->base_id = (this->base_id + 1) % std::numeric_limits<int>::max();
+		incrementWithRollover(this->base_id);
 
 		return 0;
 	}
@@ -167,7 +201,7 @@ namespace bestsens {
 			if(this->item_count < N)
 				this->item_count++;
 
-			this->base_id = (this->base_id + 1) % std::numeric_limits<int>::max();
+			incrementWithRollover(this->base_id);
 		}
 
 		return 0;
@@ -255,16 +289,7 @@ namespace bestsens {
 
 	template < typename T, int N >
 	int CircularBuffer<T, N>::getNewDataAmount(int last_value) const {
-		auto subtractWithRollover = [](int a, int b) {
-		    assert(a > 0 && b > 0);
-
-		    if(a - b < 0)
-		        return (std::numeric_limits<int>::max() - b) + a + 1;
-
-		    return a - b;
-		};
-
-		int difference = subtractWithRollover(this->base_id, last_value);
+		const auto difference = subtractWithRollover(this->base_id, last_value);
 		
 		return std::min(difference, this->item_count);
 	}
