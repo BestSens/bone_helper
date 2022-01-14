@@ -32,6 +32,15 @@
 #include "tinydir.h"
 
 namespace bestsens {
+	auto strerror(int errnum) -> std::string {
+		std::string output_string;
+		output_string.resize(256);
+
+		strerror_r(errnum, &output_string[0], output_string.size());
+
+		return output_string;
+	}
+
 	namespace system_helper {
 		void daemonize() {
 			/* Fork off the parent process */

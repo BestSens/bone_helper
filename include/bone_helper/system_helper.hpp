@@ -20,6 +20,8 @@
 #endif
 
 namespace bestsens {
+	auto strerror(int errnum) -> std::string;
+	
 	namespace system_helper {
 		void daemonize();
 
