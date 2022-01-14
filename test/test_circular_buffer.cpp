@@ -1,5 +1,6 @@
 #include "catch2/catch.hpp"
 
+#include <iostream>
 #include <limits>
 #include <thread>
 
