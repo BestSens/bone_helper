@@ -52,7 +52,7 @@ namespace bestsens {
 	template < typename T, int N >
 	class CircularBuffer {
 	public:
-		CircularBuffer() noexcept = default;
+		CircularBuffer() = default;
 		CircularBuffer(const CircularBuffer& src) noexcept;
 		CircularBuffer(CircularBuffer&& src) noexcept;
 		
