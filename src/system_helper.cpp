@@ -33,12 +33,8 @@
 
 namespace bestsens {
 	auto strerror_s(int errnum) -> std::string {
-		std::string output_string;
-		output_string.resize(256);
-
-		strerror_r(errnum, &output_string[0], output_string.size());
-
-		return output_string;
+		std::array<char, 256> buffer;
+		return {strerror_r(errnum, buffer.data(), buffer.size())};
 	}
 
 	namespace system_helper {
