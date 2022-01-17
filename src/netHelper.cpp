@@ -80,7 +80,8 @@ namespace bestsens {
 	}
 
 	auto netHelper::getLastRawPosition(const char* str) -> unsigned int {
-		return getLastRawPosition(reinterpret_cast<const unsigned char*>(str)); //NOLINT (cppcoreguidelines-pro-type-reinterpret-cast)
+		// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+		return getLastRawPosition(reinterpret_cast<const unsigned char*>(str));
 	}
 
 	auto netHelper::sha512(const std::string& input) -> std::string {
@@ -147,7 +148,9 @@ namespace bestsens {
 		struct timeval tv{};
 		tv.tv_sec = timeout;
 		tv.tv_usec = 0;
-		return setsockopt(this->sockfd, SOL_SOCKET, SO_RCVTIMEO, reinterpret_cast<const char*>(&tv), sizeof tv); //NOLINT (cppcoreguidelines-pro-type-reinterpret-cast)
+
+		// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+		return setsockopt(this->sockfd, SOL_SOCKET, SO_RCVTIMEO, reinterpret_cast<const char*>(&tv), sizeof tv);
 	}
 
 	auto netHelper::send_command(const std::string& command, json& response, const json& payload, int api_version) -> int {
@@ -345,7 +348,8 @@ namespace bestsens {
 
 			if (count <= 0 && error_counter++ > 10) {
 				if (error_counter++ > 10) {
-					if (!this->silent) spdlog::critical("error sending data: {} ({})", errno, bestsens::strerror_s(errno));
+					if (!this->silent)
+						spdlog::critical("error sending data: {} ({})", errno, bestsens::strerror_s(errno));
 					break;
 				}
 			} else {
@@ -372,7 +376,8 @@ namespace bestsens {
 
 			if (count <= 0) {
 				if (error_counter++ > 10) {
-					if (!this->silent) spdlog::critical("error receiving data: {} ({})", errno, bestsens::strerror_s(errno));
+					if (!this->silent)
+						spdlog::critical("error receiving data: {} ({})", errno, bestsens::strerror_s(errno));
 					break;
 				}
 			} else {
