@@ -266,19 +266,19 @@ namespace bestsens {
 
 					if (res < 0 && errno != EINTR) {
 						if (!this->silent)
-							spdlog::critical("Error connecting {} - {}", errno, bestsens::strerror(errno));
+							spdlog::critical("Error connecting {} - {}", errno, bestsens::strerror_s(errno));
 						return 1;
 					} else if (res > 0) {
 						socklen_t lon = sizeof(int);
 						if (getsockopt(this->sockfd, SOL_SOCKET, SO_ERROR, (void*)(&valopt), &lon) < 0) {
 							if (!this->silent)
-								spdlog::critical("Error in getsockopt() {} - {}", errno, bestsens::strerror(errno));
+								spdlog::critical("Error in getsockopt() {} - {}", errno, bestsens::strerror_s(errno));
 							return 1; 
 						}
 
 						if (valopt != 0) {
 							if (!this->silent)
-								spdlog::critical("Error in delayed connection() {} - {}", valopt, bestsens::strerror(valopt));
+								spdlog::critical("Error in delayed connection() {} - {}", valopt, bestsens::strerror_s(valopt));
 							return 1;  
 						}
 
@@ -345,7 +345,7 @@ namespace bestsens {
 
 			if (count <= 0 && error_counter++ > 10) {
 				if (error_counter++ > 10) {
-					if (!this->silent) spdlog::critical("error sending data: {} ({})", errno, bestsens::strerror(errno));
+					if (!this->silent) spdlog::critical("error sending data: {} ({})", errno, bestsens::strerror_s(errno));
 					break;
 				}
 			} else {
@@ -372,7 +372,7 @@ namespace bestsens {
 
 			if (count <= 0) {
 				if (error_counter++ > 10) {
-					if (!this->silent) spdlog::critical("error receiving data: {} ({})", errno, bestsens::strerror(errno));
+					if (!this->silent) spdlog::critical("error receiving data: {} ({})", errno, bestsens::strerror_s(errno));
 					break;
 				}
 			} else {

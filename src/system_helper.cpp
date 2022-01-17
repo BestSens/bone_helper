@@ -32,7 +32,7 @@
 #include "tinydir.h"
 
 namespace bestsens {
-	auto strerror(int errnum) -> std::string {
+	auto strerror_s(int errnum) -> std::string {
 		std::string output_string;
 		output_string.resize(256);
 
@@ -170,7 +170,7 @@ namespace bestsens {
 
 			void error(__attribute__((unused)) int errno) {
 #ifdef ENABLE_SYSTEMD_STATUS
-				sd_notifyf(0, "STATUS=%s\nERRNO=%d", bestsens::strerror(errno).c_str(), errno);
+				sd_notifyf(0, "STATUS=%s\nERRNO=%d", bestsens::strerror_s(errno).c_str(), errno);
 #endif
 			}
 
