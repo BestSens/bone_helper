@@ -17,10 +17,10 @@
 #include <exception>
 #include <string>
 
-#include "bone_helper/sha512.hpp"
 #include "bone_helper/system_helper.hpp"
 #include "fmt/format.h"
 #include "fmt/ranges.h"
+#include "mbedtls/sha512.h"
 #include "nlohmann/json.hpp"
 #include "spdlog/spdlog.h"
 
@@ -85,7 +85,10 @@ namespace bestsens {
 	}
 
 	auto netHelper::sha512(const std::string& input) -> std::string {
-		return sw::sha512::calculate(input);
+		std::array<unsigned char, 64> output_buffer;
+		// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+		mbedtls_sha512(reinterpret_cast<const unsigned char*>(input.c_str()), input.size(), output_buffer.data(), 0);
+		return fmt::format("{:02x}", fmt::join(output_buffer, ""));
 	}
 
 	auto netHelper::login(const std::string& user_name, const std::string& password, bool use_hash) -> int {
