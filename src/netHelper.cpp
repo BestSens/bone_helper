@@ -20,15 +20,51 @@
 #include "bone_helper/system_helper.hpp"
 #include "fmt/format.h"
 #include "fmt/ranges.h"
+#include "mbedtls/ctr_drbg.h"
+#include "mbedtls/entropy.h"
+#include "mbedtls/error.h"
+#include "mbedtls/platform.h"
 #include "mbedtls/sha512.h"
+#include "mbedtls/ssl.h"
 #include "nlohmann/json.hpp"
 #include "spdlog/spdlog.h"
+
+namespace {
+	// const char SSL_CA_PEM[] =
+	// 	"-----BEGIN CERTIFICATE-----\n"
+	// 	"MIID5zCCAs+gAwIBAgIJAJVglSrku6bZMA0GCSqGSIb3DQEBCwUAMIGJMQswCQYD\n"
+	// 	"VQQGEwJERTEQMA4GA1UECAwHQmF2YXJpYTEPMA0GA1UEBwwGQ29idXJnMRQwEgYD\n"
+	// 	"VQQKDAtCZXN0U2VucyBBRzEOMAwGA1UECwwFQmVNb1MxIjAgBgkqhkiG9w0BCQEW\n"
+	// 	"E3NlcnZpY2VAYmVzdHNlbnMuZGUxDTALBgNVBAMMBGJvbmUwHhcNMTcwNDIxMDg1\n"
+	// 	"OTM2WhcNMjcwNDE5MDg1OTM2WjCBiTELMAkGA1UEBhMCREUxEDAOBgNVBAgMB0Jh\n"
+	// 	"dmFyaWExDzANBgNVBAcMBkNvYnVyZzEUMBIGA1UECgwLQmVzdFNlbnMgQUcxDjAM\n"
+	// 	"BgNVBAsMBUJlTW9TMSIwIAYJKoZIhvcNAQkBFhNzZXJ2aWNlQGJlc3RzZW5zLmRl\n"
+	// 	"MQ0wCwYDVQQDDARib25lMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA\n"
+	// 	"vxQ7rBCtG8nz1UGP1WsNy229GKgFH6J1FEsiElEjZmejj4TxO5I/PdFjzkwzXKnD\n"
+	// 	"GBB1qz7zaKt6R6K6hGGyeYmGDf3VmZSdSaN79korl5czRCGW7iZdVQ5Q8VQ85drF\n"
+	// 	"1UpYOf5Xhr2coY6zQHRflHmo6cc0SNQEf4Dtx1UnfaXNPJnQk3Tc3C+E70Ez58Xy\n"
+	// 	"cD0neHkG5T0ca9LJCC5kqksDKjKxjSYATnGcgTROaLRRN1aESIu2INQsYUzJDf2c\n"
+	// 	"3IuQCtPxOeJgKypYBsR24JPpMqIG8S6QO1rzCpjzf2HEMFN0Bt7oywHYP1O6s4oK\n"
+	// 	"P7h0/qdyjJydw1SY1bShoQIDAQABo1AwTjAdBgNVHQ4EFgQUUXsEp8yjnTn13hiL\n"
+	// 	"DJnrBxcgXXwwHwYDVR0jBBgwFoAUUXsEp8yjnTn13hiLDJnrBxcgXXwwDAYDVR0T\n"
+	// 	"BAUwAwEB/zANBgkqhkiG9w0BAQsFAAOCAQEAEDrPVsegwD92J+MpP1+oCj32z6Jo\n"
+	// 	"kgmi3f7F7ObUbLGNRd3TGg3NnUXxbemz9+p1cZ2GStjoegr9sv9Xn6dZC/BdcrG4\n"
+	// 	"AY5DZ83no5ggggZDFsbgLYgS0HQnDZ3AgR704/Y36R8O1TqGidjoj05EBwg7i5GJ\n"
+	// 	"hip7dLnCL2zfFKY9KC2VETYxxR2vhb87I420YujCYtufYP5Wq+/53dE62XY8Aguq\n"
+	// 	"/ytIwAUhhYR6w1qkYVCQCbFfoTmNa8jjd2wcgnYgUdJDlpYrOh3s2xwYFrk+TGjq\n"
+	// 	"wBjCPvQ/iji6hmgRM/q6C8+prijWHso0IHanCXO355iV/rnvBkIWy+6j0g==\n"
+	// 	"-----END CERTIFICATE-----\n";
+}  // namespace
 
 namespace bestsens {
 	using json = nlohmann::json;
 
-	netHelper::netHelper(std::string conn_target, std::string conn_port, bool use_msgpack, bool silent)
-		: conn_target(std::move(conn_target)), conn_port(std::move(conn_port)), use_msgpack(use_msgpack), silent(silent) {
+	netHelper::netHelper(std::string conn_target, std::string conn_port, bool use_msgpack, bool silent, bool use_ssl)
+		: conn_target(std::move(conn_target)),
+		  conn_port(std::move(conn_port)),
+		  use_msgpack(use_msgpack),
+		  silent(silent),
+		  use_ssl(use_ssl) {
 		std::lock_guard<std::mutex> lock(this->sock_mtx);
 		
 		/*
@@ -43,6 +79,9 @@ namespace bestsens {
 
 		if (retval != 0) throw std::runtime_error(fmt::format("error getting addrinfo: {}", gai_strerror(retval)));
 
+		if (use_ssl)
+			this->initSSL();
+
 		/*
 		 * open socket
 		 */
@@ -55,7 +94,77 @@ namespace bestsens {
 
 	netHelper::~netHelper() noexcept {
 		this->disconnect();
+
+		if (this->use_ssl) {
+			mbedtls_entropy_free(&this->entropy);
+			mbedtls_ctr_drbg_free(&this->ctr_drbg);
+			// mbedtls_x509_crt_free(&this->cacert);
+			mbedtls_ssl_free(&this->ssl);
+			mbedtls_ssl_config_free(&this->ssl_conf);
+		}
+
 		freeaddrinfo(this->res);
+	}
+
+	void netHelper::initSSL() {
+		int ret{0};
+
+		mbedtls_entropy_init(&this->entropy);
+		mbedtls_ctr_drbg_init(&this->ctr_drbg);
+		// mbedtls_x509_crt_init(&this->cacert);
+		mbedtls_ssl_init(&this->ssl);
+		mbedtls_ssl_config_init(&this->ssl_conf);
+
+		constexpr auto personalisation = "bestsens-netHelper-personalize-string";
+
+		if ((ret = mbedtls_ctr_drbg_seed(&this->ctr_drbg, mbedtls_entropy_func, &this->entropy,
+										 (const unsigned char*)personalisation, 36)) != 0)
+			throw std::runtime_error(fmt::format("mbedtls_crt_drbg_init: 0x{:X}", -ret));
+
+		// if ((ret = mbedtls_x509_crt_parse(&this->cacert, (const unsigned char*)SSL_CA_PEM, sizeof(SSL_CA_PEM))) != 0)
+		// 	throw std::runtime_error(fmt::format("mbedtls_x509_crt_parse: 0x{:X}", -ret));
+
+		if ((ret = mbedtls_ssl_config_defaults(&this->ssl_conf, MBEDTLS_SSL_IS_CLIENT, MBEDTLS_SSL_TRANSPORT_STREAM,
+											   MBEDTLS_SSL_PRESET_DEFAULT)) != 0)
+			throw std::runtime_error(fmt::format("mbedtls_ssl_config_defaults: 0x{:X}", -ret));
+
+		// TODO: SSL certificates cannot be determined valid for BeMoS controllers as there is no CA certificate
+		mbedtls_ssl_conf_authmode(&this->ssl_conf, MBEDTLS_SSL_VERIFY_OPTIONAL);
+		// mbedtls_ssl_conf_ca_chain(&this->ssl_conf, &this->cacert, nullptr);
+		mbedtls_ssl_conf_rng(&this->ssl_conf, mbedtls_ctr_drbg_random, &this->ctr_drbg);
+
+		if ((ret = mbedtls_ssl_setup(&this->ssl, &this->ssl_conf)) != 0)
+			throw std::runtime_error(fmt::format("mbedtls_ssl_setup: 0x{:X}", -ret));
+
+		mbedtls_ssl_set_hostname(&this->ssl, this->conn_target.c_str());
+		mbedtls_ssl_set_bio(&this->ssl, static_cast<void*>(&this->sockfd), send_cb, recv_cb, nullptr);
+	}
+
+	void netHelper::doSSLHandshake() {
+		int ret{0};
+
+		spdlog::debug("Starting the TLS handshake...");
+		ret = mbedtls_ssl_handshake(&this->ssl);
+		if (ret < 0) {
+			if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE)
+				throw std::runtime_error(fmt::format("mbedtls_ssl_handshake: 0x{:X}", -ret));
+		}
+
+		std::array<char, 1024> buffer;
+
+		/* It also means the handshake is done, time to print info */
+		spdlog::debug("TLS connection to {} established", this->conn_target);
+
+		mbedtls_x509_crt_info(buffer.data(), buffer.size(), "\r    ", mbedtls_ssl_get_peer_cert(&this->ssl));
+		spdlog::debug("Server certificate:\r\n{}", buffer.data());
+
+		const auto flags = mbedtls_ssl_get_verify_result(&this->ssl);
+		if (flags != 0) {
+		    mbedtls_x509_crt_verify_info(buffer.data(), buffer.size(), "\r  ! ", flags);
+		    spdlog::warn("Certificate verification failed:\r\n{}", buffer.data());
+		} else {
+			spdlog::debug("Certificate verification passed");
+		}
 	}
 
 	auto netHelper::get_sockfd() const -> int {
@@ -309,6 +418,9 @@ namespace bestsens {
 		if (fcntl(this->sockfd, F_SETFL, arg) < 0)
 			throw std::runtime_error("Error fcntl(..., F_GETFL)");
 
+		if (this->use_ssl)
+			this->doSSLHandshake();
+
 		// I hope that is all 
 
 		this->connected = true;
@@ -327,16 +439,58 @@ namespace bestsens {
 		this->connected = false;
 	}
 
-	auto netHelper::send(const char * data) const -> int {
+	auto netHelper::send_cb(void *ctx, const unsigned char *buf, size_t len) -> int {
+		auto sockfd = *static_cast<int*>(ctx);
+		return ::send(sockfd, buf, len, 0);
+	}
+
+	auto netHelper::ssl_send_wrapper(const char* buffer, size_t len) -> int {
+		if (!this->use_ssl)
+			return send_cb(&this->sockfd, reinterpret_cast<const unsigned char*>(buffer), len);
+
+		const auto ret = mbedtls_ssl_write(&this->ssl, reinterpret_cast<const unsigned char*>(buffer), len);
+		if (ret < 0) {
+			if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE)
+				throw std::runtime_error(fmt::format("mbedtls_ssl_write: 0x{:X}", -ret));
+
+			return 0;
+		}
+
+		return ret;
+	}
+
+	auto netHelper::recv_cb(void *ctx, unsigned char *buf, size_t len) -> int {
+		auto sockfd = *static_cast<int*>(ctx);
+		return ::recv(sockfd, buf, len, 0);
+	}
+
+	auto netHelper::ssl_recv_wrapper(char* buffer, size_t amount) -> int {
+		if (!this->use_ssl)
+			return recv_cb(&this->sockfd, reinterpret_cast<unsigned char*>(buffer), amount);
+
+		const auto ret = mbedtls_ssl_read(&this->ssl, reinterpret_cast<unsigned char*>(buffer), amount);
+		if (ret < 0) {
+			if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE)
+				throw std::runtime_error(fmt::format("mbedtls_ssl_read: 0x{:X}", -ret));
+
+			return 0;
+		}
+
+		buffer[ret] = 0;
+
+		return ret;
+	}
+
+	auto netHelper::send(const char * data) -> int {
 		return this->send(std::string(data));
 	}
 
-	auto netHelper::send(const std::vector<uint8_t>& data) const -> int {
+	auto netHelper::send(const std::vector<uint8_t>& data) -> int {
 		const std::string s(data.begin(), data.end());
 		return this->send(s);
 	}
 
-	auto netHelper::send(const std::string& data) const -> int {
+	auto netHelper::send(const std::string& data) -> int {
 		if (!this->connected)
 			return -1;
 
@@ -347,7 +501,7 @@ namespace bestsens {
 		unsigned int t = 0;
 		int error_counter = 0;
 		while (t < data.length()) {
-			const auto count = ::send(this->sockfd, data.c_str() + t, data.length() - t, 0);
+			const auto count = this->ssl_send_wrapper(data.c_str() + t, data.length() - t);
 
 			if (count <= 0 && error_counter++ > 10) {
 				if (error_counter++ > 10) {
@@ -364,7 +518,7 @@ namespace bestsens {
 		return static_cast<int>(t);
 	}
 
-	auto netHelper::recv(void * buffer, size_t read_size) const -> int {
+	auto netHelper::recv(void * buffer, size_t read_size) -> int {
 		if (!this->connected)
 			return -1;
 
@@ -375,7 +529,7 @@ namespace bestsens {
 		unsigned int t = 0;
 		int error_counter = 0;
 		while (t < read_size) {
-			const auto count = ::recv(this->sockfd, static_cast<char *>(buffer) + t, read_size - t, 0);
+			const auto count = this->ssl_recv_wrapper(static_cast<char *>(buffer) + t, read_size - t);
 
 			if (count <= 0) {
 				if (error_counter++ > 10) {

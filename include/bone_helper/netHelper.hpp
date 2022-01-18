@@ -15,12 +15,18 @@
 #include <mutex>
 #include <string>
 
+#include "mbedtls/ctr_drbg.h"
+#include "mbedtls/entropy.h"
+#include "mbedtls/error.h"
+#include "mbedtls/platform.h"
+#include "mbedtls/ssl.h"
 #include "nlohmann/json.hpp"
 
 namespace bestsens {
 	class netHelper {
 	public:
-		netHelper(std::string conn_target, std::string conn_port, bool use_msgpack = false, bool silent = false);
+		netHelper(std::string conn_target, std::string conn_port, bool use_msgpack = false, bool silent = false,
+				  bool use_ssl = false);
 		~netHelper() noexcept;
 
 		auto connect() -> int;
@@ -31,9 +37,9 @@ namespace bestsens {
 
 		auto is_connected() const -> bool;
 
-		auto send(const std::string& data) const -> int;
-		auto send(const char * data) const -> int;
-		auto send(const std::vector<uint8_t>& data) const -> int;
+		auto send(const std::string& data) -> int;
+		auto send(const char * data) -> int;
+		auto send(const std::vector<uint8_t>& data) -> int;
 		auto send_command(const std::string& command, nlohmann::json& response, const nlohmann::json& payload = {},
 						  int api_version = 0) -> int;
 
@@ -47,7 +53,7 @@ namespace bestsens {
 		static auto getLastRawPosition(const unsigned char * str) -> unsigned int;
 		static auto getLastRawPosition(const char * str) -> unsigned int;
 
-		auto recv(void * buffer, size_t read_size) const -> int;
+		auto recv(void * buffer, size_t read_size) -> int;
 	private:
 		int sockfd{-1};
 		bool connected{false};
@@ -64,6 +70,22 @@ namespace bestsens {
 		int user_level{0};
 		bool use_msgpack{false};
 		bool silent{false};
+		const bool use_ssl{false};
+
+		void initSSL();
+		void doSSLHandshake();
+
+		mbedtls_entropy_context entropy;
+		mbedtls_ctr_drbg_context ctr_drbg;
+		// mbedtls_x509_crt cacert;
+		mbedtls_ssl_context ssl;
+		mbedtls_ssl_config ssl_conf;
+
+		auto ssl_send_wrapper(const char* buffer, size_t len) -> int;
+		auto ssl_recv_wrapper(char* buffer, size_t amount) -> int;
+
+		static auto recv_cb(void *ctx, unsigned char *buf, size_t len) -> int;
+		static auto send_cb(void *ctx, const unsigned char *buf, size_t len) -> int;
 	};
 
 	class jsonNetHelper : public netHelper {
