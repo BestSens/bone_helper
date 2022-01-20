@@ -2,15 +2,17 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-add_compile_options(-Wall -Wextra -Wpedantic -Wtype-limits)
-add_compile_options("$<$<CONFIG:RELEASE>:-O3;-DNDEBUG>")
-add_compile_options("$<$<CONFIG:DEBUG>:-Og;-DDEBUG;-g;-funwind-tables;-fno-inline>")
+add_library(common_compile_options INTERFACE)
+
+target_compile_options(common_compile_options INTERFACE -Wall -Wextra -Wpedantic -Wtype-limits)
+target_compile_options(common_compile_options INTERFACE "$<$<CONFIG:RELEASE>:-O3;-DNDEBUG>")
+target_compile_options(common_compile_options INTERFACE "$<$<CONFIG:DEBUG>:-Og;-DDEBUG;-g;-funwind-tables;-fno-inline>")
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-	add_compile_options("$<$<CONFIG:DEBUG>:-rdynamic>")
+	target_compile_options(common_compile_options INTERFACE "$<$<CONFIG:DEBUG>:-rdynamic>")
 
 	if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.0)
-		add_compile_options(-Wno-pragmas -Wno-missing-field-initializers)
+		target_compile_options(common_compile_options INTERFACE -Wno-pragmas -Wno-missing-field-initializers)
 	endif()
 endif()
 
