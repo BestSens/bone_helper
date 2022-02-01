@@ -20,12 +20,14 @@
 #include "bone_helper/system_helper.hpp"
 #include "fmt/format.h"
 #include "fmt/ranges.h"
+#ifndef BONE_HELPER_NO_SSL
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/entropy.h"
 #include "mbedtls/error.h"
 #include "mbedtls/platform.h"
-#include "mbedtls/sha512.h"
 #include "mbedtls/ssl.h"
+#endif /* BONE_HELPER_NO_SSL */
+#include "mbedtls/sha512.h"
 #include "nlohmann/json.hpp"
 #include "spdlog/spdlog.h"
 
@@ -65,6 +67,11 @@ namespace bestsens {
 		  use_msgpack(use_msgpack),
 		  silent(silent),
 		  use_ssl(use_ssl) {
+#ifdef BONE_HELPER_NO_SSL
+		if (use_ssl)
+			throw std::runtime_error("SSL requested but disabled on compile");
+#endif /* BONE_HELPER_NO_SSL */
+
 		std::lock_guard<std::mutex> lock(this->sock_mtx);
 		
 		/*
@@ -79,8 +86,10 @@ namespace bestsens {
 
 		if (retval != 0) throw std::runtime_error(fmt::format("error getting addrinfo: {}", gai_strerror(retval)));
 
+#ifndef BONE_HELPER_NO_SSL
 		if (use_ssl)
 			this->initSSL();
+#endif /* BONE_HELPER_NO_SSL */
 
 		/*
 		 * open socket
@@ -95,6 +104,7 @@ namespace bestsens {
 	netHelper::~netHelper() noexcept {
 		this->disconnect();
 
+#ifndef BONE_HELPER_NO_SSL
 		if (this->use_ssl) {
 			mbedtls_entropy_free(&this->entropy);
 			mbedtls_ctr_drbg_free(&this->ctr_drbg);
@@ -102,10 +112,12 @@ namespace bestsens {
 			mbedtls_ssl_free(&this->ssl);
 			mbedtls_ssl_config_free(&this->ssl_conf);
 		}
+#endif /* BONE_HELPER_NO_SSL */
 
 		freeaddrinfo(this->res);
 	}
 
+#ifndef BONE_HELPER_NO_SSL
 	void netHelper::initSSL() {
 		int ret{0};
 
@@ -166,6 +178,7 @@ namespace bestsens {
 			spdlog::debug("Certificate verification passed");
 		}
 	}
+#endif /* BONE_HELPER_NO_SSL */
 
 	auto netHelper::get_sockfd() const -> int {
 		return this->sockfd;
@@ -409,7 +422,6 @@ namespace bestsens {
 			return 1;
 		}
 
-		// Set to blocking mode again... 
 		if ((arg = fcntl(this->sockfd, F_GETFL, NULL)) < 0)
 			throw std::runtime_error("Error fcntl(..., F_GETFL)");
 
@@ -418,10 +430,10 @@ namespace bestsens {
 		if (fcntl(this->sockfd, F_SETFL, arg) < 0)
 			throw std::runtime_error("Error fcntl(..., F_GETFL)");
 
+#ifndef BONE_HELPER_NO_SSL
 		if (this->use_ssl)
 			this->doSSLHandshake();
-
-		// I hope that is all 
+#endif /* BONE_HELPER_NO_SSL */
 
 		this->connected = true;
 
@@ -447,7 +459,7 @@ namespace bestsens {
 	auto netHelper::ssl_send_wrapper(const char* buffer, size_t len) -> int {
 		if (!this->use_ssl)
 			return send_cb(&this->sockfd, reinterpret_cast<const unsigned char*>(buffer), len);
-
+#ifndef BONE_HELPER_NO_SSL
 		const auto ret = mbedtls_ssl_write(&this->ssl, reinterpret_cast<const unsigned char*>(buffer), len);
 		if (ret < 0) {
 			if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE)
@@ -457,6 +469,9 @@ namespace bestsens {
 		}
 
 		return ret;
+#else
+		return EXIT_FAILURE;
+#endif /* BONE_HELPER_NO_SSL */
 	}
 
 	auto netHelper::recv_cb(void *ctx, unsigned char *buf, size_t len) -> int {
@@ -467,7 +482,7 @@ namespace bestsens {
 	auto netHelper::ssl_recv_wrapper(char* buffer, size_t amount) -> int {
 		if (!this->use_ssl)
 			return recv_cb(&this->sockfd, reinterpret_cast<unsigned char*>(buffer), amount);
-
+#ifndef BONE_HELPER_NO_SSL
 		const auto ret = mbedtls_ssl_read(&this->ssl, reinterpret_cast<unsigned char*>(buffer), amount);
 		if (ret < 0) {
 			if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE)
@@ -479,6 +494,9 @@ namespace bestsens {
 		buffer[ret] = 0;
 
 		return ret;
+#else
+		return EXIT_FAILURE;
+#endif /* BONE_HELPER_NO_SSL */
 	}
 
 	auto netHelper::send(const char * data) -> int {

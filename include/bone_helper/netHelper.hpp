@@ -15,11 +15,14 @@
 #include <mutex>
 #include <string>
 
+#ifndef BONE_HELPER_NO_SSL
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/entropy.h"
 #include "mbedtls/error.h"
 #include "mbedtls/platform.h"
 #include "mbedtls/ssl.h"
+#endif /* BONE_HELPER_NO_SSL */
+
 #include "nlohmann/json.hpp"
 
 namespace bestsens {
@@ -72,6 +75,7 @@ namespace bestsens {
 		bool silent{false};
 		const bool use_ssl{false};
 
+#ifndef BONE_HELPER_NO_SSL
 		void initSSL();
 		void doSSLHandshake();
 
@@ -80,6 +84,7 @@ namespace bestsens {
 		// mbedtls_x509_crt cacert;
 		mbedtls_ssl_context ssl;
 		mbedtls_ssl_config ssl_conf;
+#endif /* BONE_HELPER_NO_SSL */
 
 		auto ssl_send_wrapper(const char* buffer, size_t len) -> int;
 		auto ssl_recv_wrapper(char* buffer, size_t amount) -> int;
