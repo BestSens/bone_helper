@@ -8,7 +8,9 @@ target_compile_options(common_compile_options INTERFACE -Wall -Wextra -Wpedantic
 target_compile_options(common_compile_options INTERFACE "$<$<CONFIG:RELEASE>:-O3;-DNDEBUG>")
 target_compile_options(common_compile_options INTERFACE "$<$<CONFIG:DEBUG>:-Og;-DDEBUG;-g;-funwind-tables;-fno-inline>")
 
-if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+target_link_libraries(common_compile_options INTERFACE ${CMAKE_DL_LIBS})
+
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
 	target_compile_options(common_compile_options INTERFACE "$<$<CONFIG:DEBUG>:-rdynamic>")
 
 	if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.0)
@@ -21,6 +23,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 option(ENABLE_SYSTEMD "enable linking of systemd" ON)
 option(BUILD_TESTS "enable building of tests" ON)
 option(AUTORUN_TESTS "enable automatic runs of tests when building Release builds" ON)
+option(ENABLE_CCACHE "enables ccache if available" ON)
 
 if(CMAKE_CROSSCOMPILING)
 	set(BUILD_TESTS OFF)
@@ -30,12 +33,14 @@ if(BUILD_TESTS)
 	message(STATUS "building tests enabled")
 endif()
 
-find_program(CCACHE_FOUND ccache)
-if(CCACHE_FOUND)
-	message(STATUS "ccache enabled")
-	set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
-	set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
-endif(CCACHE_FOUND)
+if(ENABLE_CCACHE)
+	find_program(CCACHE_FOUND ccache)
+	if(CCACHE_FOUND)
+		message(STATUS "ccache enabled")
+		set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
+		set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
+	endif(CCACHE_FOUND)
+endif()
 
 if(NOT GIT_BRANCH)
 	# Get the current working branch

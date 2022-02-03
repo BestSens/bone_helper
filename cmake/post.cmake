@@ -1,13 +1,3 @@
-target_link_libraries(${MAIN_EXECUTABLE} PRIVATE ${CMAKE_DL_LIBS})
-
-find_package(PkgConfig)
-pkg_check_modules(SYSTEMD QUIET "libsystemd")
-if(SYSTEMD_FOUND AND ENABLE_SYSTEMD)
-	target_compile_definitions(${MAIN_EXECUTABLE} PRIVATE ENABLE_SYSTEMD_STATUS)
-	target_link_libraries(${MAIN_EXECUTABLE} PRIVATE systemd)
-	message(STATUS "systemd enabled")
-endif()
-
 # "Use" NOSTRIP variable to get rid of warning
 set(ignoreMe "${NOSTRIP}")
 
