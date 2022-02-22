@@ -67,10 +67,10 @@ namespace bestsens {
 		auto add(const std::vector<T>& values) -> int;
 
 		auto get(int id) const -> T;
-		auto get(T * target, int &amount, int last_value = 0) const -> int;
+		auto get(T * target, int &amount, int last_value = 0, bool return_continous = false) const -> int;
 
 		auto getVector(int amount) const -> std::vector<T>;
-		auto getVector(int amount, int &last_value, bool exactly = false) const -> std::vector<T>;
+		auto getVector(int amount, int &last_value, bool exactly = false, bool return_continous = false) const -> std::vector<T>;
 		
 		auto getPosition(int pos) const -> T;
 		auto getBaseID() const -> int;
@@ -237,7 +237,7 @@ namespace bestsens {
 	}
 
 	template < typename T, int N >
-	auto CircularBuffer<T, N>::get(T * target, int &amount, int last_value) const -> int {
+	auto CircularBuffer<T, N>::get(T * target, int &amount, int last_value, bool return_continous) const -> int {
 		std::lock_guard<std::mutex> lock(this->mutex);
 
 		int end = 0;
@@ -256,12 +256,19 @@ namespace bestsens {
 		if (end > this->item_count)
 			end = this->item_count;
 
-		if (end > amount)
-			end = amount;
+		int start = 0;
 
-		last_position = this->base_id;
+		if (!return_continous) {
+			if (end > amount)
+				end = amount;
+		} else {
+			if (end > amount)
+				start = end - amount;
+		}
 
-		amount = getRange(target, 0, end);
+		last_position = this->base_id - start;
+
+		amount = getRange(target, start, end);
 
 		return last_position;
 	}
@@ -273,7 +280,7 @@ namespace bestsens {
 	}
 
 	template < typename T, int N >
-	auto CircularBuffer<T, N>::getVector(int amount, int &last_value, bool exactly) const -> std::vector<T> {
+	auto CircularBuffer<T, N>::getVector(int amount, int &last_value, bool exactly, bool return_continous) const -> std::vector<T> {
 		if (exactly) {
 			const auto amount_available = this->getNewDataAmount(last_value);
 
@@ -286,7 +293,7 @@ namespace bestsens {
 
 		std::vector<T> vect(amount);
 
-		last_value = this->get(vect.data(), amount, last_value);
+		last_value = this->get(vect.data(), amount, last_value, return_continous);
 
 		vect.resize(amount);
 
