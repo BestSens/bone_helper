@@ -4,9 +4,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 add_library(common_compile_options INTERFACE)
 
-target_compile_options(common_compile_options INTERFACE -Wall -Wextra -Wpedantic -Wtype-limits)
+target_compile_options(common_compile_options INTERFACE -g -Wall -Wextra -Wpedantic -Wtype-limits)
 target_compile_options(common_compile_options INTERFACE "$<$<CONFIG:RELEASE>:-O3;-DNDEBUG>")
-target_compile_options(common_compile_options INTERFACE "$<$<CONFIG:DEBUG>:-Og;-DDEBUG;-g;-funwind-tables;-fno-inline>")
+target_compile_options(common_compile_options INTERFACE "$<$<CONFIG:DEBUG>:-Og;-DDEBUG;-funwind-tables;-fno-inline>")
 
 target_link_libraries(common_compile_options INTERFACE ${CMAKE_DL_LIBS})
 
@@ -24,13 +24,14 @@ option(ENABLE_SYSTEMD "enable linking of systemd" ON)
 option(BUILD_TESTS "enable building of tests" ON)
 option(AUTORUN_TESTS "enable automatic runs of tests when building Release builds" ON)
 option(ENABLE_CCACHE "enables ccache if available" ON)
+option(ENABLE_STRIPPING "enable stripping of binary" ON)
 
 if(CMAKE_CROSSCOMPILING)
 	set(BUILD_TESTS OFF)
 endif()
 
 option(FORCE_COLORED_OUTPUT "Always produce ANSI-colored output (GNU/Clang only)." TRUE)
-if (${FORCE_COLORED_OUTPUT})
+if(FORCE_COLORED_OUTPUT)
 	if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 	   add_compile_options (-fdiagnostics-color=always)
 	elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")

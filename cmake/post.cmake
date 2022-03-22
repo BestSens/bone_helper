@@ -1,8 +1,5 @@
-# "Use" NOSTRIP variable to get rid of warning
-set(ignoreMe "${NOSTRIP}")
-
 # Strip binary release builds
-if(NOT DEFINED NOSTRIP AND CMAKE_BUILD_TYPE STREQUAL Release)
+if(ENABLE_STRIPPING)
 	if(DEFINED ENV{STRIP})
 		set(CMAKE_STRIP $ENV{STRIP})
 	endif()
