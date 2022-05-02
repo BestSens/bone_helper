@@ -18,7 +18,7 @@
 namespace bestsens {
 	class loopTimer {
 	public:
-		loopTimer(std::chrono::microseconds wait_time, int start_value = 0);
+		explicit loopTimer(std::chrono::microseconds wait_time, int start_value = 0);
 		loopTimer(int wait_time_ms, int start_value) : loopTimer(std::chrono::milliseconds(wait_time_ms), start_value) {};
 		~loopTimer();
 

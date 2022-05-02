@@ -198,8 +198,10 @@ namespace bestsens {
 				std::lock_guard<std::mutex> lock(MultiWatchdog::list_mtx);
 				this->own_entry = 1;
 
-				for (const auto &e : MultiWatchdog::watchdog_list)
-					if (*e == 0) return;
+				if (std::any_of(MultiWatchdog::watchdog_list.begin(), MultiWatchdog::watchdog_list.end(),
+								[](int *e) { return *e == 0; })) {
+					return;
+				}
 
 				watchdog();
 

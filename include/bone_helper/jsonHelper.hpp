@@ -204,8 +204,9 @@ namespace bestsens {
 		return true;
 	}
 
-	inline bool checkedUpdateFromJSON(const json& j, const std::string& name, std::string& value, const std::string default_value) {
-		if(!checkedUpdateFromJSON(j, name, value)) {
+	inline bool checkedUpdateFromJSON(const json& j, const std::string& name, std::string& value,
+									  const std::string& default_value) {
+		if (!checkedUpdateFromJSON(j, name, value)) {
 			value = default_value;
 			return false;
 		}

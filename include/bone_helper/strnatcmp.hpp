@@ -90,13 +90,12 @@ static int compare_left(nat_char const *a, nat_char const *b) {
 
 static int strnatcmp0(nat_char const *a, nat_char const *b, int fold_case) {
 	int ai, bi;
-	nat_char ca, cb;
 	int fractional, result;
 
 	ai = bi = 0;
 	while (1) {
-		ca = a[ai];
-		cb = b[bi];
+		nat_char ca = a[ai];
+		nat_char cb = b[bi];
 
 		/* skip over leading spaces or zeros */
 		while (nat_isspace(ca)) ca = a[++ai];

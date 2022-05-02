@@ -179,7 +179,6 @@ namespace bestsens {
 			}
 
 			throw std::runtime_error("could not get timesync status");
-			return false;
 		}
 
 #ifdef ENABLE_SYSTEMD_DBUS
@@ -323,7 +322,7 @@ namespace bestsens {
 		}
 
 		inline timedateinfo_t getTimeDateInfo(sd_bus * bus) {
-			timedateinfo_t ti;
+			timedateinfo_t ti{};
 			ti.timezone = getTimezone(bus);
 			ti.timesync = getTimesync(bus);
 			ti.date = getDate();

@@ -30,7 +30,7 @@ namespace bestsens{
 	}
 
 	void loopTimer::start(int start_value = 0) {
-		if(loopTimer::kill)
+		if (loopTimer::kill)
 			return;
 
 		this->running = true;
