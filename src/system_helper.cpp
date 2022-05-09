@@ -13,6 +13,7 @@
 #include <unistd.h>
 
 #include <algorithm>
+#include <array>
 #include <cstdarg>
 #include <cstring>
 #include <mutex>
