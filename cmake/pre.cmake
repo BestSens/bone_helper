@@ -10,11 +10,24 @@ target_compile_options(common_compile_options INTERFACE "$<$<CONFIG:DEBUG>:-Og;-
 
 target_link_libraries(common_compile_options INTERFACE ${CMAKE_DL_LIBS})
 
+option(USE_LTO "enable link time optimizations when available" ON)
+
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
 	target_compile_options(common_compile_options INTERFACE "$<$<CONFIG:DEBUG>:-rdynamic>")
 
 	if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.0)
 		target_compile_options(common_compile_options INTERFACE -Wno-pragmas -Wno-missing-field-initializers)
+		set(USE_LTO OFF)
+	endif()
+endif()
+
+if(USE_LTO)
+	target_compile_options(common_compile_options INTERFACE -flto)
+
+	if(${CMAKE_VERSION} VERSION_LESS "3.13.0") 
+		set(CMAKE_SHARED_LINKER_FLAGS "-flto=auto")
+	else()
+		target_compile_options(common_compile_options INTERFACE -flto=auto)
 	endif()
 endif()
 
