@@ -11,6 +11,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <array>
+#include <cstring>
 #include <ctime>
 #include <iostream>
 #include <memory>
