@@ -4,7 +4,13 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 option(BONE_HELPER_SSL "enable SSL support" ON)
 
-add_library(bone_helper STATIC src/loopTimer.cpp src/stdlib_backports.cpp src/system_helper.cpp src/netHelper.cpp)
+add_library(bone_helper STATIC
+	src/loopTimer.cpp
+	src/stdlib_backports.cpp
+	src/system_helper.cpp
+	src/netHelper.cpp
+	src/strnatcmp.cpp
+)
 
 target_include_directories(bone_helper PUBLIC include)
 target_include_directories(bone_helper PRIVATE libs/tinydir)
