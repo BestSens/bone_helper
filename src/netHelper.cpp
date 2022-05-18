@@ -130,7 +130,7 @@ namespace bestsens {
 		constexpr auto personalisation = "bestsens-netHelper-personalize-string";
 
 		// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-		const auto const* personalisation_unsigned_char = reinterpret_cast<const unsigned char*>(personalisation);
+		const auto *const personalisation_unsigned_char = reinterpret_cast<const unsigned char*>(personalisation);
 
 		if ((ret = mbedtls_ctr_drbg_seed(&this->ctr_drbg, mbedtls_entropy_func, &this->entropy,
 										 personalisation_unsigned_char, 36)) != 0)
