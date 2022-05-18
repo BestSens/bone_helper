@@ -129,8 +129,11 @@ namespace bestsens {
 
 		constexpr auto personalisation = "bestsens-netHelper-personalize-string";
 
+		// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+		const auto const* personalisation_unsigned_char = reinterpret_cast<const unsigned char*>(personalisation);
+
 		if ((ret = mbedtls_ctr_drbg_seed(&this->ctr_drbg, mbedtls_entropy_func, &this->entropy,
-										 (const unsigned char*)personalisation, 36)) != 0)
+										 personalisation_unsigned_char, 36)) != 0)
 			throw std::runtime_error(fmt::format("mbedtls_crt_drbg_init: 0x{:X}", -ret));
 
 		// if ((ret = mbedtls_x509_crt_parse(&this->cacert, (const unsigned char*)SSL_CA_PEM, sizeof(SSL_CA_PEM))) != 0)
@@ -162,7 +165,7 @@ namespace bestsens {
 				throw std::runtime_error(fmt::format("mbedtls_ssl_handshake: 0x{:X}", -ret));
 		}
 
-		std::array<char, 1024> buffer;
+		std::array<char, 1024> buffer{};
 
 		/* It also means the handshake is done, time to print info */
 		spdlog::debug("TLS connection to {} established", this->conn_target);
@@ -207,7 +210,7 @@ namespace bestsens {
 	}
 
 	auto netHelper::sha512(const std::string& input) -> std::string {
-		std::array<unsigned char, 64> output_buffer;
+		std::array<unsigned char, 64> output_buffer{};
 		// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
 		mbedtls_sha512(reinterpret_cast<const unsigned char*>(input.c_str()), input.size(), output_buffer.data(), 0);
 		return fmt::format("{:02x}", fmt::join(output_buffer, ""));
@@ -453,14 +456,24 @@ namespace bestsens {
 
 	auto netHelper::send_cb(void *ctx, const unsigned char *buf, size_t len) -> int {
 		auto sockfd = *static_cast<int*>(ctx);
-		return ::send(sockfd, buf, len, 0);
+
+		const auto ret = ::send(sockfd, buf, len, 0);
+
+		if (ret < 0) {
+			throw std::runtime_error(fmt::format("send error: 0x{:X}", -ret));
+		}
+
+		return static_cast<int>(ret);
 	}
 
 	auto netHelper::ssl_send_wrapper(const char* buffer, size_t len) -> int {
+		// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+		const auto *const buffer_unsigned = reinterpret_cast<const unsigned char*>(buffer);
+
 		if (!this->use_ssl)
-			return send_cb(&this->sockfd, reinterpret_cast<const unsigned char*>(buffer), len);
+			return send_cb(&this->sockfd, buffer_unsigned, len);
 #ifndef BONE_HELPER_NO_SSL
-		const auto ret = mbedtls_ssl_write(&this->ssl, reinterpret_cast<const unsigned char*>(buffer), len);
+		const auto ret = mbedtls_ssl_write(&this->ssl, buffer_unsigned, len);
 		if (ret < 0) {
 			if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE)
 				throw std::runtime_error(fmt::format("mbedtls_ssl_write: 0x{:X}", -ret));
@@ -476,14 +489,24 @@ namespace bestsens {
 
 	auto netHelper::recv_cb(void *ctx, unsigned char *buf, size_t len) -> int {
 		auto sockfd = *static_cast<int*>(ctx);
-		return ::recv(sockfd, buf, len, 0);
+
+		const auto ret = ::recv(sockfd, buf, len, 0);
+
+		if (ret < 0) {
+			throw std::runtime_error(fmt::format("recv error: 0x{:X}", -ret));
+		}
+
+		return static_cast<int>(ret);
 	}
 
 	auto netHelper::ssl_recv_wrapper(char* buffer, size_t amount) -> int {
+		// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
+		auto* buffer_unsigned = reinterpret_cast<unsigned char*>(buffer);
+
 		if (!this->use_ssl)
-			return recv_cb(&this->sockfd, reinterpret_cast<unsigned char*>(buffer), amount);
+			return recv_cb(&this->sockfd, buffer_unsigned, amount);
 #ifndef BONE_HELPER_NO_SSL
-		const auto ret = mbedtls_ssl_read(&this->ssl, reinterpret_cast<unsigned char*>(buffer), amount);
+		const auto ret = mbedtls_ssl_read(&this->ssl, buffer_unsigned, amount);
 		if (ret < 0) {
 			if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE)
 				throw std::runtime_error(fmt::format("mbedtls_ssl_read: 0x{:X}", -ret));
