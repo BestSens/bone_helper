@@ -27,7 +27,7 @@ if(USE_LTO)
 	if(${CMAKE_VERSION} VERSION_LESS "3.13.0") 
 		set(CMAKE_SHARED_LINKER_FLAGS "-flto=auto")
 	else()
-		target_compile_options(common_compile_options INTERFACE -flto=auto)
+		target_link_options(common_compile_options INTERFACE -flto=auto)
 	endif()
 endif()
 
