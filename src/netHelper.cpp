@@ -31,33 +31,6 @@
 #include "nlohmann/json.hpp"
 #include "spdlog/spdlog.h"
 
-namespace {
-	// const char SSL_CA_PEM[] =
-	// 	"-----BEGIN CERTIFICATE-----\n"
-	// 	"MIID5zCCAs+gAwIBAgIJAJVglSrku6bZMA0GCSqGSIb3DQEBCwUAMIGJMQswCQYD\n"
-	// 	"VQQGEwJERTEQMA4GA1UECAwHQmF2YXJpYTEPMA0GA1UEBwwGQ29idXJnMRQwEgYD\n"
-	// 	"VQQKDAtCZXN0U2VucyBBRzEOMAwGA1UECwwFQmVNb1MxIjAgBgkqhkiG9w0BCQEW\n"
-	// 	"E3NlcnZpY2VAYmVzdHNlbnMuZGUxDTALBgNVBAMMBGJvbmUwHhcNMTcwNDIxMDg1\n"
-	// 	"OTM2WhcNMjcwNDE5MDg1OTM2WjCBiTELMAkGA1UEBhMCREUxEDAOBgNVBAgMB0Jh\n"
-	// 	"dmFyaWExDzANBgNVBAcMBkNvYnVyZzEUMBIGA1UECgwLQmVzdFNlbnMgQUcxDjAM\n"
-	// 	"BgNVBAsMBUJlTW9TMSIwIAYJKoZIhvcNAQkBFhNzZXJ2aWNlQGJlc3RzZW5zLmRl\n"
-	// 	"MQ0wCwYDVQQDDARib25lMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA\n"
-	// 	"vxQ7rBCtG8nz1UGP1WsNy229GKgFH6J1FEsiElEjZmejj4TxO5I/PdFjzkwzXKnD\n"
-	// 	"GBB1qz7zaKt6R6K6hGGyeYmGDf3VmZSdSaN79korl5czRCGW7iZdVQ5Q8VQ85drF\n"
-	// 	"1UpYOf5Xhr2coY6zQHRflHmo6cc0SNQEf4Dtx1UnfaXNPJnQk3Tc3C+E70Ez58Xy\n"
-	// 	"cD0neHkG5T0ca9LJCC5kqksDKjKxjSYATnGcgTROaLRRN1aESIu2INQsYUzJDf2c\n"
-	// 	"3IuQCtPxOeJgKypYBsR24JPpMqIG8S6QO1rzCpjzf2HEMFN0Bt7oywHYP1O6s4oK\n"
-	// 	"P7h0/qdyjJydw1SY1bShoQIDAQABo1AwTjAdBgNVHQ4EFgQUUXsEp8yjnTn13hiL\n"
-	// 	"DJnrBxcgXXwwHwYDVR0jBBgwFoAUUXsEp8yjnTn13hiLDJnrBxcgXXwwDAYDVR0T\n"
-	// 	"BAUwAwEB/zANBgkqhkiG9w0BAQsFAAOCAQEAEDrPVsegwD92J+MpP1+oCj32z6Jo\n"
-	// 	"kgmi3f7F7ObUbLGNRd3TGg3NnUXxbemz9+p1cZ2GStjoegr9sv9Xn6dZC/BdcrG4\n"
-	// 	"AY5DZ83no5ggggZDFsbgLYgS0HQnDZ3AgR704/Y36R8O1TqGidjoj05EBwg7i5GJ\n"
-	// 	"hip7dLnCL2zfFKY9KC2VETYxxR2vhb87I420YujCYtufYP5Wq+/53dE62XY8Aguq\n"
-	// 	"/ytIwAUhhYR6w1qkYVCQCbFfoTmNa8jjd2wcgnYgUdJDlpYrOh3s2xwYFrk+TGjq\n"
-	// 	"wBjCPvQ/iji6hmgRM/q6C8+prijWHso0IHanCXO355iV/rnvBkIWy+6j0g==\n"
-	// 	"-----END CERTIFICATE-----\n";
-}  // namespace
-
 namespace bestsens {
 	using json = nlohmann::json;
 
@@ -152,7 +125,7 @@ namespace bestsens {
 			throw std::runtime_error(fmt::format("mbedtls_ssl_setup: 0x{:X}", -ret));
 
 		mbedtls_ssl_set_hostname(&this->ssl, this->conn_target.c_str());
-		mbedtls_ssl_set_bio(&this->ssl, static_cast<void*>(&this->sockfd), send_cb, recv_cb, nullptr);
+		mbedtls_ssl_set_bio(&this->ssl, static_cast<void*>(&this->sockfd), sendCb, recvCb, nullptr);
 	}
 
 	void netHelper::doSSLHandshake() {
@@ -194,8 +167,8 @@ namespace bestsens {
 	auto netHelper::getLastRawPosition(const unsigned char* str) -> unsigned int {
 		const auto last_position = [&]() -> unsigned int {
 			try {
-				return (static_cast<uint8_t>(str[0]) << 24) + (static_cast<uint8_t>(str[1]) << 16) +
-					   (static_cast<uint8_t>(str[2]) << 8) + (static_cast<uint8_t>(str[3]));
+				return (static_cast<uint8_t>(str[0]) << 24u) + (static_cast<uint8_t>(str[1]) << 16u) +
+					   (static_cast<uint8_t>(str[2]) << 8u) + (static_cast<uint8_t>(str[3]));
 			} catch (...) {}
 
 			return 0;
@@ -270,12 +243,32 @@ namespace bestsens {
 		return this->user_level;
 	}
 
-	auto netHelper::set_timeout(const int timeout) -> int {
-		this->timeout = timeout;
+	auto netHelper::getTimevalStruct() const -> timeval {
+		timeval tv{};
+		tv.tv_sec = this->timeout / 1000;
+		tv.tv_usec = (this->timeout % 1000) * 1000;
 
-		struct timeval tv{};
-		tv.tv_sec = timeout;
-		tv.tv_usec = 0;
+		return tv;
+	}
+
+	/*!
+		@brief	sets socket timeout
+		@param	timeout: timeout in s
+		@return	Returns 0 on success, -1 for errors.
+	*/
+	[[deprecated]] auto netHelper::set_timeout(long timeout) -> int {
+		return this->set_timeout_ms(timeout * 1000);
+	}
+
+	/*!
+		@brief	sets socket timeout
+		@param	timeout_ms: timeout in ms
+		@return	Returns 0 on success, -1 for errors.
+	*/
+	auto netHelper::set_timeout_ms(long timeout_ms) -> int {
+		this->timeout = timeout_ms;
+
+		const auto tv = this->getTimevalStruct();
 
 		// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
 		return setsockopt(this->sockfd, SOL_SOCKET, SO_RCVTIMEO, reinterpret_cast<const char*>(&tv), sizeof tv);
@@ -361,18 +354,22 @@ namespace bestsens {
 		return this->connected;
 	}
 
+	/*!
+		@brief	connects socket
+		@return	Returns 0 on success, != 0 for errors.
+	*/
 	auto netHelper::connect() -> int {
 		if (this->connected)
 			return 1;
 
 		// Set non-blocking 
 		long arg{0};
-		if ((arg = fcntl(this->sockfd, F_GETFL, nullptr)) < 0)
+		if ((arg = fcntl(this->sockfd, F_GETFL, nullptr)) < 0) // NOLINT(hicpp-vararg)
 			throw std::runtime_error("Error fcntl(..., F_GETFL)");
 
-		arg |= O_NONBLOCK; 
+		arg |= O_NONBLOCK;  // NOLINT(hicpp-signed-bitwise)
 		
-		if (fcntl(this->sockfd, F_SETFL, arg) < 0)
+		if (fcntl(this->sockfd, F_SETFL, arg) < 0) // NOLINT(hicpp-vararg)
 			throw std::runtime_error("Error fcntl(..., F_GETFL)");
 
 		/*
@@ -384,13 +381,11 @@ namespace bestsens {
 		auto res = ::connect(this->sockfd, this->res->ai_addr, this->res->ai_addrlen);
 		fd_set myset;
 		int valopt{0};
-		struct timeval tv{};
 
 		if (res < 0) {
 			if (errno == EINPROGRESS) {
 				do {
-					tv.tv_sec = this->timeout;
-					tv.tv_usec = 0;
+					auto tv = this->getTimevalStruct();
 					FD_ZERO(&myset); // NOLINT(readability-isolate-declaration)
 					FD_SET(this->sockfd, &myset); // NOLINT(cppcoreguidelines-pro-bounds-constant-array-index)
 					res = select(this->sockfd+1, nullptr, &myset, nullptr, &tv);
@@ -425,12 +420,12 @@ namespace bestsens {
 			return 1;
 		}
 
-		if ((arg = fcntl(this->sockfd, F_GETFL, NULL)) < 0)
+		if ((arg = fcntl(this->sockfd, F_GETFL, NULL)) < 0) // NOLINT(hicpp-vararg)
 			throw std::runtime_error("Error fcntl(..., F_GETFL)");
 
-		arg &= (~O_NONBLOCK); 
+		arg &= (~O_NONBLOCK); // NOLINT(hicpp-signed-bitwise)
 
-		if (fcntl(this->sockfd, F_SETFL, arg) < 0)
+		if (fcntl(this->sockfd, F_SETFL, arg) < 0) // NOLINT(hicpp-vararg)
 			throw std::runtime_error("Error fcntl(..., F_GETFL)");
 
 #ifndef BONE_HELPER_NO_SSL
@@ -454,7 +449,7 @@ namespace bestsens {
 		this->connected = false;
 	}
 
-	auto netHelper::send_cb(void *ctx, const unsigned char *buf, size_t len) -> int {
+	auto netHelper::sendCb(void *ctx, const unsigned char *buf, size_t len) -> int {
 		auto sockfd = *static_cast<int*>(ctx);
 
 		const auto ret = ::send(sockfd, buf, len, 0);
@@ -466,12 +461,12 @@ namespace bestsens {
 		return static_cast<int>(ret);
 	}
 
-	auto netHelper::ssl_send_wrapper(const char* buffer, size_t len) -> int {
+	auto netHelper::sslSendWrapper(const char* buffer, size_t len) -> int {
 		// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
 		const auto *const buffer_unsigned = reinterpret_cast<const unsigned char*>(buffer);
 
 		if (!this->use_ssl)
-			return send_cb(&this->sockfd, buffer_unsigned, len);
+			return sendCb(&this->sockfd, buffer_unsigned, len);
 #ifndef BONE_HELPER_NO_SSL
 		const auto ret = mbedtls_ssl_write(&this->ssl, buffer_unsigned, len);
 		if (ret < 0) {
@@ -487,7 +482,7 @@ namespace bestsens {
 #endif /* BONE_HELPER_NO_SSL */
 	}
 
-	auto netHelper::recv_cb(void *ctx, unsigned char *buf, size_t len) -> int {
+	auto netHelper::recvCb(void *ctx, unsigned char *buf, size_t len) -> int {
 		auto sockfd = *static_cast<int*>(ctx);
 
 		const auto ret = ::recv(sockfd, buf, len, 0);
@@ -499,12 +494,12 @@ namespace bestsens {
 		return static_cast<int>(ret);
 	}
 
-	auto netHelper::ssl_recv_wrapper(char* buffer, size_t amount) -> int {
+	auto netHelper::sslRecvWrapper(char* buffer, size_t amount) -> int {
 		// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
 		auto* buffer_unsigned = reinterpret_cast<unsigned char*>(buffer);
 
 		if (!this->use_ssl)
-			return recv_cb(&this->sockfd, buffer_unsigned, amount);
+			return recvCb(&this->sockfd, buffer_unsigned, amount);
 #ifndef BONE_HELPER_NO_SSL
 		const auto ret = mbedtls_ssl_read(&this->ssl, buffer_unsigned, amount);
 		if (ret < 0) {
@@ -542,7 +537,7 @@ namespace bestsens {
 		unsigned int t = 0;
 		int error_counter = 0;
 		while (t < data.length()) {
-			const auto count = this->ssl_send_wrapper(data.c_str() + t, data.length() - t);
+			const auto count = this->sslSendWrapper(data.c_str() + t, data.length() - t);
 
 			if (count <= 0 && error_counter++ > 10) {
 				if (error_counter++ > 10) {
@@ -570,7 +565,7 @@ namespace bestsens {
 		unsigned int t = 0;
 		int error_counter = 0;
 		while (t < read_size) {
-			const auto count = this->ssl_recv_wrapper(static_cast<char *>(buffer) + t, read_size - t);
+			const auto count = this->sslRecvWrapper(static_cast<char *>(buffer) + t, read_size - t);
 
 			if (count <= 0) {
 				if (error_counter++ > 10) {

@@ -10,6 +10,7 @@
 
 #include <netdb.h>
 #include <sys/socket.h>
+#include <sys/time.h>
 #include <sys/types.h>
 
 #include <mutex>
@@ -46,7 +47,8 @@ namespace bestsens {
 		auto send_command(const std::string& command, nlohmann::json& response, const nlohmann::json& payload = {},
 						  int api_version = 0) -> int;
 
-		auto set_timeout(const int timeout) -> int;
+		auto set_timeout(long timeout) -> int;
+		auto set_timeout_ms(long timeout_ms) -> int;
 
 		auto get_sockfd() const -> int;
 
@@ -60,7 +62,7 @@ namespace bestsens {
 	private:
 		int sockfd{-1};
 		bool connected{false};
-		int timeout{10};
+		long timeout{10000};
 		struct addrinfo remote{};
 		struct addrinfo * res{nullptr};
 
@@ -86,11 +88,13 @@ namespace bestsens {
 		mbedtls_ssl_config ssl_conf;
 #endif /* BONE_HELPER_NO_SSL */
 
-		auto ssl_send_wrapper(const char* buffer, size_t len) -> int;
-		auto ssl_recv_wrapper(char* buffer, size_t amount) -> int;
+		auto sslSendWrapper(const char* buffer, size_t len) -> int;
+		auto sslRecvWrapper(char* buffer, size_t amount) -> int;
 
-		static auto recv_cb(void *ctx, unsigned char *buf, size_t len) -> int;
-		static auto send_cb(void *ctx, const unsigned char *buf, size_t len) -> int;
+		static auto recvCb(void *ctx, unsigned char *buf, size_t len) -> int;
+		static auto sendCb(void *ctx, const unsigned char *buf, size_t len) -> int;
+
+		auto getTimevalStruct() const -> timeval;
 	};
 
 	class jsonNetHelper : public netHelper {
