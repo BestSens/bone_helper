@@ -12,6 +12,7 @@
 #include <cassert>
 #include <limits>
 #include <mutex>
+#include <stdexcept>
 #include <vector>
 
 namespace bestsens {
@@ -20,8 +21,9 @@ namespace bestsens {
 		assert(a >= 0 && b >= 0);
 		assert(a <= limit && b <= limit);
 
-		if (a - b < 0)
+		if (a - b < 0) {
 			return (limit - b) + a + 1;
+		}
 
 		return a - b;
 	}
@@ -33,20 +35,21 @@ namespace bestsens {
 
 		const auto diff_to_overflow = limit - a;
 
-		if (diff_to_overflow < b)
+		if (diff_to_overflow < b) {
 			return b - diff_to_overflow - 1;
+		}
 		
 		return a + b;	
 	}
 
 	template <typename T>
 	void incrementWithRollover(T& a, const T& limit = std::numeric_limits<T>::max()) {
-		a = addWithRollover(a, 1, limit);
+		a = addWithRollover(a, T{1u}, limit);
 	}
 
 	template <typename T>
 	void decrementWithRollover(T& a, const T& limit = std::numeric_limits<T>::max()) {
-		a = subtractWithRollover(a, 1, limit);
+		a = subtractWithRollover(a, T{1u}, limit);
 	}
 
 	template < typename T, int N >
@@ -70,14 +73,15 @@ namespace bestsens {
 		auto get(T * target, int &amount, int last_value = 0, bool return_continous = false) const -> int;
 
 		auto getVector(int amount) const -> std::vector<T>;
-		auto getVector(int amount, int &last_value, bool exactly = false, bool return_continous = false) const -> std::vector<T>;
-		
+		auto getVector(int amount, int& last_value, bool exactly = false, bool return_continous = false) const
+			-> std::vector<T>;
+
 		auto getPosition(int pos) const -> T;
 		auto getBaseID() const -> int;
 		auto getNewDataAmount(int last_value = 0) const -> int;
 
 		auto size() const -> int;
-		auto maxSize() const -> int;
+		constexpr auto maxSize() const -> int;
 
 		void clear();
 	private:
@@ -90,6 +94,8 @@ namespace bestsens {
 		auto getRange(T * target, int start, int end) const -> int;
 
 		mutable std::mutex mutex;
+
+		auto incrementCounters() -> void;
 	};
 
 	template < typename T, int N >
@@ -136,58 +142,47 @@ namespace bestsens {
 		return this->getPosition(id);
 	}
 
+	template <typename T, int N>
+	auto CircularBuffer<T, N>::incrementCounters() -> void {
+		if (this->item_count < N) {
+			this->item_count++;
+		};
+
+		incrementWithRollover(this->current_position, N - 1);
+		incrementWithRollover(this->base_id);
+	}
+
 	template < typename T, int N >
 	auto CircularBuffer<T, N>::add(T&& value) -> int {
-		if (N == 0)
-			throw std::runtime_error("out of bounds");
+		static_assert(N > 0, "zero length buffer cannot be filled");
 
 		std::lock_guard<std::mutex> lock(this->mutex);
 		this->buffer[this->current_position] = std::forward<T>(value);
-
-		this->current_position = (this->current_position + 1) % N;
-
-		if (this->item_count < N)
-			this->item_count++;
-
-		incrementWithRollover(this->base_id);
+		this->incrementCounters();
 
 		return 0;
 	}
 
 	template < typename T, int N >
 	auto CircularBuffer<T, N>::add(const T& value) -> int {
-		if (N == 0)
-			throw std::runtime_error("out of bounds");
+		static_assert(N > 0, "zero length buffer cannot be filled");
 
 		std::lock_guard<std::mutex> lock(this->mutex);
 		this->buffer[this->current_position] = value;
-
-		this->current_position = (this->current_position + 1) % N;
-
-		if (this->item_count < N)
-			this->item_count++;
-
-		incrementWithRollover(this->base_id);
+		this->incrementCounters();
 
 		return 0;
 	}
 
 	template < typename T, int N >
 	auto CircularBuffer<T, N>::add(const std::vector<T>& values) -> int {
-		if (N == 0)
-			throw std::runtime_error("out of bounds");
+		static_assert(N > 0, "zero length buffer cannot be filled");
 
 		std::lock_guard<std::mutex> lock(this->mutex);
 
 		for (const auto& e : values) {
 			this->buffer[this->current_position] = e;
-
-			this->current_position = (this->current_position + 1) % N;
-
-			if (this->item_count < N)
-				this->item_count++;
-
-			incrementWithRollover(this->base_id);
+			this->incrementCounters();
 		}
 
 		return 0;
@@ -195,15 +190,12 @@ namespace bestsens {
 
 	template < typename T, int N >
 	auto CircularBuffer<T, N>::getRange(T * target, int start, int end) const -> int {
-		auto offset = (this->current_position - end) % N;
-
-		if (offset < 0)
-			offset += N;
-
 		auto len = end - start;
 
-		if (len > N)
-			len = N;
+		assert(len <= N);
+		assert(end > 0);
+
+		const auto offset = subtractWithRollover(this->current_position, end, N - 1);
 
 		auto len2 = 0;
 
@@ -212,8 +204,9 @@ namespace bestsens {
 			len = N - offset;
 		}
 
-		if (len < 0 || len2 < 0)
+		if (len < 0 || len2 < 0) {
 			throw std::runtime_error("out of bounds");
+		}
 
 		std::copy(this->buffer.data() + offset, this->buffer.data() + offset + len, target);
 		std::copy(this->buffer.data(), this->buffer.data() + len2, target + len);
@@ -230,10 +223,11 @@ namespace bestsens {
 	auto CircularBuffer<T, N>::get(int id) const -> T {
 		std::lock_guard<std::mutex> lock(this->mutex);
 
-		if (this->item_count == 0)
+		if (this->item_count == 0) {
 			throw std::runtime_error("out of bounds");
+		}
 
-		return this->buffer.at((this->current_position + id) % N);
+		return this->buffer.at(addWithRollover(this->current_position, id, N - 1));
 	}
 
 	template < typename T, int N >
@@ -243,27 +237,30 @@ namespace bestsens {
 		int end = 0;
 		int last_position = 0;
 
-		if (amount == 0)
-			amount = -1;
+		if (amount == 0) {
+			return this->base_id;
+		}
 
 		if (last_value > 0 && last_value <= this->base_id) {
-			const auto temp = this->base_id - last_value;
-			end = temp % N;
+			end = subtractWithRollover(this->base_id, last_value);
 		} else {
 			end = amount;
 		}
 
-		if (end > this->item_count)
+		if (end > this->item_count) {
 			end = this->item_count;
+		}
 
 		int start = 0;
 
 		if (!return_continous) {
-			if (end > amount)
+			if (end > amount) {
 				end = amount;
+			}
 		} else {
-			if (end > amount)
+			if (end > amount) {
 				start = end - amount;
+			}
 		}
 
 		last_position = this->base_id - start;
@@ -307,10 +304,7 @@ namespace bestsens {
 		if (pos >= this->item_count || this->item_count == 0)
 			throw std::runtime_error("out of bounds");
 
-		auto offset = ((this->current_position - 1) - pos) % N;
-
-		if (offset < 0)
-			offset += N;
+		const auto offset = subtractWithRollover(subtractWithRollover(this->current_position, 1, N - 1), pos, N - 1);
 
 		return this->buffer.at(offset);
 	}
@@ -322,6 +316,10 @@ namespace bestsens {
 
 	template < typename T, int N >
 	auto CircularBuffer<T, N>::getNewDataAmount(int last_value) const -> int {
+		if (last_value < 0) {
+			last_value = 0;
+		}
+
 		const auto difference = subtractWithRollover(this->base_id, last_value);
 		return std::min(difference, this->item_count);
 	}
@@ -332,7 +330,7 @@ namespace bestsens {
 	}
 
 	template < typename T, int N >
-	auto CircularBuffer<T, N>::maxSize() const -> int {
+	constexpr auto CircularBuffer<T, N>::maxSize() const -> int {
 		return N;
 	}
 
