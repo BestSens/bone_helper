@@ -111,8 +111,11 @@ TEST_CASE("circular_buffer_test") {
 
 	SECTION("test underflow") {
 		int test[BUFFER_SIZE];
+		test[0] = 0xdeadbeef;
 		int amount = 0;
-		CHECK_THROWS(buffer_test.get(test, amount, 0));
+		buffer_test.get(test, amount, 0);
+		CHECK(amount == 0);
+		CHECK(test[0] == 0xdeadbeef);
 	}
 
 	SECTION("test getPosition") {
