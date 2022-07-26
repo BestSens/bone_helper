@@ -65,44 +65,22 @@ if(ENABLE_CCACHE)
 	endif(CCACHE_FOUND)
 endif()
 
-if(NOT GIT_BRANCH)
-	# Get the current working branch
-	execute_process(
-		COMMAND git rev-parse --abbrev-ref HEAD
-		WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-		OUTPUT_VARIABLE GIT_BRANCH
-		OUTPUT_STRIP_TRAILING_WHITESPACE
-	)
-endif()
-
-if(NOT GIT_COMMIT_HASH)
-	# Get the latest abbreviated commit hash of the working branch
-	execute_process(
-		COMMAND git rev-parse --verify --short=8 HEAD
-		WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-		OUTPUT_VARIABLE GIT_COMMIT_HASH
-		OUTPUT_STRIP_TRAILING_WHITESPACE
-	)
-endif()
-
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # depend on deleted version_info.hpp.temp to force rebuiling every time
 add_custom_target(version_header ALL DEPENDS 
 	${CMAKE_CURRENT_BINARY_DIR}/version_info.hpp
-	${CMAKE_CURRENT_BINARY_DIR}/version_info.hpp.temp
 )
 
-add_custom_command(OUTPUT
-	${CMAKE_CURRENT_BINARY_DIR}/version_info.hpp
-	${CMAKE_CURRENT_BINARY_DIR}/version_info.hpp.temp
+add_custom_command(
+	OUTPUT	${CMAKE_CURRENT_BINARY_DIR}/version_info.hpp
+			${CMAKE_CURRENT_BINARY_DIR}/_version_info.hpp
 	COMMAND ${CMAKE_COMMAND}
-	-DCMAKE_PROJECT_VERSION_MAJOR=${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}
-	-DCMAKE_PROJECT_VERSION_MINOR=${${CMAKE_PROJECT_NAME}_VERSION_MINOR}
-	-DCMAKE_PROJECT_VERSION_PATCH=${${CMAKE_PROJECT_NAME}_VERSION_PATCH}
-	-DGIT_BRANCH=${GIT_BRANCH}
-	-DGIT_COMMIT_HASH=${GIT_COMMIT_HASH}
-	-P ${CMAKE_CURRENT_LIST_DIR}/create_version_info.cmake)
+			-DCMAKE_PROJECT_VERSION_MAJOR=${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}
+			-DCMAKE_PROJECT_VERSION_MINOR=${${CMAKE_PROJECT_NAME}_VERSION_MINOR}
+			-DCMAKE_PROJECT_VERSION_PATCH=${${CMAKE_PROJECT_NAME}_VERSION_PATCH}
+			-P ${CMAKE_CURRENT_LIST_DIR}/create_version_info.cmake
+)
 
 set_source_files_properties(${CMAKE_CURRENT_BINARY_DIR}/version_info.hpp
 	PROPERTIES GENERATED TRUE
