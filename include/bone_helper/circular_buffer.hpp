@@ -70,7 +70,7 @@ namespace bestsens {
 		auto add(const std::vector<T>& values) -> ssize_t;
 
 		auto get(ssize_t id) const -> T;
-		auto get(T * target, ssize_t &amount, ssize_t last_value = 0, bool return_continous = false) const -> ssize_t;
+		auto get(T * target, ssize_t &amount, ssize_t last_value = -1, bool return_continous = false) const -> ssize_t;
 
 		auto getVector(ssize_t amount) const -> std::vector<T>;
 		auto getVector(ssize_t amount, ssize_t& last_value, bool exactly = false, bool return_continous = false) const
