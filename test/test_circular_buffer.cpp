@@ -14,7 +14,7 @@ TEST_CASE("circular_buffer_test") {
 	SECTION("test") {
 		int test[BUFFER_SIZE];
 		int test2[1];
-		int amount = BUFFER_SIZE;
+		ssize_t amount = BUFFER_SIZE;
 		int last_position = 0;
 
 		CHECK_THROWS(buffer_test.get(0));
@@ -63,7 +63,7 @@ TEST_CASE("circular_buffer_test") {
 		/*
 		 * request 20 items with only 10 set
 		 */
-		int amount = 20;
+		ssize_t amount = 20;
 		buffer_test.get(test, amount);
 		CHECK(amount == 10);
 	}
@@ -77,7 +77,7 @@ TEST_CASE("circular_buffer_test") {
 		/*
 		 * request more items than buffer is big
 		 */
-		int amount = 120;
+		ssize_t amount = 120;
 		buffer_test.get(test, amount);
 		CHECK(amount == BUFFER_SIZE);
 	}
@@ -103,7 +103,7 @@ TEST_CASE("circular_buffer_test") {
 
 	SECTION("test empty") {
 		int test[BUFFER_SIZE];
-		int amount = 1800;
+		ssize_t amount = 1800;
 		int ret_val = buffer_test.get(test, amount, 600);
 		CHECK(ret_val == 0);
 		CHECK(amount == 0);
@@ -112,7 +112,7 @@ TEST_CASE("circular_buffer_test") {
 	SECTION("test underflow") {
 		int test[BUFFER_SIZE];
 		test[0] = 0xdeadbeef;
-		int amount = 0;
+		ssize_t amount = 0;
 		buffer_test.get(test, amount, 0);
 		CHECK(amount == 0);
 		CHECK(test[0] == 0xdeadbeef);
@@ -137,7 +137,7 @@ TEST_CASE("vector") {
 
 	SECTION("test last_value") {
 		for(unsigned int i = 0; i < 100; i++) {
-			int last_value = rand() % 99999;
+			ssize_t last_value = rand() % 99999;
 			std::vector<int> v = buffer_test.getVector(std::numeric_limits<int>::max(), last_value);
 
 			REQUIRE(v.size() == 10);
@@ -151,7 +151,7 @@ TEST_CASE("vector") {
 	}
 
 	SECTION("test last_value without change") {
-		int last_value = -1;
+		ssize_t last_value = -1;
 		std::vector<int> v = buffer_test.getVector(11, last_value);
 
 		CHECK(v.size() == 10);
@@ -162,7 +162,7 @@ TEST_CASE("vector") {
 	}
 
 	SECTION("test amount") {
-		int last_value = 1;
+		ssize_t last_value = 1;
 		std::vector<int> v = buffer_test.getVector(2, last_value);
 
 		REQUIRE(v.size() == 2);
@@ -257,7 +257,7 @@ TEST_CASE("circular buffer stress test", "[.]") {
 	for(unsigned int i = 0; i < inst_thread_read.size(); i++) {
 		new (&inst_thread_read[i]) std::thread([&buffer_test](unsigned int thread_id) {
 			for(int i = 0; i < 10000; i++) {
-				int amount = 10000;
+				ssize_t amount = 10000;
 				int test[amount];
 				int last_position = 0;
 
