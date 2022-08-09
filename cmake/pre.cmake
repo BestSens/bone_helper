@@ -10,7 +10,7 @@ target_compile_options(common_compile_options INTERFACE "$<$<CONFIG:DEBUG>:-Og;-
 
 target_link_libraries(common_compile_options INTERFACE ${CMAKE_DL_LIBS})
 
-option(USE_LTO "enable link time optimizations when available" ON)
+option(USE_LTO "enable link time optimizations when available" OFF)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
 	target_compile_options(common_compile_options INTERFACE "$<$<CONFIG:DEBUG>:-rdynamic>")
