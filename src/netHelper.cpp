@@ -453,11 +453,6 @@ namespace bestsens {
 		auto sockfd = *static_cast<int*>(ctx);
 
 		const auto ret = ::send(sockfd, buf, len, 0);
-
-		if (ret < 0) {
-			throw std::runtime_error(fmt::format("send error: 0x{:X}", -ret));
-		}
-
 		return static_cast<int>(ret);
 	}
 
@@ -465,8 +460,16 @@ namespace bestsens {
 		// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
 		const auto *const buffer_unsigned = reinterpret_cast<const unsigned char*>(buffer);
 
-		if (!this->use_ssl)
-			return sendCb(&this->sockfd, buffer_unsigned, len);
+		if (!this->use_ssl) {
+			const auto ret = sendCb(&this->sockfd, buffer_unsigned, len);
+
+			if (ret < 0) {
+				throw std::runtime_error(fmt::format("send error: 0x{:X}", -ret));
+			}
+
+			return ret;
+		}
+			
 #ifndef BONE_HELPER_NO_SSL
 		const auto ret = mbedtls_ssl_write(&this->ssl, buffer_unsigned, len);
 		if (ret < 0) {
@@ -486,11 +489,6 @@ namespace bestsens {
 		auto sockfd = *static_cast<int*>(ctx);
 
 		const auto ret = ::recv(sockfd, buf, len, 0);
-
-		if (ret < 0) {
-			throw std::runtime_error(fmt::format("recv error: 0x{:X}", -ret));
-		}
-
 		return static_cast<int>(ret);
 	}
 
@@ -498,8 +496,16 @@ namespace bestsens {
 		// NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
 		auto* buffer_unsigned = reinterpret_cast<unsigned char*>(buffer);
 
-		if (!this->use_ssl)
-			return recvCb(&this->sockfd, buffer_unsigned, amount);
+		if (!this->use_ssl) {
+			const auto ret = recvCb(&this->sockfd, buffer_unsigned, amount);
+
+			if (ret < 0) {
+				throw std::runtime_error(fmt::format("send error: 0x{:X}", -ret));
+			}
+
+			return ret;
+		}
+
 #ifndef BONE_HELPER_NO_SSL
 		const auto ret = mbedtls_ssl_read(&this->ssl, buffer_unsigned, amount);
 		if (ret < 0) {
