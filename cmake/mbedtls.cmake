@@ -1,5 +1,6 @@
 set(ENABLE_TESTING OFF CACHE INTERNAL "Build mbed TLS tests.")
 set(ENABLE_PROGRAMS OFF CACHE INTERNAL "Build mbed TLS programs.")
+set(MBEDTLS_FATAL_WARNINGS OFF CACHE INTERNAL "Compiler warnings treated as errors")
 add_subdirectory(libs/mbedtls)
 
 set(MBEDTLS_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/libs/mbedtls/include" CACHE INTERNAL "")
