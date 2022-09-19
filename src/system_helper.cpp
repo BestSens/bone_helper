@@ -8,6 +8,8 @@
 #include "bone_helper/system_helper.hpp"
 
 #include <endian.h>
+#include <grp.h>
+#include <pwd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -34,11 +36,56 @@
 
 namespace bestsens {
 	auto strerror_s(int errnum) -> std::string {
-		std::array<char, 256> buffer;
+		std::array<char, 256> buffer{};
 		return {strerror_r(errnum, buffer.data(), buffer.size())};
 	}
 
 	namespace system_helper {
+		auto getUID() -> unsigned int {
+			return getuid();
+		}
+
+		auto getUID(const std::string &user_name) -> unsigned int {
+			struct passwd *pwd = getpwnam(user_name.c_str());  // NOLINT (concurrency-mt-unsafe)
+
+			if (pwd == nullptr) {
+				throw std::runtime_error("error getting uid: " + strerror_s(errno));
+			}
+
+			return static_cast<unsigned int>(pwd->pw_uid);
+		}
+
+		auto getGID() -> unsigned int {
+			return getgid();
+		}
+
+		auto getGID(const std::string &group_name) -> unsigned int {
+			struct group *grp = getgrnam(group_name.c_str());  // NOLINT (concurrency-mt-unsafe)
+
+			if (grp == nullptr) {
+				throw std::runtime_error("error getting gid: " + strerror_s(errno));
+			}
+
+			return static_cast<unsigned int>(grp->gr_gid);
+		}
+
+		auto dropPriviledges() -> void {
+			const auto userid = getUID("bemos");
+			const auto groupid = getGID("bemos_users");
+
+			if (setgid(groupid) != 0) {
+				throw std::runtime_error("setgid: Unable to drop group privileges: " + strerror_s(errno));
+			}
+
+			if (setuid(userid) != 0) {
+				throw std::runtime_error("setuid: Unable to drop user privileges: " + strerror_s(errno));
+			}
+
+			if (setuid(0) != -1) {
+				throw std::runtime_error("managed to regain root privileges");
+			}
+		}
+
 		void daemonize() {
 			/* Fork off the parent process */
 			pid_t pid = fork();

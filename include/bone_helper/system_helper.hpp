@@ -23,6 +23,12 @@ namespace bestsens {
 	auto strerror_s(int errnum) -> std::string;
 	
 	namespace system_helper {
+		auto getUID() -> unsigned int;
+		auto getUID(const std::string &user_name) -> unsigned int;
+		auto getGID() -> unsigned int;
+		auto getGID(const std::string &group_name) -> unsigned int;
+		auto dropPriviledges() -> void;
+
 		void daemonize();
 
 		void memcpy_swap_bo(void *dest, const void *src, std::size_t count);
