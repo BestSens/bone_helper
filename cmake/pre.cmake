@@ -31,6 +31,14 @@ if(USE_LTO)
 	endif()
 endif()
 
+option(STATIC_LINK_BINARY "statically link binary" OFF)
+
+if(STATIC_LINK_BINARY)
+	set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+	set(BUILD_SHARED_LIBS OFF)
+	set(CMAKE_EXE_LINKER_FLAGS "-static")
+endif()
+
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 option(ENABLE_SYSTEMD "enable linking of systemd" ON)
