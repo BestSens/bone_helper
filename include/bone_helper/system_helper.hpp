@@ -36,8 +36,8 @@ namespace bestsens {
 		void memcpy_le(void *dest, const void *src, std::size_t count);
 
 		auto deleteFilesRecursive(const std::string &directory_location) -> void;
-		auto getDirectories(const std::string &directory_location) -> std::vector<std::string>;
-		auto getDirectoriesUnsorted(const std::string &directory_location) -> std::vector<std::string>;
+		auto getDirectories(const std::string &directory_location, bool recursive) -> std::vector<std::string>;
+		auto getDirectoriesUnsorted(const std::string &directory_location, bool recursive) -> std::vector<std::string>;
 
 		auto readDirectory(const std::string &directory_location, const std::string &start_string,
 						   const std::string &extension, bool full_path) -> std::vector<std::string>;

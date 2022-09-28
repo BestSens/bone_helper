@@ -182,7 +182,7 @@ namespace bestsens {
 			}
 		}
 
-		auto getDirectoriesUnsorted(const std::string &directory_location) -> std::vector<std::string> {
+		auto getDirectoriesUnsorted(const std::string &directory_location, bool recursive) -> std::vector<std::string> {
 			std::vector<std::string> result;
 
 			tinydir_dir dir;
@@ -208,8 +208,10 @@ namespace bestsens {
 						const auto new_directory = directory_location + "/" + entry;
 						result.push_back(new_directory);
 
-						const auto new_result = getDirectories(new_directory);
-						result.insert(std::end(result), std::begin(new_result), std::end(new_result));
+						if (recursive) {
+							const auto new_result = getDirectories(new_directory, recursive);
+							result.insert(std::end(result), std::begin(new_result), std::end(new_result));
+						}
 					}
 				}
 			} catch (...) {}
@@ -219,8 +221,8 @@ namespace bestsens {
 			return result;
 		}
 
-		auto getDirectories(const std::string &directory_location) -> std::vector<std::string> {
-			auto result = getDirectoriesUnsorted(directory_location);
+		auto getDirectories(const std::string &directory_location, bool recursive) -> std::vector<std::string> {
+			auto result = getDirectoriesUnsorted(directory_location, recursive);
 			std::sort(result.begin(), result.end(), compareNat);
 
 			return result;
