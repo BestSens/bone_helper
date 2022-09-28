@@ -162,14 +162,22 @@ namespace bestsens {
 					deleteFilesRecursive(full_path);
 				}
 
+				/*
+				 * we only want to delete regular files or folders, no symlinks or stuff
+				 * we don't know what happens if we just delete them
+				 */
+				if (file.is_dir == 0 && file.is_reg == 0) {
+					throw std::runtime_error("cannot delete " + full_path + ": not a regular file");
+				}
+
 				if (std::remove(full_path.c_str()) != 0) {
-					throw std::runtime_error("error deleting file " + full_path +
+					throw std::runtime_error("error deleting file " + full_path + ": " +
 											 strerror_s(errno));  // NOLINT(concurrency-mt-unsafe)
 				}
 			}
 
 			if (std::remove(directory_location.c_str()) != 0) {
-				throw std::runtime_error("error deleting file " + directory_location +
+				throw std::runtime_error("error deleting file " + directory_location + ": " +
 										 strerror_s(errno));  // NOLINT(concurrency-mt-unsafe)
 			}
 		}
@@ -180,7 +188,7 @@ namespace bestsens {
 			tinydir_dir dir;
 
 			if (tinydir_open(&dir, directory_location.c_str()) != 0) {
-				throw std::runtime_error("error opening directory" + directory_location);
+				throw std::runtime_error("error opening directory " + directory_location);
 			}
 
 			try {
