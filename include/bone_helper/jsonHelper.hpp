@@ -96,8 +96,8 @@ namespace bestsens {
 		return arithmetic_merge_json(from, to, [](double a, double b){ try { return a / b; } catch(...){} return a; });
 	}
 
-	template <typename T>
-	inline auto value_ig_type(const nlohmann::json& input, const std::string& key, const T& default_value) -> T {
+	template <typename keytype, typename T>
+	auto value_ig_type(const nlohmann::json& input, const keytype& key, const T& default_value) -> T {
 		try {
 			return input.value(key, default_value);
 		} catch (const nlohmann::json::type_error& e) {
@@ -105,60 +105,50 @@ namespace bestsens {
 		}
 	}
 
-	inline auto is_json_number(const nlohmann::json& input, const std::string& key) -> bool{
+	template <typename keytype>
+	auto is_json_number(const nlohmann::json& input, const keytype& key) -> bool {
 		return (input.contains(key) && input.at(key).is_number());
 	}
 
-	inline auto is_json_array(const nlohmann::json& input, const std::string& key) -> bool{
+	template <typename keytype>
+	auto is_json_array(const nlohmann::json& input, const keytype& key) -> bool {
 		return (input.contains(key) && input.at(key).is_array());
 	}
 
-	inline auto is_json_string(const nlohmann::json& input, const std::string& key) -> bool{
+	template <typename keytype>
+	auto is_json_string(const nlohmann::json& input, const keytype& key) -> bool {
 		return (input.contains(key) && input.at(key).is_string());
 	}
 
-	inline auto is_json_bool(const nlohmann::json& input, const std::string& key) -> bool{
+	template <typename keytype>
+	auto is_json_bool(const nlohmann::json& input, const keytype& key) -> bool {
 		return (input.contains(key) && input.at(key).is_boolean());
 	}
 
-	inline auto is_json_object(const nlohmann::json& input, const std::string& key) -> bool{
+	template <typename keytype>
+	auto is_json_object(const nlohmann::json& input, const keytype& key) -> bool {
 		return (input.contains(key) && input.at(key).is_object());
 	}
 
-	inline auto is_json_node(const nlohmann::json& input, const std::string& key) -> bool{
+	template <typename keytype>
+	auto is_json_node(const nlohmann::json& input, const keytype& key) -> bool {
 		return (input.contains(key) && !input.at(key).is_null());
 	}
 
-	inline auto checkedUpdateFromJSON(const nlohmann::json& j, const std::string& name, int& value) -> bool{
-		if(is_json_number(j, name))
-			value = j.at(name).get<int>();
-		else
-			return false;
-
-		return true;
-	}
-
-	inline auto checkedUpdateFromJSON(const nlohmann::json& j, const std::string& name, int& value,
-									  const int default_value) -> bool {
-		if(!checkedUpdateFromJSON(j, name, value)) {
-			value = default_value;
+	template <typename keytype>
+	auto checkedUpdateFromJSON(const nlohmann::json& j, const keytype& name, int& value) -> bool {
+		if (is_json_number(j, name)) {
+			value = j.at(name).template get<int>();
+		} else {
 			return false;
 		}
 
 		return true;
 	}
 
-	inline auto checkedUpdateFromJSON(const nlohmann::json& j, const std::string& name, double& value) -> bool{
-		if(is_json_number(j, name))
-			value = j.at(name).get<double>();
-		else
-			return false;
-
-		return true;
-	}
-
-	inline auto checkedUpdateFromJSON(const nlohmann::json& j, const std::string& name, double& value,
-									  const double default_value) -> bool {
+	template <typename keytype>
+	auto checkedUpdateFromJSON(const nlohmann::json& j, const keytype& name, int& value, const int default_value)
+		-> bool {
 		if (!checkedUpdateFromJSON(j, name, value)) {
 			value = default_value;
 			return false;
@@ -167,18 +157,21 @@ namespace bestsens {
 		return true;
 	}
 
-	inline auto checkedUpdateFromJSON(const nlohmann::json& j, const std::string& name, bool& value) -> bool{
-		if(is_json_bool(j, name))
-			value = j.at(name).get<bool>();
-		else
+	template <typename keytype>
+	auto checkedUpdateFromJSON(const nlohmann::json& j, const keytype& name, double& value) -> bool {
+		if (is_json_number(j, name)) {
+			value = j.at(name).template get<double>();
+		} else {
 			return false;
+		}
 
 		return true;
 	}
 
-	inline auto checkedUpdateFromJSON(const nlohmann::json& j, const std::string& name, bool& value,
-									  const bool default_value) -> bool {
-		if(!checkedUpdateFromJSON(j, name, value)) {
+	template <typename keytype>
+	auto checkedUpdateFromJSON(const nlohmann::json& j, const keytype& name, double& value, const double default_value)
+		-> bool {
+		if (!checkedUpdateFromJSON(j, name, value)) {
 			value = default_value;
 			return false;
 		}
@@ -186,16 +179,41 @@ namespace bestsens {
 		return true;
 	}
 
-	inline auto checkedUpdateFromJSON(const nlohmann::json& j, const std::string& name, std::string& value) -> bool{
-		if(is_json_string(j, name))
-			value = j.at(name).get<std::string>();
-		else
+	template <typename keytype>
+	auto checkedUpdateFromJSON(const nlohmann::json& j, const keytype& name, bool& value) -> bool {
+		if (is_json_bool(j, name)) {
+			value = j.at(name).template get<bool>();
+		} else {
 			return false;
+		}
 
 		return true;
 	}
 
-	inline auto checkedUpdateFromJSON(const nlohmann::json& j, const std::string& name, std::string& value,
+	template <typename keytype>
+	auto checkedUpdateFromJSON(const nlohmann::json& j, const keytype& name, bool& value, const bool default_value)
+		-> bool {
+		if (!checkedUpdateFromJSON(j, name, value)) {
+			value = default_value;
+			return false;
+		}
+
+		return true;
+	}
+
+	template <typename keytype>
+	auto checkedUpdateFromJSON(const nlohmann::json& j, const keytype& name, std::string& value) -> bool {
+		if (is_json_string(j, name)) {
+			value = j.at(name).template get<std::string>();
+		} else {
+			return false;
+		}
+
+		return true;
+	}
+
+	template <typename keytype>
+	auto checkedUpdateFromJSON(const nlohmann::json& j, const keytype& name, std::string& value,
 									  const std::string& default_value) -> bool {
 		if (!checkedUpdateFromJSON(j, name, value)) {
 			value = default_value;
@@ -206,14 +224,14 @@ namespace bestsens {
 	}
 
 	inline auto get_filtered_values(const nlohmann::json& j, const std::vector<std::string>& filter) -> nlohmann::json {
-		if (filter.size() == 0) {
+		if (filter.empty()) {
 			return j;
 		}
 
 		nlohmann::json result;
 
 		for (const auto& e : j.items()) {
-			auto it = std::find(filter.begin(), filter.end(), e.key());
+			const auto it = std::find(filter.cbegin(), filter.cend(), e.key());
 
 			if (it != filter.end()) {
 				result[e.key()] = e.value();
