@@ -51,14 +51,14 @@ namespace bestsens {
 				return to;	// for type incompatibility just return old value
 			}
 
-			int i{0};
+			size_t i{0};
 			for (auto it = from.cbegin(); it != from.cend(); ++it, ++i) {
 				if (from.is_object()) {
 					if (!it.value().is_null()) {
 						to[it.key()] = arithmetic_merge_json(it.value(), to.at(it.key()), operation);
 					}
 				} else {
-					if (i >= static_cast<int>(to.size())) {
+					if (i >= to.size()) {
 						break;
 					}
 
@@ -71,29 +71,45 @@ namespace bestsens {
 
 		// combine from and to if they are numbers
 		if (from.is_number() && to.is_number()) {
-			const auto a = from.get<double>();
-			const auto b = to.get<double>();
+			if (from.is_number_integer() && to.is_number_integer()) {
+				const auto a = from.get<long>();
+				const auto b = to.get<long>();
 
-			return nlohmann::json(operation(a, b));
+				return nlohmann::json(operation(a, b));
+			} else {
+				const auto a = from.get<double>();
+				const auto b = to.get<double>();
+
+				return nlohmann::json(operation(a, b));
+			}
 		}
 
 		return to;	// from is neither a number nor an object, return old value
 	}
 
 	inline auto arithmetic_add_json(const nlohmann::json& from, const nlohmann::json& to) -> nlohmann::json {
-		return arithmetic_merge_json(from, to, [](double a, double b){ return a + b; });
+		return arithmetic_merge_json(from, to, [](auto a, auto b) { return a + b; });
 	}
 
 	inline auto arithmetic_sub_json(const nlohmann::json& from, const nlohmann::json& to) -> nlohmann::json {
-		return arithmetic_merge_json(from, to, [](double a, double b){ return a - b; });
+		return arithmetic_merge_json(from, to, [](auto a, auto b) { return a - b; });
 	}
 
 	inline auto arithmetic_mul_json(const nlohmann::json& from, const nlohmann::json& to) -> nlohmann::json {
-		return arithmetic_merge_json(from, to, [](double a, double b){ return a * b; });
+		return arithmetic_merge_json(from, to, [](auto a, auto b) { return a * b; });
 	}
 
 	inline auto arithmetic_div_json(const nlohmann::json& from, const nlohmann::json& to) -> nlohmann::json {
-		return arithmetic_merge_json(from, to, [](double a, double b){ try { return a / b; } catch(...){} return a; });
+		return arithmetic_merge_json(from, to, [](double a, double b) {
+			if (b == 0) {
+				return a;
+			}
+			
+			try {
+				return a / b;
+			} catch (...) {}
+			return a;
+		});
 	}
 
 	template <typename keytype, typename T>
