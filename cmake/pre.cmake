@@ -99,6 +99,7 @@ set_source_files_properties(${CMAKE_CURRENT_BINARY_DIR}/version_info.hpp
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 if(CMAKE_CROSSCOMPILING)
 	set(THREADS_PTHREAD_ARG "2" CACHE STRING "Forcibly set by CMakeLists.txt." FORCE)
+	target_compile_options(common_compile_options INTERFACE "$<$<CONFIG:RELEASE>:-fno-var-tracking-assignments>")
 endif()
 
 find_package(Threads REQUIRED)
