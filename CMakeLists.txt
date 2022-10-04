@@ -10,12 +10,20 @@ add_library(bone_helper STATIC
 	src/system_helper.cpp
 	src/netHelper.cpp
 	src/strnatcmp.cpp
+	src/fsHelper.cpp
 )
 
 target_include_directories(bone_helper PUBLIC include)
 target_include_directories(bone_helper PRIVATE libs/tinydir)
 
 target_link_libraries(bone_helper PRIVATE nlohmann_json::nlohmann_json fmt spdlog)
+
+add_library(uff_writer STATIC
+	src/uffWriter.cpp
+)
+
+target_include_directories(uff_writer PUBLIC include)
+target_link_libraries(uff_writer PRIVATE bone_helper fmt)
 
 find_package(MbedTLS REQUIRED)
 target_include_directories(bone_helper PRIVATE ${MBEDTLS_INCLUDE_DIRS})

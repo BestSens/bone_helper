@@ -11,6 +11,7 @@
 #include <mutex>
 #include <string>
 #include <vector>
+#include "bone_helper/fsHelper.hpp"
 
 #ifdef ENABLE_SYSTEMD_STATUS
 #include <systemd/sd-daemon.h>
@@ -35,18 +36,11 @@ namespace bestsens {
 		void memcpy_be(void *dest, const void *src, std::size_t count);
 		void memcpy_le(void *dest, const void *src, std::size_t count);
 
-		auto deleteFilesRecursive(const std::string &directory_location) -> void;
-		auto getDirectories(const std::string &directory_location, bool recursive) -> std::vector<std::string>;
-		auto getDirectoriesUnsorted(const std::string &directory_location, bool recursive) -> std::vector<std::string>;
-
-		auto readDirectory(const std::string &directory_location, const std::string &start_string,
-						   const std::string &extension, bool full_path) -> std::vector<std::string>;
-
-		auto readDirectoryUnsorted(const std::string &directory_location, const std::string &start_string,
-								   const std::string &extension, bool full_path) -> std::vector<std::string>;
-
-		auto readDirectoryNatural(const std::string &directory_location, const std::string &start_string,
-								  const std::string &extension, bool full_path) -> std::vector<std::string>;
+		constexpr auto *deleteFilesRecursive = fs::deleteFilesRecursive;
+		constexpr auto *getDirectoriesUnsorted = fs::getDirectoriesUnsorted;
+		constexpr auto *readDirectory = fs::readDirectory;
+		constexpr auto *readDirectoryUnsorted = fs::readDirectoryUnsorted;
+		constexpr auto *readDirectoryNatural = fs::readDirectoryNatural;
 
 		namespace systemd {
 			void ready();
