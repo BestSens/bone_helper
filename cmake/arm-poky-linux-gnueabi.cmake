@@ -1,4 +1,4 @@
-set(CMAKE_SYSTEM_NAME Generic)
+set(CMAKE_SYSTEM_NAME Linux)
 set(CMAKE_SYSTEM_PROCESSOR ARM)
 
 if(MINGW OR CYGWIN OR WIN32)
@@ -47,4 +47,5 @@ set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 
 set(CMAKE_SYSROOT "/opt/boneos/2.0.3/sysroots/cortexa9hf-vfp-neon-poky-linux-gnueabi")
 
-add_compile_options("-march=armv7-a;-mfloat-abi=hard;-mfpu=neon;-mtune=cortex-a9")
+add_compile_options("-march=armv7-a;-mfloat-abi=hard;-mfpu=neon;-mtune=cortex-a9;-pthread")
+add_link_options("-march=armv7-a;-mfloat-abi=hard;-mfpu=neon;-mtune=cortex-a9;-pthread")
