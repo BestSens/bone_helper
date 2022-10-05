@@ -46,6 +46,9 @@ set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 
 set(CMAKE_SYSROOT "/opt/boneos/2.0.3/sysroots/cortexa9hf-vfp-neon-poky-linux-gnueabi")
+set(ENV{SDKTARGETSYSROOT} ${CMAKE_SYSROOT})
+set(ENV{PKG_CONFIG_SYSROOT_DIR} ${CMAKE_SYSROOT})
+set(ENV{PKG_CONFIG_PATH} ${CMAKE_SYSROOT}/usr/lib/pkgconfig)
 
 add_compile_options("-march=armv7-a;-mfloat-abi=hard;-mfpu=neon;-mtune=cortex-a9;-pthread")
 add_link_options("-march=armv7-a;-mfloat-abi=hard;-mfpu=neon;-mtune=cortex-a9;-pthread")

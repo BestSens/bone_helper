@@ -36,7 +36,7 @@ if(NOT BONE_HELPER_SSL)
 endif()
 
 find_package(PkgConfig)
-pkg_check_modules(SYSTEMD QUIET "libsystemd")
+pkg_check_modules(SYSTEMD "libsystemd")
 if(SYSTEMD_FOUND AND ENABLE_SYSTEMD)
 	target_compile_definitions(bone_helper PRIVATE ENABLE_SYSTEMD_STATUS)
 	target_compile_definitions(bone_helper INTERFACE ENABLE_SYSTEMD_STATUS)
