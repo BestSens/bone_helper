@@ -32,8 +32,8 @@ namespace bestsens {
 
 		constexpr auto dset_id1 = "NONE";
 		constexpr auto dset_id2 = "NONE";
-		constexpr auto dset_id3 = "NONE";
-		const auto dset_id4 = fmt::format("{:%d-%b-%y %H:%M:%S}", std::chrono::system_clock::from_time_t(this->ds.date));
+		const auto dset_id3 = fmt::format("{:%d-%b-%y %H:%M:%S}", std::chrono::system_clock::from_time_t(this->ds.date));
+		constexpr auto dset_id4 = "NONE";
 		constexpr auto dset_id5 = "NONE";
 
 		fmt::format_to(std::back_inserter(out), "{:<80s}\n", dset_id1);
@@ -41,7 +41,6 @@ namespace bestsens {
 		fmt::format_to(std::back_inserter(out), "{:<80s}\n", dset_id3);
 		fmt::format_to(std::back_inserter(out), "{:<80s}\n", dset_id4);
 		fmt::format_to(std::back_inserter(out), "{:<80s}\n", dset_id5);
-
 
 		constexpr auto func_type = 1;
 		constexpr auto func_id = 0;
