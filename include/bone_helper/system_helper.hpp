@@ -38,6 +38,7 @@ namespace bestsens {
 
 		constexpr auto *deleteFilesRecursive = fs::deleteFilesRecursive;
 		constexpr auto *getDirectoriesUnsorted = fs::getDirectoriesUnsorted;
+		constexpr auto *getDirectories = fs::getDirectories;
 		constexpr auto *readDirectory = fs::readDirectory;
 		constexpr auto *readDirectoryUnsorted = fs::readDirectoryUnsorted;
 		constexpr auto *readDirectoryNatural = fs::readDirectoryNatural;
