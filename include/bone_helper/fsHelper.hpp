@@ -126,6 +126,11 @@ namespace bestsens {
 
 				static auto createFolderPath(const std::string& filename) -> int {
 					const auto pos = filename.find_last_of('/');
+
+					if (pos == std::string::npos) {
+						return 0;
+					}
+
 					const auto filepath = filename.substr(0, pos);
 					return makePath(filepath) ? 0 : 1;
 				};
