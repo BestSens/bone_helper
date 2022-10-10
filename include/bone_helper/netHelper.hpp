@@ -50,6 +50,9 @@ namespace bestsens {
 		auto send_command(const std::string& command, nlohmann::json& response, const nlohmann::json& payload = {},
 						  int api_version = 0) -> int;
 
+		auto getCommandReturnPayload(const std::string& command, const nlohmann::json& payload = {}, int api_version = 0)
+			-> nlohmann::json;
+
 		auto set_timeout(long timeout) -> int;
 		auto set_timeout_ms(long timeout_ms) -> int;
 

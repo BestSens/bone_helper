@@ -16,8 +16,10 @@
 #include <cstring>
 #include <exception>
 #include <mutex>
+#include <stdexcept>
 #include <string>
 
+#include "bone_helper/jsonHelper.hpp"
 #include "bone_helper/system_helper.hpp"
 #include "fmt/format.h"
 #include "fmt/ranges.h"
@@ -373,6 +375,27 @@ namespace bestsens {
 		}
 
 		return 0;
+	}
+
+	auto netHelper::getCommandReturnPayload(const std::string& command, const json& payload, int api_version) -> json {
+		json j;
+		const auto retval = this->send_command(command, j, payload, api_version);
+
+		if (retval == 0) {
+			throw std::runtime_error("unknown error");
+		}
+
+		if (!is_json_object(j, "payload")) {
+			return {};
+		}
+
+		auto &return_payload = j.at("payload");
+
+		if (is_json_string(return_payload, "error")) {
+			throw std::runtime_error(return_payload.at("error").get<std::string>());
+		}
+
+		return return_payload;
 	}
 
 	auto netHelper::is_connected() const -> bool {
