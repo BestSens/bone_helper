@@ -14,25 +14,22 @@ namespace bestsens {
 			int position{0};
 			double dt{0};
 			std::string y_unit;
+			size_t sample_count{0};
 		};
 
-		UffFile() = default;
-		explicit UffFile(std::string filename) : filename(std::move(filename)){};
+		explicit UffFile(const std::string& filename) : file{filename, std::ios::out} {};
 
-		auto setFilename(const std::string& filename) -> void;
-		auto write() -> void;
+		auto updateFilename(const std::string& filename) -> void;
+		auto writeHeader(const dataset& ds) -> void;
 
-		auto setParameters(const dataset& ds) -> void;
+		auto appendData(const std::vector<float>& data) -> void;
 
-		auto append(const std::vector<double>& data) -> void;
-		auto resize(size_t new_size) -> void;
-		auto clear() -> void;
+		auto endFile() -> void;
+
+		auto clearFile() -> void;
 
 	private:
-		auto writeHeader(system_helper::fs::OutputFile& file) -> void;
-		auto writeData(system_helper::fs::OutputFile& file) -> void;
-		std::string filename;
-		std::vector<double> data;
-		dataset ds;
+		system_helper::fs::OutputFile file;
+		size_t samples_written{0};
 	};
 }  // namespace bestsens

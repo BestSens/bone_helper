@@ -87,6 +87,11 @@ namespace bestsens {
 					return this->filename;
 				};
 
+				auto clearFile() -> void {
+					this->filehandle.close();
+					this->filehandle.open(this->filename, this->mode | std::ofstream::trunc);
+				}
+
 				// NOLINTNEXTLINE (readability-identifier-naming)
 				auto is_open() const {
 					return this->filehandle.is_open();

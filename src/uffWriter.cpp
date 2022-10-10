@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <iterator>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -11,17 +12,11 @@
 #include "fmt/format.h"
 
 namespace bestsens {
-	auto UffFile::setFilename(const std::string& filename) -> void {
-		this->filename = filename;
+	auto UffFile::updateFilename(const std::string& filename) -> void {
+		this->file.updateFilename(filename);
 	};
 
-	auto UffFile::write() -> void {
-		system_helper::fs::OutputFile file(this->filename, std::ios::out);
-		this->writeHeader(file);
-		this->writeData(file);
-	}
-
-	auto UffFile::writeHeader(system_helper::fs::OutputFile& file) -> void {
+	auto UffFile::writeHeader(const dataset& ds) -> void {
 		auto out = fmt::memory_buffer();
 
 		constexpr auto unknown = -1;
@@ -32,7 +27,7 @@ namespace bestsens {
 
 		constexpr auto dset_id1 = "NONE";
 		constexpr auto dset_id2 = "NONE";
-		const auto dset_id3 = fmt::format("{:%d-%b-%y %H:%M:%S}", std::chrono::system_clock::from_time_t(this->ds.date));
+		const auto dset_id3 = fmt::format("{:%d-%b-%y %H:%M:%S}", std::chrono::system_clock::from_time_t(ds.date));
 		constexpr auto dset_id4 = "NONE";
 		constexpr auto dset_id5 = "NONE";
 
@@ -49,8 +44,8 @@ namespace bestsens {
 		constexpr auto rsp_ent_name = "NONE";
 		constexpr auto rsp_node = 1;
 		constexpr auto rsp_dir = 0;
-		const auto ref_ent_name = this->ds.position_name;
-		const auto ref_node = this->ds.position;
+		const auto ref_ent_name = ds.position_name;
+		const auto ref_node = ds.position;
 		constexpr auto ref_dir = 0;
 
 		fmt::format_to(std::back_inserter(out), "{:5d}{:10d}{:5d}{:10d} {:10s}{:10d}{:4d} {:10s}{:10d}{:4d}\n",
@@ -58,10 +53,10 @@ namespace bestsens {
 					   ref_node, ref_dir);
 
 		constexpr auto ord_data_type = 4;
-		const auto num_pts = this->data.size();
+		const auto num_pts = ds.sample_count;
 		constexpr auto is_even= 1;
 		constexpr auto abcissa_min = 0.0;
-		const auto dx = this->ds.dt;
+		const auto dx = ds.dt;
 		constexpr auto z_axis_value = 0.0;
 
 		fmt::format_to(std::back_inserter(out), "{:10d}{:10d}{:10d}{:13.5e}{:13.5e}{:13.5e}\n", ord_data_type, num_pts,
@@ -114,41 +109,36 @@ namespace bestsens {
 		file.write(out.data(), out.size());
 	};
 
-	auto UffFile::writeData(system_helper::fs::OutputFile& file) -> void {
+	auto UffFile::appendData(const std::vector<float>& data) -> void {
 		auto out = fmt::memory_buffer();
 
-		int blocks_written = 0;
-		for (const auto& e : this->data) {
+		for (const auto& e : data) {
 			fmt::format_to(std::back_inserter(out), "{:20.11e}", e);
 
-			if (++blocks_written == 4) {
+			++this->samples_written;
+
+			if (this->samples_written % 4 == 0) {
 				fmt::format_to(std::back_inserter(out), "\n");
-				blocks_written = 0;
 			}
 		}
 
-		if (blocks_written != 0) {
+		this->file.write(out.data(), out.size());
+	}
+
+	auto UffFile::endFile() -> void {
+		auto out = fmt::memory_buffer();
+
+		if (this->samples_written % 4 != 0) {
 			fmt::format_to(std::back_inserter(out), "\n");
 		}
 
 		fmt::format_to(std::back_inserter(out), "{:6d}\n", -1);
 
-		file.write(out.data(), out.size());
+		this->file.write(out.data(), out.size());
 	}
 
-	auto UffFile::setParameters(const dataset& ds) -> void {
-		this->ds = ds;
-	}
-
-	auto UffFile::append(const std::vector<double>& data) -> void {
-		this->data.insert(this->data.end(), data.cbegin(), data.cend());
-	}
-
-	auto UffFile::resize(size_t new_size) -> void {
-		this->data.resize(new_size);
-	}
-
-	auto UffFile::clear() -> void {
-		this->data.clear();
+	auto UffFile::clearFile() -> void {
+		this->samples_written = 0;
+		this->file.clearFile();
 	}
 }  // namespace bestsens
