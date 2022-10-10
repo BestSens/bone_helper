@@ -33,9 +33,12 @@ namespace bestsens {
 				  bool use_ssl = false);
 		~netHelper() noexcept;
 
+		netHelper(const netHelper&) = delete;
+		netHelper(netHelper&& src) noexcept;
+
 		auto connect() -> int;
 		void disconnect() noexcept;
-		auto login(const std::string& user_name, const std::string& password, bool use_hash = 1) -> int;
+		auto login(const std::string& user_name, const std::string& password, bool use_hash = true) -> int;
 
 		auto is_logged_in() const -> int;
 
@@ -66,7 +69,7 @@ namespace bestsens {
 		struct addrinfo remote{};
 		struct addrinfo * res{nullptr};
 
-		std::mutex sock_mtx;
+		std::mutex sock_mtx{};
 
 		std::string user_name;
 		std::string conn_target;
@@ -81,11 +84,11 @@ namespace bestsens {
 		void initSSL();
 		void doSSLHandshake();
 
-		mbedtls_entropy_context entropy;
-		mbedtls_ctr_drbg_context ctr_drbg;
+		mbedtls_entropy_context entropy{};
+		mbedtls_ctr_drbg_context ctr_drbg{};
 		// mbedtls_x509_crt cacert;
-		mbedtls_ssl_context ssl;
-		mbedtls_ssl_config ssl_conf;
+		mbedtls_ssl_context ssl{};
+		mbedtls_ssl_config ssl_conf{};
 #endif /* BONE_HELPER_NO_SSL */
 
 		auto sslSendWrapper(const char* buffer, size_t len) -> int;

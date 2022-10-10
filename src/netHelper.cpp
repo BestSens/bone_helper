@@ -15,6 +15,7 @@
 
 #include <cstring>
 #include <exception>
+#include <mutex>
 #include <string>
 
 #include "bone_helper/system_helper.hpp"
@@ -45,7 +46,7 @@ namespace bestsens {
 			throw std::runtime_error("SSL requested but disabled on compile");
 #endif /* BONE_HELPER_NO_SSL */
 
-		std::lock_guard<std::mutex> lock(this->sock_mtx);
+		const std::lock_guard<std::mutex> lock(this->sock_mtx);
 		
 		/*
 		 * socket configuration
@@ -67,11 +68,35 @@ namespace bestsens {
 		/*
 		 * open socket
 		 */
-		if ((this->sockfd = socket(this->res->ai_family, this->res->ai_socktype, this->res->ai_protocol)) == -1) {
+		this->sockfd = socket(this->res->ai_family, this->res->ai_socktype, this->res->ai_protocol);
+		if (this->sockfd == -1) {
 			throw std::runtime_error(fmt::format("error opening socket: {}", this->sockfd));
 		}
 
 		this->set_timeout(this->timeout);
+	}
+
+	netHelper::netHelper(netHelper&& src) noexcept : use_ssl(src.use_ssl) {
+		const std::lock_guard<std::mutex> lock_src(src.sock_mtx);
+
+		std::swap(this->sockfd, src.sockfd);
+		std::swap(this->connected, src.connected);
+		std::swap(this->timeout, src.timeout);
+		std::swap(this->remote, src.remote);
+		std::swap(this->res, src.res);
+		std::swap(this->user_name, src.user_name);
+		std::swap(this->conn_target, src.conn_target);
+		std::swap(this->conn_port, src.conn_port);
+		std::swap(this->user_level, src.user_level);
+		std::swap(this->use_msgpack, src.use_msgpack);
+		std::swap(this->silent, src.silent);
+
+#ifndef BONE_HELPER_NO_SSL
+		std::swap(this->entropy, src.entropy);
+		std::swap(this->ctr_drbg, src.ctr_drbg);
+		std::swap(this->ssl, src.ssl);
+		std::swap(this->ssl_conf, src.ssl_conf);
+#endif
 	}
 
 	netHelper::~netHelper() noexcept {
