@@ -26,8 +26,7 @@ target_include_directories(uff_writer PUBLIC include)
 target_link_libraries(uff_writer PRIVATE bone_helper fmt)
 
 find_package(MbedTLS REQUIRED)
-target_include_directories(bone_helper PRIVATE ${MBEDTLS_INCLUDE_DIRS})
-target_link_libraries(bone_helper INTERFACE mbedtls)
+target_link_libraries(bone_helper PUBLIC mbedtls mbedx509 mbedcrypto)
 
 if(NOT BONE_HELPER_SSL)
 	target_compile_definitions(bone_helper PRIVATE BONE_HELPER_NO_SSL)
