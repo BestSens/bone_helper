@@ -201,10 +201,6 @@ namespace bestsens {
 			throw std::runtime_error("out of bounds");
 		}
 
-		if ((N - offset) > len) {
-			throw std::runtime_error("out of bounds");
-		}
-
 		size_t len2 = 0;
 
 		if (len > N - offset) {
