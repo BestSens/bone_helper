@@ -100,15 +100,16 @@ namespace bestsens {
 	}
 
 	inline auto arithmetic_div_json(const nlohmann::json& from, const nlohmann::json& to) -> nlohmann::json {
-		return arithmetic_merge_json(from, to, [](double a, double b) {
+		return arithmetic_merge_json(from, to, [](auto a, auto b) -> double {
 			if (b == 0) {
-				return a;
+				return static_cast<double>(a);
 			}
 			
 			try {
-				return a / b;
+				return static_cast<double>(a) / static_cast<double>(b);
 			} catch (...) {}
-			return a;
+			
+			return static_cast<double>(a);
 		});
 	}
 

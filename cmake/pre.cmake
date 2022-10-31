@@ -4,7 +4,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 add_library(common_compile_options INTERFACE)
 
-target_compile_options(common_compile_options INTERFACE -g -Wall -Wextra -Wpedantic -Wtype-limits)
+target_compile_options(common_compile_options INTERFACE -g -Wall -Wextra -Wpedantic -Wtype-limits -Wconversion -Werror)
 target_compile_options(common_compile_options INTERFACE "$<$<CONFIG:RELEASE>:-O3;-DNDEBUG>")
 target_compile_options(common_compile_options INTERFACE "$<$<CONFIG:DEBUG>:-Og;-DDEBUG;-funwind-tables;-fno-inline>")
 
