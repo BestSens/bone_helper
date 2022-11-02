@@ -42,3 +42,5 @@ if(SYSTEMD_FOUND AND ENABLE_SYSTEMD)
 	target_link_libraries(bone_helper PRIVATE systemd)
 	message(STATUS "systemd enabled")
 endif()
+
+add_subdirectory(test)

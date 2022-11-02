@@ -1,8 +1,7 @@
-#include "catch2/catch.hpp"
-
 #include <thread>
 
 #include "bone_helper/stopwatch.hpp"
+#include "catch2/catch_all.hpp"
 
 using namespace bestsens;
 

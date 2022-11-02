@@ -1,8 +1,7 @@
-#include "catch2/catch.hpp"
-
 #include <chrono>
 
 #include "bone_helper/loopTimer.hpp"
+#include "catch2/catch_all.hpp"
 
 TEST_CASE("loopTimer_test") {
     /*
@@ -17,7 +16,7 @@ TEST_CASE("loopTimer_test") {
     timer->wait_on_tick();
     auto calculation_end = std::chrono::steady_clock::now();
     auto runtime = calculation_end - calculation_start;
-    CHECK(std::chrono::duration<double>(runtime).count() == Approx(0.1).epsilon(0.025));
+    CHECK(std::chrono::duration<double>(runtime).count() == Catch::Approx(0.1).epsilon(0.025));
 
     /*
      * check second tick
@@ -25,7 +24,7 @@ TEST_CASE("loopTimer_test") {
     timer->wait_on_tick();
     calculation_end = std::chrono::steady_clock::now();
     runtime = calculation_end - calculation_start;
-    CHECK(std::chrono::duration<double>(runtime).count() == Approx(0.2).epsilon(0.025));
+    CHECK(std::chrono::duration<double>(runtime).count() == Catch::Approx(0.2).epsilon(0.025));
 
     /*
      * check second timer with direct start
@@ -47,7 +46,7 @@ TEST_CASE("loopTimer_test") {
     timer2->wait_on_tick();
     calculation_end = std::chrono::steady_clock::now();
     runtime = calculation_end - calculation_start;
-    CHECK(std::chrono::duration<double>(runtime).count() == Approx(0.1).epsilon(0.025));
+    CHECK(std::chrono::duration<double>(runtime).count() == Catch::Approx(0.1).epsilon(0.025));
 
     /*
      * get wait time
@@ -69,7 +68,7 @@ TEST_CASE("loopTimer_test") {
     auto runtime2 = calculation_end - calculation_start;
 
     runtime = runtime2 - runtime1;
-    CHECK(std::chrono::duration<double>(runtime).count() == Approx(0.2).epsilon(0.05));
+    CHECK(std::chrono::duration<double>(runtime).count() == Catch::Approx(0.2).epsilon(0.05));
 
     SECTION("destruction")
     {
