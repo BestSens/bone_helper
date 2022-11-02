@@ -43,4 +43,6 @@ if(SYSTEMD_FOUND AND ENABLE_SYSTEMD)
 	message(STATUS "systemd enabled")
 endif()
 
-add_subdirectory(test)
+if(BUILD_TESTS)
+	add_subdirectory(test)
+endif()
