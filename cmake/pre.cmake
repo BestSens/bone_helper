@@ -4,9 +4,20 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 add_library(common_compile_options INTERFACE)
 
-target_compile_options(common_compile_options INTERFACE -g -Wall -Wextra -Wpedantic -Wtype-limits -Wconversion -Werror)
+option(ENABLE_WCONVERSION "enables warnings for conversions" ON)
+option(CRITICAL_WARNINGS "throw error on warnings" ON)
+
+target_compile_options(common_compile_options INTERFACE -g -Wall -Wextra -Wpedantic -Wtype-limits)
 target_compile_options(common_compile_options INTERFACE "$<$<CONFIG:RELEASE>:-O3;-DNDEBUG>")
 target_compile_options(common_compile_options INTERFACE "$<$<CONFIG:DEBUG>:-Og;-DDEBUG;-funwind-tables;-fno-inline>")
+
+if(ENABLE_WCONVERSION)
+	target_compile_options(common_compile_options INTERFACE -Wconversion)
+endif()
+
+if(CRITICAL_WARNINGS)
+	target_compile_options(common_compile_options INTERFACE -Werror)
+endif()
 
 target_link_libraries(common_compile_options INTERFACE ${CMAKE_DL_LIBS})
 
