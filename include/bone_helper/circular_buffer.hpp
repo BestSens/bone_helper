@@ -194,7 +194,7 @@ namespace bestsens {
 			throw std::runtime_error("out of bounds");
 		}
 
-		const auto last_inserted = subtractWithRollover(this->current_insert_position, 1ul, N - 1);
+		const auto last_inserted = subtractWithRollover<size_t>(this->current_insert_position, 1ul, N - 1);
 		const auto offset = subtractWithRollover(last_inserted, end - 1, N - 1);
 
 		auto len = end - start;
