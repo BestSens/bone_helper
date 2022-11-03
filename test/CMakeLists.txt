@@ -31,7 +31,7 @@ add_test(NAME test COMMAND run_test_bone_helper)
 enable_testing()
 
 # Automatically run tests for release builds
-if(CMAKE_BUILD_TYPE STREQUAL Release)
+if(CMAKE_BUILD_TYPE STREQUAL Release AND AUTORUN_TESTS)
 	add_custom_command(
 		TARGET run_test_bone_helper
 		COMMENT "Run tests"
