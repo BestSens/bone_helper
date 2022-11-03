@@ -13,6 +13,31 @@ namespace {
 	constexpr auto buffer_size = 100u;
 }
 
+TEST_CASE("get_vector_bug") {
+	bestsens::CircularBuffer<size_t, 20> buffer_test;
+
+	auto test_vect = buffer_test.getVector(5);
+
+	REQUIRE(test_vect.empty());
+
+	buffer_test.add(0);
+	test_vect = buffer_test.getVector(5);
+	REQUIRE(test_vect.size() == 1);
+
+	size_t size = 1;
+	for (size_t i = 0; i < 40; ++i) {
+		buffer_test.add(i + 1);
+		test_vect = buffer_test.getVector(5);
+
+		if (size < 5) {
+			++size;
+		}
+
+		INFO("loop number: " << i);
+		REQUIRE(test_vect.size() == size);
+	}
+}
+
 TEST_CASE("circular_buffer_test") {
 	bestsens::CircularBuffer<size_t, buffer_size> buffer_test;
 
