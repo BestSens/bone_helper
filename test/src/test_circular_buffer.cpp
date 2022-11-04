@@ -178,7 +178,7 @@ TEST_CASE("vector") {
 
 		for (unsigned int i = 0; i < 100; i++) {
 			auto last_value = static_cast<size_t>(dist(rng));
-			std::vector<int> v = buffer_test.getVector(std::numeric_limits<size_t>::max(), last_value);
+			const auto v = buffer_test.getVector(std::numeric_limits<size_t>::max(), last_value);
 
 			REQUIRE(v.size() == 10);
 
@@ -193,7 +193,7 @@ TEST_CASE("vector") {
 
 	SECTION("test last_value without change") {
 		size_t last_value = 0;
-		std::vector<int> v = buffer_test.getVector(11, last_value);
+		auto v = buffer_test.getVector(11, last_value);
 
 		CHECK(v.size() == 10);
 		CHECK(last_value == 10);
@@ -204,11 +204,59 @@ TEST_CASE("vector") {
 
 	SECTION("test amount") {
 		size_t last_value = 1;
-		std::vector<int> v = buffer_test.getVector(2, last_value);
+		const auto v = buffer_test.getVector(2, last_value);
 
 		REQUIRE(v.size() == 2);
 		CHECK(v[0] == 8);
 		CHECK(v[1] == 9);
+	}
+
+	SECTION("exactly") {
+		size_t last_value = 0;
+
+		auto v = buffer_test.getVector(buffer_test.size() + 1, last_value, false);
+		CHECK(v.size() == buffer_test.size());
+
+		v = buffer_test.getVector(buffer_test.size() + 1, last_value, true);
+		CHECK(v.empty());
+
+		last_value = 0;
+		v = buffer_test.getVector(buffer_test.size() + 1, last_value, true);
+		CHECK(v.empty());
+	}
+
+	SECTION("continous") {
+		size_t last_value = 0;
+
+		auto v = buffer_test.getVector(2, last_value, false, true);
+		REQUIRE(v.size() == 2);
+		CHECK(v.at(0) == 8);
+		CHECK(v.at(1) == 9);
+
+		for (int i = 10; i <= 14; ++i) {
+			buffer_test.add(i);
+		}
+
+		v = buffer_test.getVector(2, last_value, false, true);
+		REQUIRE(v.size() == 2);
+		CHECK(v.at(0) == 10);
+		CHECK(v.at(1) == 11);
+
+		auto new_last_value = last_value;
+
+		v = buffer_test.getVector(2, new_last_value, false, false);
+		REQUIRE(v.size() == 2);
+		CHECK(v.at(0) == 13);
+		CHECK(v.at(1) == 14);
+
+		v = buffer_test.getVector(2, last_value, false, true);
+		REQUIRE(v.size() == 2);
+		CHECK(v.at(0) == 12);
+		CHECK(v.at(1) == 13);
+
+		v = buffer_test.getVector(2, last_value, false, true);
+		REQUIRE(v.size() == 1);
+		CHECK(v.at(0) == 14);
 	}
 }
 
