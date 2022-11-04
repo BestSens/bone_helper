@@ -362,13 +362,13 @@ namespace bestsens {
 			} catch(const json::exception& ia) {
 				if (!this->silent) {
 					spdlog::error("{}", ia.what());
-					spdlog::error("input string: \"{}\"", str.data());
+					spdlog::error("input string: \"{:c}\"", fmt::join(str, ""));
 				}
 			}
 		} else {
 			if (!this->silent) {
 				spdlog::critical("could not receive all data");
-				spdlog::critical("input string: \"{}\"", str.data());
+				spdlog::critical("input string: \"{:c}\"", fmt::join(str, ""));
 			}
 
 			throw std::runtime_error("could not receive all data");
