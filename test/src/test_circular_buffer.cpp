@@ -371,8 +371,31 @@ TEST_CASE("copy of non-fundamentals") {
 	CHECK(vect[1].foo->c == 'C');
 }
 
+TEST_CASE("circular buffer performance test", "[.]") {
+	static bestsens::CircularBuffer<int, 10'000'000> buffer_test;
+
+	SECTION("add single") {
+		while (buffer_test.size() < buffer_test.capacity()) {
+			buffer_test.add(0);
+		}
+	}
+
+	SECTION("add vector") {
+		const std::vector<int> v(1'000, 0);
+
+		while (buffer_test.size() < buffer_test.capacity()) {
+			buffer_test.add(v);
+		}
+	}
+
+	for (size_t i = 0; i < 10'000; ++i) {
+		const auto v = buffer_test.getVector(10'000);
+		REQUIRE(v.size() == 10'000);
+	}
+}
+
 TEST_CASE("circular buffer stress test", "[.]") {
-	bestsens::CircularBuffer<int, 100000> buffer_test;
+	bestsens::CircularBuffer<int, 100'000> buffer_test;
 
 	std::array<std::thread, 50> inst_thread;
 	std::array<std::thread, 50> inst_thread_read;
