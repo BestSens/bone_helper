@@ -13,6 +13,7 @@
 #include <limits>
 #include <mutex>
 #include <stdexcept>
+#include <type_traits>
 #include <vector>
 
 namespace bestsens {
@@ -67,7 +68,10 @@ namespace bestsens {
 
 		auto add(const T& value) -> size_t;
 		auto add(T&& value) -> size_t;
-		auto add(const std::vector<T>& values) -> size_t;
+
+		template <typename Container>
+		auto add(const Container& values) ->
+			typename std::enable_if<std::is_same<typename Container::value_type, T>::value, size_t>::type;
 
 		auto get(size_t id) const -> T;
 		auto get(T * target, size_t &amount, size_t last_value = 0, bool return_continous = false) const -> size_t;
@@ -174,8 +178,10 @@ namespace bestsens {
 		return 0;
 	}
 
-	template < typename T, size_t N >
-	auto CircularBuffer<T, N>::add(const std::vector<T>& values) -> size_t {
+	template <typename T, size_t N>
+	template <typename Container>
+	auto CircularBuffer<T, N>::add(const Container& values) ->
+		typename std::enable_if<std::is_same<typename Container::value_type, T>::value, size_t>::type {
 		static_assert(N > 0, "zero length buffer cannot be filled");
 
 		std::lock_guard<std::mutex> lock(this->mutex);

@@ -163,6 +163,24 @@ TEST_CASE("circular_buffer_test") {
 	}
 }
 
+TEST_CASE("add container") {
+	bestsens::CircularBuffer<int, buffer_size> buffer_test;
+
+	SECTION("vector") {
+		const std::vector<int> data(10);
+
+		buffer_test.add(data);
+		CHECK(buffer_test.size() == data.size());
+	}
+
+	SECTION("array") {
+		const std::array<int, 10> data{};
+
+		buffer_test.add(data);
+		CHECK(buffer_test.size() == data.size());
+	}
+}
+
 TEST_CASE("vector") {
 	bestsens::CircularBuffer<int, buffer_size> buffer_test;
 
