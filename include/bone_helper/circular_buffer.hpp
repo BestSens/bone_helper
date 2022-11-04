@@ -310,7 +310,8 @@ namespace bestsens {
 			throw std::runtime_error("out of bounds");
 		}
 
-		const auto offset = subtractWithRollover(subtractWithRollover(this->current_insert_position, 1ul, N - 1), pos, N - 1);
+		const auto offset =
+			subtractWithRollover(subtractWithRollover<size_t>(this->current_insert_position, 1ul, N - 1), pos, N - 1);
 
 		return this->buffer.at(offset);
 	}
