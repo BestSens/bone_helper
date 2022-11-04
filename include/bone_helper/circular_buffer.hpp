@@ -81,7 +81,7 @@ namespace bestsens {
 		auto getNewDataAmount(size_t last_value = 0) const -> size_t;
 
 		auto size() const -> size_t;
-		constexpr auto maxSize() const -> size_t;
+		constexpr auto capacity() const -> size_t;
 
 		void clear();
 	private:
@@ -332,7 +332,7 @@ namespace bestsens {
 	}
 
 	template < typename T, size_t N >
-	constexpr auto CircularBuffer<T, N>::maxSize() const -> size_t {
+	constexpr auto CircularBuffer<T, N>::capacity() const -> size_t {
 		return N;
 	}
 

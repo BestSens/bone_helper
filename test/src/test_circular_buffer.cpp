@@ -257,6 +257,30 @@ TEST_CASE("vector") {
 		v = buffer_test.getVector(2, last_value, false, true);
 		REQUIRE(v.size() == 1);
 		CHECK(v.at(0) == 14);
+
+		while (buffer_test.size() < buffer_test.capacity() - 1) {
+			buffer_test.add(0);
+		}
+
+		v = buffer_test.getVector(2, last_value, false, true);
+		REQUIRE(v.size() == 2);
+		CHECK(v.at(0) == 0);
+		CHECK(v.at(1) == 0);
+
+		last_value = buffer_test.getBaseID();
+
+		v = buffer_test.getVector(2, last_value, false, true);
+		REQUIRE(v.empty());
+
+		for (int i = 0; i < 20; i += 2) {
+			buffer_test.add(i);
+			buffer_test.add(i + 1);
+
+			v = buffer_test.getVector(buffer_test.capacity(), last_value, false, true);
+			REQUIRE(v.size() == 2);
+			CHECK(v.at(0) == i);
+			CHECK(v.at(1) == i + 1);
+		}
 	}
 }
 
