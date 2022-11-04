@@ -13,7 +13,16 @@ target_include_directories(run_test_bone_helper PRIVATE
 	data
 )
 
-target_compile_options(run_test_bone_helper PRIVATE -fsanitize=address -fsanitize=undefined -Wall -Wextra -Wpedantic -Wtype-limits -Wconversion -Werror)
+if(ENABLE_WCONVERSION)
+	target_compile_options(run_test_bone_helper PRIVATE -Wconversion)
+endif()
+
+if(CRITICAL_WARNINGS)
+	target_compile_options(run_test_bone_helper PRIVATE -Werror)
+endif()
+
+
+target_compile_options(run_test_bone_helper PRIVATE -fsanitize=address -fsanitize=undefined -Wall -Wextra -Wpedantic -Wtype-limits)
 target_link_options(run_test_bone_helper PRIVATE -fsanitize=address -fsanitize=undefined)
 
 find_package(MbedTLS REQUIRED)
