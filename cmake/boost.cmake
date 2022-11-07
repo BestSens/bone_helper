@@ -1,1 +1,2 @@
+add_definitions(-DBOOST_LOCALE_DISABLE_DEPRECATED_03_WARNING)
 add_subdirectory("libs/boost")
