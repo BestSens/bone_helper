@@ -5,7 +5,7 @@ CPMAddPackage(
   OPTIONS
     "SPDLOG_FMT_EXTERNAL ON"
   URL https://github.com/gabime/spdlog/archive/refs/tags/v1.11.0.tar.gz
-  URL_HASH MD5=effea813cd81cfb5588806c5754e14f1
+  URL_HASH MD5=287c6492c25044fd2da9947ab120b2bd
   OVERRIDE_FIND_PACKAGE
 )
 
