@@ -45,7 +45,7 @@ if(CMAKE_BUILD_TYPE STREQUAL Release AND AUTORUN_TESTS)
 		TARGET run_test_bone_helper
 		COMMENT "Run tests"
 		POST_BUILD 
-		WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/tests
+		WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 		COMMAND run_test_bone_helper
 	)
 endif()
