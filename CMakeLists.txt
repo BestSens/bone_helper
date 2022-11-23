@@ -20,6 +20,7 @@ target_link_libraries(bone_helper PRIVATE
 	spdlog
 	ssl
 	crypto
+	Boost::process
 )
 
 target_link_libraries(bone_helper PUBLIC

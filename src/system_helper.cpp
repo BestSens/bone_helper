@@ -23,6 +23,9 @@
 #include <string>
 #include <vector>
 
+#include "boost/asio.hpp"
+#include "boost/process.hpp"
+
 #ifdef ENABLE_SYSTEMD_STATUS
 #include <systemd/sd-daemon.h>
 #include <systemd/sd-journal.h>
@@ -82,6 +85,28 @@ namespace bestsens {
 			if (setuid(0) != -1) {
 				throw std::runtime_error("managed to regain root privileges");
 			}
+		}
+
+		auto pipeSystemCommand(const std::string &command) -> std::vector<std::string> {
+			namespace bp = boost::process;
+
+			const auto new_command = command + " 2>&1";	 // redirect stderr to stdout
+			const std::vector<std::string> args = {"-c", new_command};
+
+			boost::asio::io_service ios;
+			bp::ipstream is;
+
+			const bp::child c(bp::search_path("sh"), args, bp::std_in.close(), bp::std_out > is, ios);
+			ios.run();
+
+			std::vector<std::string> lines{};
+			std::string line;
+
+			while (std::getline(is, line) && !line.empty()) {
+				lines.push_back(line);
+			}
+
+			return lines;
 		}
 
 		void daemonize() {

@@ -22,6 +22,8 @@
 #include <string>
 #include <vector>
 
+#include "bone_helper/system_helper.hpp"
+
 #ifdef ENABLE_SYSTEMD_DBUS
 #include <systemd/sd-bus.h>
 #endif
@@ -36,60 +38,38 @@ namespace bestsens {
 			bool timesync_enabled;
 		};
 
-		inline std::vector<std::string> pipeSystemCommand(const std::string& command) {
-			std::string cmd = command + " 2>&1";
-			std::array<char, 128> line;
-			std::vector<std::string> lines;
-			std::shared_ptr<FILE> pipe(popen(cmd.c_str(), "r"), pclose);
-
-			if(!pipe) throw std::runtime_error("popen() failed!");
-
-			while(fgets(line.data(), 128, pipe.get()) != NULL)
-			{
-				lines.push_back(std::string(line.data()));
-			}
-
-			if(ferror(pipe.get()))
-			{
-				throw std::runtime_error(strerror(errno));
-			}
-
-			return lines;
-		}
-
-		inline std::string getDate() {
+		inline auto getDate() -> std::string {
 			std::time_t rawtime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 			std::tm tm = *std::localtime(&rawtime);
 
-			char mbstr[20];
-			std::strftime(mbstr, sizeof(mbstr), "%F %T", &tm);
+			std::array<char, 20> mbstr{};
+			std::strftime(mbstr.data(), mbstr.size(), "%F %T", &tm);
 
-			return std::string(mbstr);
+			return {mbstr.data(), mbstr.size()};
 		}
 
-		inline std::string getTimezoneOffset() {
+		inline auto getTimezoneOffset() -> std::string {
 			std::time_t rawtime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 			std::tm tm = *std::localtime(&rawtime);
 
-			char mbstr[6];
-			std::strftime(mbstr, sizeof(mbstr), "%z", &tm);
+			std::array<char, 6> mbstr{};
+			std::strftime(mbstr.data(), mbstr.size(), "%z", &tm);
 
-			return std::string(mbstr);
+			return {mbstr.data(), mbstr.size()};
 		}
 
-		inline timedateinfo_t getTimeDateInfo() {
-			timedateinfo_t ti;
+		inline auto getTimeDateInfo() -> timedateinfo_t {
+			timedateinfo_t ti{};
 
-			for(auto input : pipeSystemCommand("timedatectl status")) {
+			for (const auto& input : system_helper::pipeSystemCommand("timedatectl status")) {
 				std::regex tzrgx("Time zone:\\s*([a-zA-Z]+\\/[a-zA-Z]+)");
 				std::regex tsrgx("Network time on:\\s*(yes|no)");
 				std::smatch match;
 
-				if(std::regex_search(input, match, tzrgx)) {
-					if(match.ready() && match.size() == 2)
-						ti.timezone = match[1];
-				} else if(std::regex_search(input, match, tsrgx)) {
-					if(match.ready() && match.size() == 2) {
+				if (std::regex_search(input, match, tzrgx)) {
+					if (match.ready() && match.size() == 2) ti.timezone = match[1];
+				} else if (std::regex_search(input, match, tsrgx)) {
+					if (match.ready() && match.size() == 2) {
 						ti.timesync_enabled = match[1].compare("yes") == 0;
 					}
 				}
@@ -105,7 +85,7 @@ namespace bestsens {
 				const std::time_t rawtime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 				std::tm tm = *std::localtime(&rawtime);
 
-				if (strptime(date.c_str(), "%F %T", &tm) == NULL) {
+				if (strptime(date.c_str(), "%F %T", &tm) == nullptr) {
 					std::string error = std::string("could not set time: error parsing string");
 					throw std::runtime_error(error);
 				}
@@ -114,16 +94,15 @@ namespace bestsens {
 				const struct timespec newtime_ts = {newtime, 0};
 
 				if (clock_settime(CLOCK_REALTIME, &newtime_ts) != 0) {
-					std::string error = std::string("could not set time: ") + strerror(errno);
+					const auto error = std::string("could not set time: ") + strerror_s(errno);
 					throw std::runtime_error(error);
 				}
 			} else { // no root priviledges, try old sudo -n approach
-				std::string cmd = std::string("sudo -n timedatectl set-time \"") + date + std::string("\"");
+				const auto cmd = std::string("sudo -n timedatectl set-time \"") + date + std::string("\"");
+				const auto lines = system_helper::pipeSystemCommand(cmd);
 
-				auto lines = pipeSystemCommand(cmd);
-
-				if (lines.size() > 0) {
-					std::string error = std::string("could not set time: ") + lines[0];
+				if (!lines.empty()) {
+					const auto error = std::string("could not set time: ") + lines[0];
 					throw std::runtime_error(error);
 				}
 			}
@@ -132,22 +111,24 @@ namespace bestsens {
 		inline void setTimezone(const std::string& timezone) {
 			std::string cmd = std::string("sudo -n timedatectl set-timezone \"") + timezone + std::string("\"");
 
-			auto lines = pipeSystemCommand(cmd);
+			auto lines = system_helper::pipeSystemCommand(cmd);
 
-			if(lines.size() > 0) {
+			if(!lines.empty()) {
 				std::string error = std::string("could not set timezone: ") + lines[0];
 				throw std::runtime_error(error);
 			}
 		}
 
-		inline std::string getTimezone() {
-			for(auto input : pipeSystemCommand("timedatectl status")) {
+		inline auto getTimezone() -> std::string {
+			for (const auto& input : system_helper::pipeSystemCommand("timedatectl status")) {
 				std::regex r("Time zone:\\s*([a-zA-Z]+\\/[a-zA-Z]+)");
 				std::smatch match;
 
-				if(std::regex_search(input, match, r))
-					if(match.ready() && match.size() == 2)
+				if (std::regex_search(input, match, r)) {
+					if (match.ready() && match.size() == 2) {
 						return match[1];
+					}
+				}
 			}
 
 			throw std::runtime_error("could not get timezone");
@@ -158,26 +139,24 @@ namespace bestsens {
 		inline void setTimesync(bool timesync_enabled) {
 			std::string cmd = std::string("sudo -n timedatectl set-ntp ") + (timesync_enabled ? "true" : "false");
 
-			auto lines = pipeSystemCommand(cmd);
+			auto lines = system_helper::pipeSystemCommand(cmd);
 
-			if(lines.size() > 0) {
+			if(!lines.empty()) {
 				std::string error = std::string("could not set timeync: ") + lines[0];
 				throw std::runtime_error(error);
 			}
 		}
 
-		inline bool getTimesync() {
-			for(auto input : pipeSystemCommand("timedatectl status")) {
+		inline auto getTimesync() -> bool {
+			for (const auto& input : system_helper::pipeSystemCommand("timedatectl status")) {
 				std::regex r("Network time on:\\s*(yes|no)");
 				std::smatch match;
 
-				if(std::regex_search(input, match, r))
-					if(match.ready() && match.size() == 2) {
-						if(match[1].compare("yes") == 0)
-							return true;
-						else
-							return false;
+				if (std::regex_search(input, match, r)) {
+					if (match.ready() && match.size() == 2) {
+						return match[1].compare("yes") == 0;
 					}
+				}
 			}
 
 			throw std::runtime_error("could not get timesync status");
