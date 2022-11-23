@@ -2,8 +2,6 @@ project(bone_helper)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-option(BONE_HELPER_SSL "enable SSL support" ON)
-
 add_library(bone_helper STATIC
 	src/loopTimer.cpp
 	src/stdlib_backports.cpp
@@ -16,7 +14,17 @@ add_library(bone_helper STATIC
 target_include_directories(bone_helper PUBLIC include)
 target_include_directories(bone_helper PRIVATE libs/tinydir)
 
-target_link_libraries(bone_helper PRIVATE nlohmann_json::nlohmann_json fmt spdlog)
+target_link_libraries(bone_helper PRIVATE
+	nlohmann_json::nlohmann_json
+	fmt
+	spdlog
+	ssl
+	crypto
+)
+
+target_link_libraries(bone_helper PUBLIC
+	Boost::asio
+)
 
 add_library(uff_writer STATIC
 	src/uffWriter.cpp
@@ -24,15 +32,6 @@ add_library(uff_writer STATIC
 
 target_include_directories(uff_writer PUBLIC include)
 target_link_libraries(uff_writer PRIVATE bone_helper fmt)
-
-find_package(MbedTLS REQUIRED)
-target_link_libraries(bone_helper PUBLIC mbedtls mbedx509 mbedcrypto)
-
-if(NOT BONE_HELPER_SSL)
-	target_compile_definitions(bone_helper PRIVATE BONE_HELPER_NO_SSL)
-	target_compile_definitions(bone_helper INTERFACE BONE_HELPER_NO_SSL)
-	message(STATUS "building without ssl support")
-endif()
 
 find_package(PkgConfig)
 pkg_check_modules(SYSTEMD "libsystemd")

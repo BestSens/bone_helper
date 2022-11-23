@@ -25,14 +25,15 @@ endif()
 target_compile_options(run_test_bone_helper PRIVATE -fsanitize=address -fsanitize=undefined -Wall -Wextra -Wpedantic -Wtype-limits)
 target_link_options(run_test_bone_helper PRIVATE -fsanitize=address -fsanitize=undefined)
 
-find_package(MbedTLS REQUIRED)
 find_package(Threads REQUIRED)
 
 target_link_libraries(run_test_bone_helper PRIVATE
 	Catch2::Catch2WithMain
 	nlohmann_json::nlohmann_json
-	mbedtls
+	ssl
+	crypto
 	pthread
+	Boost::asio
 )
 
 add_test(NAME test COMMAND run_test_bone_helper)
