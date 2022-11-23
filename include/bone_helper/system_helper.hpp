@@ -30,6 +30,8 @@ namespace bestsens {
 		auto getGID(const std::string &group_name) -> unsigned int;
 		auto dropPriviledges() -> void;
 
+		auto pipeSystemCommand(const std::string& command) -> std::vector<std::string>;
+
 		void daemonize();
 
 		void memcpy_swap_bo(void *dest, const void *src, std::size_t count);

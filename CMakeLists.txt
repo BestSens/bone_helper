@@ -16,7 +16,13 @@ add_library(bone_helper STATIC
 target_include_directories(bone_helper PUBLIC include)
 target_include_directories(bone_helper PRIVATE libs/tinydir)
 
-target_link_libraries(bone_helper PRIVATE nlohmann_json::nlohmann_json fmt spdlog)
+target_link_libraries(bone_helper PRIVATE
+	nlohmann_json::nlohmann_json
+	fmt
+	spdlog
+	Boost::process
+	Boost::asio
+)
 
 add_library(uff_writer STATIC
 	src/uffWriter.cpp
