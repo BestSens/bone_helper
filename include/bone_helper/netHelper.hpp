@@ -46,7 +46,8 @@ namespace bestsens {
 		auto getCommandReturnPayload(const std::string& command, const nlohmann::json& payload = {}, int api_version = 0)
 			-> nlohmann::json;
 
-		auto set_timeout(int timeout) -> int;
+		auto set_timeout(unsigned int timeout) -> void;
+		auto set_timeout_ms(unsigned int timeout_ms) -> void;
 
 		auto get_mutex() -> std::mutex&;
 
@@ -56,12 +57,11 @@ namespace bestsens {
 
 		virtual auto connect() -> int;
 		virtual auto disconnect() noexcept -> void;
-		virtual auto set_timeout_ms(int timeout_ms) -> int;
 		virtual auto send(const std::string& data) -> int;
 		virtual auto recv(void * buffer, size_t read_size) -> int;
 	protected:
 		bool connected{false};
-		int timeout{10000};
+		unsigned int timeout{10000};
 		struct addrinfo remote{};
 
 		bool is_ipv6{false};
@@ -76,7 +76,7 @@ namespace bestsens {
 		bool use_msgpack{false};
 		bool silent{false};
 
-		boost::asio::io_service io_service;
+		boost::asio::io_context io_context;
 	};
 
 	class netHelper : public netHelper_base {
@@ -88,8 +88,6 @@ namespace bestsens {
 
 		auto connect() -> int override;
 		auto disconnect() noexcept -> void override;
-
-		auto set_timeout_ms(int timeout_ms) -> int override;
 
 		auto send(const std::string& data) -> int override;
 		auto recv(void * buffer, size_t read_size) -> int override;
@@ -107,11 +105,11 @@ namespace bestsens {
 		auto connect() -> int override;
 		auto disconnect() noexcept -> void override;
 
-		auto set_timeout_ms(int timeout_ms) -> int override;
-
 		auto send(const std::string& data) -> int override;
 		auto recv(void * buffer, size_t read_size) -> int override;
 	private:
+		auto handshake() -> void;
+
 		boost::asio::ssl::context ssl_ctx;
 		boost::asio::ssl::stream<boost::asio::ip::tcp::socket> s;
 	};

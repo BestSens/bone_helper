@@ -21,6 +21,7 @@ target_link_libraries(bone_helper PRIVATE
 	ssl
 	crypto
 	Boost::process
+	Boost::optional
 )
 
 target_link_libraries(bone_helper PUBLIC

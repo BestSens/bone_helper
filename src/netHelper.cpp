@@ -24,10 +24,13 @@
 #include "bone_helper/system_helper.hpp"
 #include "boost/asio.hpp"
 #include "boost/asio/ip/address.hpp"
+#include "boost/asio/read.hpp"
 #include "boost/asio/ssl.hpp"
 #include "boost/asio/ssl/context.hpp"
 #include "boost/asio/ssl/stream.hpp"
 #include "boost/asio/ssl/verify_mode.hpp"
+#include "boost/date_time/posix_time/posix_time_duration.hpp"
+#include "boost/optional.hpp"
 #include "fmt/format.h"
 #include "fmt/ranges.h"
 #include "nlohmann/json.hpp"
@@ -63,7 +66,7 @@ namespace bestsens {
 	// 	std::swap(this->silent, src.silent);
 
 	// 	std::swap(this->s, src.s);
-	// 	std::swap(this->io_service, src.io_service);
+	// 	std::swap(this->io_context, src.io_context);
 	// }
 
 	auto netHelper_base::get_mutex() -> std::mutex& {
@@ -165,8 +168,8 @@ namespace bestsens {
 		@param	timeout: timeout in s
 		@return	Returns 0 on success, -1 for errors.
 	*/
-	[[deprecated]] auto netHelper_base::set_timeout(int timeout) -> int {
-		return this->set_timeout_ms(timeout * 1000);
+	[[deprecated]] auto netHelper_base::set_timeout(unsigned int timeout) -> void {
+		this->set_timeout_ms(timeout * 1000);
 	}
 
 	/*!
@@ -174,8 +177,8 @@ namespace bestsens {
 		@param	timeout_ms: timeout in ms
 		@return	Returns 0 on success, -1 for errors.
 	*/
-	auto netHelper_base::set_timeout_ms(int /*timeout_ms*/) -> int {
-		return 0;
+	auto netHelper_base::set_timeout_ms(unsigned int timeout_ms) -> void {
+		this->timeout = timeout_ms;
 	}
 
 	auto netHelper_base::send_command(const std::string& command, json& response, const json& payload, int api_version) -> int {
@@ -309,7 +312,7 @@ namespace bestsens {
 	}
 
 	netHelper::netHelper(std::string conn_target, std::string conn_port, bool use_msgpack, bool silent) 
-		: s(tcp::socket(this->io_service)),
+		: s(tcp::socket(this->io_context)),
 		netHelper_base(std::move(conn_target), std::move(conn_port), use_msgpack, silent)
 	{}
 	
@@ -322,11 +325,32 @@ namespace bestsens {
 			return 1;
 		}
 
-		tcp::resolver resolver(io_service);
+		tcp::resolver resolver(io_context);
 		tcp::resolver::query query(this->is_ipv6 ? tcp::v6() : tcp::v4(), this->conn_target, this->conn_port);
 		tcp::resolver::iterator iterator = resolver.resolve(query);
 
-		boost::asio::connect(this->s, iterator);
+		boost::optional<boost::system::error_code> timer_result;
+		boost::asio::deadline_timer timer(this->io_context);
+		timer.expires_from_now(boost::posix_time::milliseconds(this->timeout));
+		timer.async_wait([&timer_result](const boost::system::error_code& error) { timer_result.reset(error); });
+
+		boost::optional<boost::system::error_code> result;
+		boost::asio::async_connect(this->s, iterator,
+								   [this, &result](const boost::system::error_code& error,
+												   const tcp::resolver::iterator& /*endpoint*/) { result.reset(error); });
+
+		this->io_context.reset();
+		while (this->io_context.run_one() != 0u) {
+			if (result) {
+				timer.cancel();
+			} else if (timer_result) {
+				this->s.cancel();
+			}
+		}
+
+		if (*result) {
+			throw boost::system::system_error(*result);
+		}
 
 		this->connected = true;
 
@@ -350,7 +374,33 @@ namespace bestsens {
 			return -1;
 		}
 
-		const auto size = boost::asio::write(this->s, boost::asio::buffer(data, data.size()));
+		boost::optional<boost::system::error_code> timer_result;
+		boost::asio::deadline_timer timer(this->io_context);
+		timer.expires_from_now(boost::posix_time::milliseconds(this->timeout));
+		timer.async_wait([&timer_result](const boost::system::error_code& error) { timer_result.reset(error); });
+
+		size_t size{0};
+
+		boost::optional<boost::system::error_code> result;
+		boost::asio::async_write(this->s, boost::asio::buffer(data, data.size()),
+								[&result, &size](const boost::system::error_code& error, size_t length) {
+									result.reset(error);
+									size = length;
+								});
+
+		this->io_context.reset();
+		while (this->io_context.run_one() != 0u) {
+			if (result) {
+				timer.cancel();
+			} else if (timer_result) {
+				this->s.cancel();
+			}
+		}
+
+		if (*result) {
+			throw boost::system::system_error(*result);
+		}
+		
 		return static_cast<int>(size);
 	}
 
@@ -359,38 +409,41 @@ namespace bestsens {
 			return -1;
 		}
 
-		const auto reply_length = boost::asio::read(this->s, boost::asio::buffer(buffer, read_size));
-		return static_cast<int>(reply_length);
-	}
+		boost::optional<boost::system::error_code> timer_result;
+		boost::asio::deadline_timer timer(this->io_context);
+		timer.expires_from_now(boost::posix_time::milliseconds(this->timeout));
+		timer.async_wait([&timer_result](const boost::system::error_code& error) { timer_result.reset(error); });
 
-	/*!
-		@brief	sets socket timeout
-		@param	timeout_ms: timeout in ms
-		@return	Returns 0 on success, -1 for errors.
-	*/
-	auto netHelper::set_timeout_ms(int timeout_ms) -> int {
-		this->timeout = timeout_ms;
-		this->s.set_option(boost::asio::detail::socket_option::integer<SOL_SOCKET, SO_RCVTIMEO>{timeout_ms});
-		return 0;
+		size_t size{0};
+
+		boost::optional<boost::system::error_code> result;
+		boost::asio::async_read(this->s, boost::asio::buffer(buffer, read_size),
+								[&result, &size](const boost::system::error_code& error, size_t length) {
+									result.reset(error);
+									size = length;
+								});
+
+		this->io_context.reset();
+		while (this->io_context.run_one() != 0u) {
+			if (result) {
+				timer.cancel();
+			} else if (timer_result) {
+				this->s.cancel();
+			}
+		}
+
+		if (*result) {
+			throw boost::system::system_error(*result);
+		}
+
+		return static_cast<int>(size);
 	}
 
 	netHelperSSL::netHelperSSL(std::string conn_target, std::string conn_port, bool use_msgpack, bool silent)
 		: ssl_ctx(boost::asio::ssl::context(boost::asio::ssl::context::sslv23)),
-		  s(boost::asio::ssl::stream<tcp::socket>(this->io_service, this->ssl_ctx)),
+		  s(boost::asio::ssl::stream<tcp::socket>(this->io_context, this->ssl_ctx)),
 		  netHelper_base(std::move(conn_target), std::move(conn_port), use_msgpack, silent) {
 		this->s.set_verify_mode(boost::asio::ssl::verify_none);
-	}
-
-	/*!
-		@brief	sets socket timeout
-		@param	timeout_ms: timeout in ms
-		@return	Returns 0 on success, -1 for errors.
-	*/
-	auto netHelperSSL::set_timeout_ms(int timeout_ms) -> int {
-		this->timeout = timeout_ms;
-		this->s.lowest_layer().set_option(
-			boost::asio::detail::socket_option::integer<SOL_SOCKET, SO_RCVTIMEO>{timeout_ms});
-		return 0;
 	}
 
 	/*!
@@ -402,16 +455,62 @@ namespace bestsens {
 			return 1;
 		}
 
-		tcp::resolver resolver(io_service);
+		tcp::resolver resolver(io_context);
 		tcp::resolver::query query(this->is_ipv6 ? tcp::v6() : tcp::v4(), this->conn_target, this->conn_port);
 		tcp::resolver::iterator iterator = resolver.resolve(query);
 
-		boost::asio::connect(this->s.lowest_layer(), iterator);
-		this->s.handshake(boost::asio::ssl::stream<tcp::socket>::client);
+		boost::optional<boost::system::error_code> timer_result;
+		boost::asio::deadline_timer timer(this->io_context);
+		timer.expires_from_now(boost::posix_time::milliseconds(this->timeout));
+		timer.async_wait([&timer_result](const boost::system::error_code& error) { timer_result.reset(error); });
+
+		boost::optional<boost::system::error_code> result;
+		boost::asio::async_connect(this->s.lowest_layer(), iterator,
+								   [this, &result](const boost::system::error_code& error,
+												   const tcp::resolver::iterator& /*endpoint*/) { result.reset(error); });
+
+		this->io_context.reset();
+		while (this->io_context.run_one() != 0u) {
+			if (result) {
+				timer.cancel();
+			} else if (timer_result) {
+				this->s.lowest_layer().cancel();
+			}
+		}
+
+		if (*result) {
+			throw boost::system::system_error(*result);
+		}
+
+		this->handshake();
 
 		this->connected = true;
 
 		return 0;
+	}
+
+	auto netHelperSSL::handshake() -> void {
+		boost::optional<boost::system::error_code> timer_result;
+		boost::asio::deadline_timer timer(this->io_context);
+		timer.expires_from_now(boost::posix_time::milliseconds(this->timeout));
+		timer.async_wait([&timer_result](const boost::system::error_code& error) { timer_result.reset(error); });
+
+		boost::optional<boost::system::error_code> result;
+		this->s.async_handshake(boost::asio::ssl::stream_base::client,
+								[this, &result](const boost::system::error_code& error) { result.reset(error); });
+
+		this->io_context.reset();
+		while (this->io_context.run_one() != 0u) {
+			if (result) {
+				timer.cancel();
+			} else if (timer_result) {
+				this->s.lowest_layer().cancel();
+			}
+		}
+
+		if (*result) {
+			throw boost::system::system_error(*result);
+		}
 	}
 
 	void netHelperSSL::disconnect() noexcept {
@@ -431,7 +530,33 @@ namespace bestsens {
 			return -1;
 		}
 
-		const auto size = boost::asio::write(this->s, boost::asio::buffer(data, data.size()));
+		boost::optional<boost::system::error_code> timer_result;
+		boost::asio::deadline_timer timer(this->io_context);
+		timer.expires_from_now(boost::posix_time::milliseconds(this->timeout));
+		timer.async_wait([&timer_result](const boost::system::error_code& error) { timer_result.reset(error); });
+
+		size_t size{0};
+
+		boost::optional<boost::system::error_code> result;
+		boost::asio::async_write(this->s, boost::asio::buffer(data, data.size()),
+								[&result, &size](const boost::system::error_code& error, size_t length) {
+									result.reset(error);
+									size = length;
+								});
+
+		this->io_context.reset();
+		while (this->io_context.run_one() != 0u) {
+			if (result) {
+				timer.cancel();
+			} else if (timer_result) {
+				this->s.lowest_layer().cancel();
+			}
+		}
+
+		if (*result) {
+			throw boost::system::system_error(*result);
+		}
+
 		return static_cast<int>(size);
 	}
 
@@ -440,7 +565,33 @@ namespace bestsens {
 			return -1;
 		}
 
-		const auto reply_length = boost::asio::read(this->s, boost::asio::buffer(buffer, read_size));
-		return static_cast<int>(reply_length);
+		boost::optional<boost::system::error_code> timer_result;
+		boost::asio::deadline_timer timer(this->io_context);
+		timer.expires_from_now(boost::posix_time::milliseconds(this->timeout));
+		timer.async_wait([&timer_result](const boost::system::error_code& error) { timer_result.reset(error); });
+
+		size_t size{0};
+
+		boost::optional<boost::system::error_code> result;
+		boost::asio::async_read(this->s, boost::asio::buffer(buffer, read_size),
+								[&result, &size](const boost::system::error_code& error, size_t length) {
+									result.reset(error);
+									size = length;
+								});
+
+		this->io_context.reset();
+		while (this->io_context.run_one() != 0u) {
+			if (result) {
+				timer.cancel();
+			} else if (timer_result) {
+				this->s.lowest_layer().cancel();
+			}
+		}
+
+		if (*result) {
+			throw boost::system::system_error(*result);
+		}
+
+		return static_cast<int>(size);
 	}
 }
