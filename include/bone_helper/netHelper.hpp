@@ -124,6 +124,12 @@ namespace bestsens {
 				  bool use_ssl = false);
 		~netHelper() = default;
 
+		netHelper(netHelper&&) = default;
+		netHelper(netHelper const& other) = delete;
+
+		auto operator=(netHelper&&) -> netHelper& = default;
+		auto operator=(netHelper const& other) -> netHelper& = delete;
+
 		auto login(const std::string& user_name, const std::string& password, bool use_hash = true) -> int;
 
 		auto is_logged_in() const -> int;
