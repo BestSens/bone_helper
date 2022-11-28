@@ -52,3 +52,5 @@ set(ENV{PKG_CONFIG_PATH} ${CMAKE_SYSROOT}/usr/lib/pkgconfig)
 
 add_compile_options("-march=armv7-a;-mfloat-abi=hard;-mfpu=neon;-mtune=cortex-a9;-pthread")
 add_link_options("-march=armv7-a;-mfloat-abi=hard;-mfpu=neon;-mtune=cortex-a9;-pthread")
+
+set(SSL_DIR ${CMAKE_SYSROOT}/opt/openssl-3)
