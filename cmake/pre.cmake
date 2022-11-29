@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 add_library(common_compile_options INTERFACE)
 
 option(ENABLE_WCONVERSION "enables warnings for conversions" ON)
-option(CRITICAL_WARNINGS "throw error on warnings" ON)
+option(CRITICAL_WARNINGS "throw error on warnings" OFF)
 
 target_compile_options(common_compile_options INTERFACE -g -Wall -Wextra -Wpedantic -Wtype-limits)
 target_compile_options(common_compile_options INTERFACE "$<$<CONFIG:RELEASE>:-O3;-DNDEBUG>")
