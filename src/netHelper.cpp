@@ -47,8 +47,6 @@ namespace bestsens {
 			conn_port(std::move(conn_port)),
 			use_msgpack(use_msgpack),
 			silent(silent) {
-			const auto address = boost::asio::ip::address::from_string(this->conn_target);
-			this->is_ipv6 = address.is_v6();
 			this->set_timeout_ms(this->timeout);
 		}
 
@@ -139,7 +137,7 @@ namespace bestsens {
 			/*
 			* do login
 			*/
-			json payload = {
+			const json payload = {
 				{"signed_token", login_token},
 				{"username", user_name}
 			};
@@ -167,15 +165,6 @@ namespace bestsens {
 
 		/*!
 			@brief	sets socket timeout
-			@param	timeout: timeout in s
-			@return	Returns 0 on success, -1 for errors.
-		*/
-		[[deprecated]] auto netHelper_base::set_timeout(unsigned int timeout) -> void {
-			this->set_timeout_ms(timeout * 1000);
-		}
-
-		/*!
-			@brief	sets socket timeout
 			@param	timeout_ms: timeout in ms
 			@return	Returns 0 on success, -1 for errors.
 		*/
@@ -194,7 +183,7 @@ namespace bestsens {
 				temp["api"] = api_version;
 			}
 
-			std::lock_guard<std::mutex> lock(this->sock_mtx);
+			const std::lock_guard<std::mutex> lock(this->sock_mtx);
 
 			/*
 			* send data to server
@@ -294,7 +283,7 @@ namespace bestsens {
 			return 0;
 		}
 
-		void netHelper_base::disconnect() noexcept {}
+		void netHelper_base::disconnect() {}
 
 		auto netHelper_base::send(const char * data) -> int {
 			return this->send(std::string(data));
@@ -328,8 +317,8 @@ namespace bestsens {
 			}
 
 			tcp::resolver resolver(io_context);
-			tcp::resolver::query query(this->is_ipv6 ? tcp::v6() : tcp::v4(), this->conn_target, this->conn_port);
-			tcp::resolver::iterator iterator = resolver.resolve(query);
+			const tcp::resolver::query query(this->conn_target, this->conn_port);
+			const tcp::resolver::iterator iterator = resolver.resolve(query);
 
 			boost::optional<boost::system::error_code> timer_result;
 			boost::asio::deadline_timer timer(this->io_context);
@@ -359,12 +348,12 @@ namespace bestsens {
 			return 0;
 		}
 
-		void netHelperTCP::disconnect() noexcept {
+		void netHelperTCP::disconnect() {
 			if (!this->connected) {
 				return;
 			}
 
-			std::lock_guard<std::mutex> lock(this->sock_mtx);
+			const std::lock_guard<std::mutex> lock(this->sock_mtx);
 
 			this->s.shutdown(boost::asio::ip::tcp::socket::shutdown_both);
 
@@ -458,8 +447,8 @@ namespace bestsens {
 			}
 
 			tcp::resolver resolver(io_context);
-			tcp::resolver::query query(this->is_ipv6 ? tcp::v6() : tcp::v4(), this->conn_target, this->conn_port);
-			tcp::resolver::iterator iterator = resolver.resolve(query);
+			const tcp::resolver::query query(this->conn_target, this->conn_port);
+			const tcp::resolver::iterator iterator = resolver.resolve(query);
 
 			boost::optional<boost::system::error_code> timer_result;
 			boost::asio::deadline_timer timer(this->io_context);
@@ -515,12 +504,12 @@ namespace bestsens {
 			}
 		}
 
-		void netHelperSSL::disconnect() noexcept {
+		void netHelperSSL::disconnect() {
 			if (!this->connected) {
 				return;
 			}
 
-			std::lock_guard<std::mutex> lock(this->sock_mtx);
+			const std::lock_guard<std::mutex> lock(this->sock_mtx);
 
 			this->s.lowest_layer().shutdown(boost::asio::ip::tcp::socket::shutdown_both);
 
@@ -638,7 +627,7 @@ namespace bestsens {
 	}
 
 	[[deprecated]] auto netHelper::set_timeout(unsigned int timeout) -> void {
-		return this->ptr->set_timeout(timeout);
+		return this->ptr->set_timeout_ms(timeout * 1000);
 	}
 
 	auto netHelper::set_timeout_ms(unsigned int timeout_ms) -> void {

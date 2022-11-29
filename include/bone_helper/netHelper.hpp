@@ -46,7 +46,6 @@ namespace bestsens {
 			auto getCommandReturnPayload(const std::string& command, const nlohmann::json& payload = {},
 										 int api_version = 0) -> nlohmann::json;
 
-			auto set_timeout(unsigned int timeout) -> void;
 			auto set_timeout_ms(unsigned int timeout_ms) -> void;
 
 			auto get_mutex() -> std::mutex&;
@@ -56,7 +55,7 @@ namespace bestsens {
 			static auto getLastRawPosition(const char* str) -> unsigned int;
 
 			virtual auto connect() -> int;
-			virtual auto disconnect() noexcept -> void;
+			virtual auto disconnect() -> void;
 			virtual auto send(const std::string& data) -> int;
 			virtual auto recv(void* buffer, size_t read_size) -> int;
 
@@ -64,8 +63,6 @@ namespace bestsens {
 			bool connected{false};
 			unsigned int timeout{10000};
 			struct addrinfo remote {};
-
-			bool is_ipv6{false};
 
 			std::mutex sock_mtx{};
 
@@ -88,7 +85,7 @@ namespace bestsens {
 			netHelperTCP(netHelperTCP&& src) noexcept = delete;
 
 			auto connect() -> int override;
-			auto disconnect() noexcept -> void override;
+			auto disconnect() -> void override;
 
 			auto send(const std::string& data) -> int override;
 			auto recv(void* buffer, size_t read_size) -> int override;
@@ -105,7 +102,7 @@ namespace bestsens {
 			netHelperSSL(netHelperSSL&& src) noexcept = delete;
 
 			auto connect() -> int override;
-			auto disconnect() noexcept -> void override;
+			auto disconnect() -> void override;
 
 			auto send(const std::string& data) -> int override;
 			auto recv(void* buffer, size_t read_size) -> int override;
