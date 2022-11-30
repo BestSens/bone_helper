@@ -23,6 +23,8 @@
 #include <vector>
 
 #include "bone_helper/system_helper.hpp"
+#include "boost/date_time/posix_time/posix_time.hpp"
+#include "fmt/chrono.h"
 
 #ifdef ENABLE_SYSTEMD_DBUS
 #include <systemd/sd-bus.h>
@@ -39,35 +41,27 @@ namespace bestsens {
 		};
 
 		inline auto getDate() -> std::string {
-			std::time_t rawtime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-			std::tm tm = *std::localtime(&rawtime);
-
-			std::array<char, 20> mbstr{};
-			std::strftime(mbstr.data(), mbstr.size(), "%F %T", &tm);
-
-			return {mbstr.data(), mbstr.size()};
+			const boost::posix_time::ptime date{boost::posix_time::second_clock::local_time()};
+			return fmt::format("{:%F %T}", boost::posix_time::to_tm(date));
 		}
 
 		inline auto getTimezoneOffset() -> std::string {
-			std::time_t rawtime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-			std::tm tm = *std::localtime(&rawtime);
-
-			std::array<char, 6> mbstr{};
-			std::strftime(mbstr.data(), mbstr.size(), "%z", &tm);
-
-			return {mbstr.data(), mbstr.size()};
+			const boost::posix_time::ptime date{boost::posix_time::second_clock::local_time()};
+			return fmt::format("{:%z}", boost::posix_time::to_tm(date));
 		}
 
 		inline auto getTimeDateInfo() -> timedateinfo_t {
 			timedateinfo_t ti{};
 
 			for (const auto& input : system_helper::pipeSystemCommand("timedatectl status")) {
-				std::regex tzrgx("Time zone:\\s*([a-zA-Z]+\\/[a-zA-Z]+)");
-				std::regex tsrgx("Network time on:\\s*(yes|no)");
+				const std::regex tzrgx("Time zone:\\s*([a-zA-Z]+\\/[a-zA-Z]+)");
+				const std::regex tsrgx("Network time on:\\s*(yes|no)");
 				std::smatch match;
 
 				if (std::regex_search(input, match, tzrgx)) {
-					if (match.ready() && match.size() == 2) ti.timezone = match[1];
+					if (match.ready() && match.size() == 2) {
+						ti.timezone = match[1];
+					}
 				} else if (std::regex_search(input, match, tsrgx)) {
 					if (match.ready() && match.size() == 2) {
 						ti.timesync_enabled = match[1].compare("yes") == 0;
@@ -82,46 +76,42 @@ namespace bestsens {
 
 		inline void setDate(const std::string& date) {
 			if (geteuid() == 0) { 
-				const std::time_t rawtime = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-				std::tm tm = *std::localtime(&rawtime);
+				const boost::posix_time::ptime current_date{boost::posix_time::second_clock::local_time()};
+				std::tm tm = boost::posix_time::to_tm(current_date);
 
 				if (strptime(date.c_str(), "%F %T", &tm) == nullptr) {
-					std::string error = std::string("could not set time: error parsing string");
-					throw std::runtime_error(error);
+					throw std::runtime_error("could not set time: error parsing string");
 				}
 
 				const std::time_t newtime = std::mktime(&tm);
 				const struct timespec newtime_ts = {newtime, 0};
 
 				if (clock_settime(CLOCK_REALTIME, &newtime_ts) != 0) {
-					const auto error = std::string("could not set time: ") + strerror_s(errno);
-					throw std::runtime_error(error);
+					throw std::runtime_error(fmt::format("could not set time: {}", strerror_s(errno)));
 				}
 			} else { // no root priviledges, try old sudo -n approach
 				const auto cmd = std::string("sudo -n timedatectl set-time \"") + date + std::string("\"");
 				const auto lines = system_helper::pipeSystemCommand(cmd);
 
 				if (!lines.empty()) {
-					const auto error = std::string("could not set time: ") + lines[0];
-					throw std::runtime_error(error);
+					throw std::runtime_error(fmt::format("could not set time: {}", lines[0]));
 				}
 			}
 		}
 
 		inline void setTimezone(const std::string& timezone) {
-			std::string cmd = std::string("sudo -n timedatectl set-timezone \"") + timezone + std::string("\"");
+			const auto cmd = fmt::format("sudo -n timedatectl set-timezone \"{}\"", timezone);
 
 			auto lines = system_helper::pipeSystemCommand(cmd);
 
-			if(!lines.empty()) {
-				std::string error = std::string("could not set timezone: ") + lines[0];
-				throw std::runtime_error(error);
+			if (!lines.empty()) {
+				throw std::runtime_error(fmt::format("could not set time: {}", lines[0]));
 			}
 		}
 
 		inline auto getTimezone() -> std::string {
 			for (const auto& input : system_helper::pipeSystemCommand("timedatectl status")) {
-				std::regex r("Time zone:\\s*([a-zA-Z]+\\/[a-zA-Z]+)");
+				const std::regex r("Time zone:\\s*([a-zA-Z]+\\/[a-zA-Z]+)");
 				std::smatch match;
 
 				if (std::regex_search(input, match, r)) {
@@ -132,24 +122,21 @@ namespace bestsens {
 			}
 
 			throw std::runtime_error("could not get timezone");
-
-			return "";
 		}
 
 		inline void setTimesync(bool timesync_enabled) {
-			std::string cmd = std::string("sudo -n timedatectl set-ntp ") + (timesync_enabled ? "true" : "false");
+			const auto cmd = fmt::format("sudo -n timedatectl set-ntp {}", timesync_enabled ? "true" : "false");
 
 			auto lines = system_helper::pipeSystemCommand(cmd);
 
-			if(!lines.empty()) {
-				std::string error = std::string("could not set timeync: ") + lines[0];
-				throw std::runtime_error(error);
+			if (!lines.empty()) {
+				throw std::runtime_error(fmt::format("could not set time: {}", lines[0]));
 			}
 		}
 
 		inline auto getTimesync() -> bool {
 			for (const auto& input : system_helper::pipeSystemCommand("timedatectl status")) {
-				std::regex r("Network time on:\\s*(yes|no)");
+				const std::regex r("Network time on:\\s*(yes|no)");
 				std::smatch match;
 
 				if (std::regex_search(input, match, r)) {

@@ -22,6 +22,7 @@ target_link_libraries(bone_helper PRIVATE
 	crypto
 	Boost::process
 	Boost::optional
+	Boost::date_time
 )
 
 target_link_libraries(bone_helper PUBLIC
