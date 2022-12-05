@@ -118,7 +118,7 @@ namespace bestsens {
 		if (!input.is_object()) {
 			return default_value;
 		}
-		
+
 		try {
 			return input.value(key, default_value);
 		} catch (const nlohmann::json::type_error& e) {
@@ -128,32 +128,32 @@ namespace bestsens {
 
 	template <typename keytype>
 	auto is_json_number(const nlohmann::json& input, const keytype& key) -> bool {
-		return (input.contains(key) && input.at(key).is_number());
+		return (input.is_object() && input.contains(key) && input.at(key).is_number());
 	}
 
 	template <typename keytype>
 	auto is_json_array(const nlohmann::json& input, const keytype& key) -> bool {
-		return (input.contains(key) && input.at(key).is_array());
+		return (input.is_object() && input.contains(key) && input.at(key).is_array());
 	}
 
 	template <typename keytype>
 	auto is_json_string(const nlohmann::json& input, const keytype& key) -> bool {
-		return (input.contains(key) && input.at(key).is_string());
+		return (input.is_object() && input.contains(key) && input.at(key).is_string());
 	}
 
 	template <typename keytype>
 	auto is_json_bool(const nlohmann::json& input, const keytype& key) -> bool {
-		return (input.contains(key) && input.at(key).is_boolean());
+		return (input.is_object() && input.contains(key) && input.at(key).is_boolean());
 	}
 
 	template <typename keytype>
 	auto is_json_object(const nlohmann::json& input, const keytype& key) -> bool {
-		return (input.contains(key) && input.at(key).is_object());
+		return (input.is_object() && input.contains(key) && input.at(key).is_object());
 	}
 
 	template <typename keytype>
 	auto is_json_node(const nlohmann::json& input, const keytype& key) -> bool {
-		return (input.contains(key) && !input.at(key).is_null());
+		return (input.is_object() && input.contains(key) && !input.at(key).is_null());
 	}
 
 	template <typename keytype>
