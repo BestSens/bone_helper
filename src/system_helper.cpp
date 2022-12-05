@@ -102,8 +102,8 @@ namespace bestsens {
 			std::vector<std::string> lines{};
 			std::string line;
 
-			while (std::getline(is, line) && !line.empty()) {
-				lines.push_back(line);
+			while (std::getline(is, line)) {
+				lines.push_back(line + "\n");
 			}
 
 			return lines;
