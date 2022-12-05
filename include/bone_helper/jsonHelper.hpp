@@ -115,6 +115,10 @@ namespace bestsens {
 
 	template <typename keytype, typename T>
 	auto value_ig_type(const nlohmann::json& input, const keytype& key, const T& default_value) -> T {
+		if (!input.is_object()) {
+			return default_value;
+		}
+		
 		try {
 			return input.value(key, default_value);
 		} catch (const nlohmann::json::type_error& e) {
