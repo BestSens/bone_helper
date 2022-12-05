@@ -1,21 +1,23 @@
 #include "bone_helper/loopTimer.hpp"
 
+#include <atomic>
+#include <chrono>
+#include <condition_variable>
+#include <mutex>
+
 namespace bestsens{
-	loopTimer::loopTimer(std::chrono::microseconds wait_time, int start_value) : wait_time{wait_time} {
-		this->start(start_value);
+	loopTimer::loopTimer(std::chrono::microseconds wait_time, bool start_value) : wait_time{wait_time} {
+		this->next_cycle =
+			start_value ? std::chrono::steady_clock::now() : std::chrono::steady_clock::now() + this->wait_time;
 	}
 
 	loopTimer::~loopTimer() {
 		this->stop();
-		if(this->timer_thread.joinable())
-		{
-			this->timer_thread.join();
-		}
 	}
 
 	void loopTimer::kill_all() {
 		{
-			std::lock_guard<std::mutex> lk(loopTimer::m_trigger);
+			const std::lock_guard<std::mutex> lk(loopTimer::m_trigger);
 			loopTimer::kill = true;
 		}
 		loopTimer::cv_trigger.notify_all();
@@ -23,49 +25,10 @@ namespace bestsens{
 
 	void loopTimer::stop() {
 		{
-			std::lock_guard<std::mutex> lk(loopTimer::m_trigger);
+			const std::lock_guard<std::mutex> lk(loopTimer::m_trigger);
 			this->running = false;
 		}
 		loopTimer::cv_trigger.notify_all();
-	}
-
-	void loopTimer::start(int start_value = 0) {
-		if (loopTimer::kill)
-			return;
-
-		this->running = true;
-		this->ready = (start_value == 1);
-
-		new (&this->timer_thread) std::thread([this] {
-			bool exit = false;
-
-			auto predicate = [this]() -> bool {
-				return loopTimer::kill || !this->running;
-			};
-
-			while (!exit) {
-				const auto expires = std::chrono::steady_clock::now() + this->wait_time;
-				
-				{
-					std::unique_lock<std::mutex> lk(loopTimer::m_trigger);
-					exit = loopTimer::cv_trigger.wait_until(lk, expires, predicate);
-				}
-
-				{
-					std::lock_guard<std::mutex> lk(this->m);
-					this->ready = true;
-				}
-
-				this->cv.notify_all();
-			}
-
-			{
-				std::lock_guard<std::mutex> lk(this->m);
-				this->ready = true;
-			}
-
-			this->cv.notify_all();
-		});
 	}
 
 	std::atomic<bool> loopTimer::kill{false};
@@ -73,18 +36,16 @@ namespace bestsens{
 	std::mutex loopTimer::m_trigger;
 
 	void loopTimer::wait_on_tick() {
-		std::unique_lock<std::mutex> lk(this->m);
+		do {
+			std::unique_lock<std::mutex> lk(loopTimer::m_trigger);
+			loopTimer::cv_trigger.wait_until(lk, this->next_cycle);
+		} while (!loopTimer::kill && this->running && std::chrono::steady_clock::now() < this->next_cycle);
 
-		while (!this->ready && !loopTimer::kill)
-			this->cv.wait(lk);
-
-		this->ready = false;
+		this->next_cycle = std::chrono::steady_clock::now() + this->wait_time;
 	}
 
-	auto loopTimer::set_wait_time(std::chrono::microseconds wait_time) -> int {
+	auto loopTimer::set_wait_time(std::chrono::microseconds wait_time) -> void {
 		this->wait_time = wait_time;
-
-		return 0;
 	}
 
 	auto loopTimer::get_wait_time() -> std::chrono::microseconds {
