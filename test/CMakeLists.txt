@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.3)
+find_package(Boost REQUIRED)
 
 add_executable(run_test_bone_helper
 	src/test_circular_buffer.cpp 
@@ -10,6 +11,7 @@ add_executable(run_test_bone_helper
 
 target_include_directories(run_test_bone_helper PRIVATE
 	${PROJECT_SOURCE_DIR}/include
+	${Boost_INCLUDE_DIRS}
 	data
 )
 
@@ -20,7 +22,6 @@ endif()
 if(CRITICAL_WARNINGS)
 	target_compile_options(run_test_bone_helper PRIVATE -Werror)
 endif()
-
 
 target_compile_options(run_test_bone_helper PRIVATE -fsanitize=address -fsanitize=undefined -Wall -Wextra -Wpedantic -Wtype-limits)
 target_link_options(run_test_bone_helper PRIVATE -fsanitize=address -fsanitize=undefined)
@@ -33,7 +34,7 @@ target_link_libraries(run_test_bone_helper PRIVATE
 	ssl
 	crypto
 	pthread
-	Boost::asio
+	${Boost_LIBRARIES}
 )
 
 add_test(NAME test COMMAND run_test_bone_helper)

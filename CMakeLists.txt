@@ -11,7 +11,9 @@ add_library(bone_helper STATIC
 	src/fsHelper.cpp
 )
 
-target_include_directories(bone_helper PUBLIC include)
+find_package(Boost REQUIRED filesystem)
+
+target_include_directories(bone_helper PUBLIC include ${Boost_INCLUDE_DIRS})
 target_include_directories(bone_helper PRIVATE libs/tinydir)
 
 target_link_libraries(bone_helper PRIVATE
@@ -20,13 +22,10 @@ target_link_libraries(bone_helper PRIVATE
 	spdlog
 	ssl
 	crypto
-	Boost::process
-	Boost::optional
-	Boost::date_time
 )
 
 target_link_libraries(bone_helper PUBLIC
-	Boost::asio
+	${Boost_LIBRARIES}
 )
 
 add_library(uff_writer STATIC
