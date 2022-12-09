@@ -3,9 +3,9 @@ if(NOT SSL_DIR)
 endif()
 
 add_library(ssl STATIC IMPORTED)
-set_property(TARGET ssl PROPERTY IMPORTED_LOCATION ${SSL_DIR}/libs/libssl.a)
+set_property(TARGET ssl PROPERTY IMPORTED_LOCATION ${SSL_DIR}/lib/libssl.a)
 target_include_directories(ssl INTERFACE ${SSL_DIR}/include)
 
 add_library(crypto STATIC IMPORTED)
-set_property(TARGET crypto PROPERTY IMPORTED_LOCATION ${SSL_DIR}/libs/libcrypto.a)
+set_property(TARGET crypto PROPERTY IMPORTED_LOCATION ${SSL_DIR}/lib/libcrypto.a)
 target_include_directories(crypto INTERFACE ${SSL_DIR}/include)
