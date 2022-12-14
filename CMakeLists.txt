@@ -20,11 +20,11 @@ target_link_libraries(bone_helper PRIVATE
 	nlohmann_json::nlohmann_json
 	fmt
 	spdlog
-	ssl
-	crypto
 )
 
 target_link_libraries(bone_helper PUBLIC
+	ssl
+	crypto
 	${Boost_LIBRARIES}
 )
 
