@@ -77,7 +77,7 @@ namespace bestsens {
 		auto get(T * target, size_t &amount, size_t last_value = 0, bool return_continous = false) const -> size_t;
 
 		template <typename Tv>
-		auto getValue(size_t id, const std::string& identifier) const -> Tv;
+		auto getValue(size_t pos, const std::string& identifier) const -> Tv;
 
 		auto getVector(size_t amount) const -> std::vector<T>;
 		auto getVector(size_t amount, size_t& last_value, bool exactly = false, bool return_continous = false) const
