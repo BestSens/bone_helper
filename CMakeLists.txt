@@ -28,6 +28,10 @@ target_link_libraries(bone_helper PUBLIC
 	${Boost_LIBRARIES}
 )
 
+if(NOT STATIC_LINK_BINARY)
+	target_link_libraries(bone_helper PUBLIC ${CMAKE_DL_LIBS})
+endif()
+
 add_library(uff_writer STATIC
 	src/uffWriter.cpp
 )

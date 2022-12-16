@@ -1,7 +1,3 @@
-if(!STATIC_LINK_BINARY)
-	target_link_libraries(${MAIN_EXECUTABLE} ${CMAKE_DL_LIBS})
-endif()
-
 # Strip binary release builds
 if(ENABLE_STRIPPING)
 	if(DEFINED ENV{STRIP})
