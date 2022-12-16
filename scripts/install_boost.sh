@@ -5,6 +5,6 @@ wget https://boostorg.jfrog.io/artifactory/main/release/1.81.0/source/boost_1_81
 tar xzf boost_1_81_0.tar.gz
 cd boost_1_81_0
 ./bootstrap.sh || exit 1
-sudo ./b2 install || exit 1
+sudo ./b2 install --without-python || exit 1
 cd /tmp
 sudo rm -Rf boost_1_81_0
