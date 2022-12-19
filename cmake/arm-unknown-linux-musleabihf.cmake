@@ -47,3 +47,5 @@ set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 
 set(SSL_DIR /home/jan/x-tools/arm-unknown-linux-musleabihf/arm-unknown-linux-musleabihf/opt/openssl-3)
+set(USE_SYSTEM_SSL OFF)
+set(STATIC_LINK_BINARY ON)
