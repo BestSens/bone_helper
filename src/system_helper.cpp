@@ -36,8 +36,12 @@
 namespace bestsens {
 	auto strerror_s(int errnum) -> std::string {
 		std::array<char, 256> buffer{};
+#ifndef __GLIBC__
 		strerror_r(errnum, buffer.data(), buffer.size());
 		return {buffer.data()};
+#else
+		return {strerror_r(errnum, buffer.data(), buffer.size())};
+#endif
 	}
 
 	namespace system_helper {
