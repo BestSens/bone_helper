@@ -7,13 +7,18 @@ elseif(UNIX OR APPLE)
     set(UTIL_SEARCH_CMD which)
 endif()
 
-set(TOOLCHAIN_PREFIX arm-unknown-linux-musleabihf-)
+set(TOOLCHAIN_NAME arm-unknown-linux-musleabihf)
+set(TOOLCHAIN_PREFIX "${TOOLCHAIN_NAME}-")
 
 execute_process(
   COMMAND ${UTIL_SEARCH_CMD} ${TOOLCHAIN_PREFIX}gcc
   OUTPUT_VARIABLE BINUTILS_PATH
   OUTPUT_STRIP_TRAILING_WHITESPACE
 )
+
+get_filename_component(TOOLCHAIN_SYSROOT ${BINUTILS_PATH} DIRECTORY)
+get_filename_component(TOOLCHAIN_SYSROOT ${TOOLCHAIN_SYSROOT} DIRECTORY)
+set(TOOLCHAIN_SYSROOT "${TOOLCHAIN_SYSROOT}/${TOOLCHAIN_NAME}/")
 
 set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 
@@ -40,12 +45,12 @@ set(CMAKE_SIZE_UTIL ${TOOLCHAIN_PREFIX}size)
 
 set(CMAKE_STRIP ${TOOLCHAIN_PREFIX}strip)
 
-set(CMAKE_FIND_ROOT_PATH ${BINUTILS_PATH} /home/jan/x-tools/arm-unknown-linux-musleabihf/arm-unknown-linux-musleabihf/lib/cmake)
+set(CMAKE_FIND_ROOT_PATH ${BINUTILS_PATH} ${TOOLCHAIN_SYSROOT}/lib/cmake)
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 
-set(SSL_DIR /home/jan/x-tools/arm-unknown-linux-musleabihf/arm-unknown-linux-musleabihf/opt/openssl-3)
+set(SSL_DIR ${TOOLCHAIN_SYSROOT}/opt/openssl-3)
 set(USE_SYSTEM_SSL OFF)
 set(STATIC_LINK_BINARY ON)
