@@ -16,8 +16,6 @@
 #ifdef ENABLE_SYSTEMD_STATUS
 #include <systemd/sd-daemon.h>
 #include <systemd/sd-journal.h>
-#else
-#include <syslog.h>
 #endif
 
 namespace bestsens {
@@ -64,34 +62,6 @@ namespace bestsens {
 				static std::mutex list_mtx;
 			};
 		} // namespace systemd
-
-		class LogManager {
-		public:
-			LogManager() {
-				this->setEcho(this->enable_echo);
-			};
-			explicit LogManager(std::string process_name) : process_name{std::move(process_name)} {
-				this->setEcho(this->enable_echo);
-			};
-
-			void setMaxLogLevel(int max_log_level);
-			void setEcho(bool enable_echo);
-
-			void write(int priority, const std::string& message);
-			void write(const std::string& message);
-			void write(int priority, const char *fmt, ...);
-			void write(int priority, const char *fmt, va_list ap);
-			void write(const char *fmt, ...);
-
-			void auditlog(const char *fmt, ...);
-		private:
-			int max_log_level{LOG_INFO};
-			const int default_log_level{LOG_INFO};
-			bool enable_echo{true};
-			std::string process_name;
-
-			std::mutex mutex;
-		};
 	} // namespace system_helper
 } // namespace bestsens
 
