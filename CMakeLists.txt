@@ -25,6 +25,7 @@ target_link_libraries(bone_helper PRIVATE
 target_link_libraries(bone_helper PUBLIC
 	ssl
 	crypto
+	atomic
 	${Boost_LIBRARIES}
 )
 
