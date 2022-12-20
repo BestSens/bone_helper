@@ -25,6 +25,7 @@ option(USE_LTO "enable link time optimizations when available" ON)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
 	target_compile_options(common_compile_options INTERFACE "$<$<CONFIG:DEBUG>:-rdynamic>")
+	target_compile_options(common_compile_options INTERFACE "-fno-var-tracking")
 
 	if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.0)
 		target_compile_options(common_compile_options INTERFACE -Wno-pragmas -Wno-missing-field-initializers)
