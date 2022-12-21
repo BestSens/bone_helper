@@ -1,13 +1,14 @@
 set(CMAKE_C_STANDARD 11)
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_library(common_compile_options INTERFACE)
 
 option(ENABLE_WCONVERSION "enables warnings for conversions" ON)
 option(CRITICAL_WARNINGS "throw error on warnings" OFF)
 
-target_compile_options(common_compile_options INTERFACE -g -Wall -Wextra -Wpedantic -Wtype-limits)
+target_compile_options(common_compile_options INTERFACE -g -Wall -Wextra -Wpedantic -Wtype-limits -Wno-psabi)
 target_compile_options(common_compile_options INTERFACE "$<$<CONFIG:RELEASE>:-O3;-DNDEBUG>")
 target_compile_options(common_compile_options INTERFACE "$<$<CONFIG:DEBUG>:-Og;-DDEBUG;-funwind-tables;-fno-inline>")
 
@@ -26,11 +27,6 @@ option(USE_LTO "enable link time optimizations when available" ON)
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
 	target_compile_options(common_compile_options INTERFACE "$<$<CONFIG:DEBUG>:-rdynamic>")
 	target_compile_options(common_compile_options INTERFACE "-fno-var-tracking")
-
-	if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS 5.0)
-		target_compile_options(common_compile_options INTERFACE -Wno-pragmas -Wno-missing-field-initializers)
-		set(USE_LTO OFF)
-	endif()
 endif()
 
 if(USE_LTO)
