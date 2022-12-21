@@ -20,7 +20,9 @@ if(CRITICAL_WARNINGS)
 	target_compile_options(common_compile_options INTERFACE -Werror)
 endif()
 
-target_link_libraries(common_compile_options INTERFACE ${CMAKE_DL_LIBS})
+if(NOT STATIC_LINK_BINARY)
+	target_link_libraries(common_compile_options INTERFACE ${CMAKE_DL_LIBS})
+endif()
 
 option(USE_LTO "enable link time optimizations when available" ON)
 
