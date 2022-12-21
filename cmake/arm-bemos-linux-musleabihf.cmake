@@ -7,7 +7,7 @@ elseif(UNIX OR APPLE)
     set(UTIL_SEARCH_CMD which)
 endif()
 
-set(TOOLCHAIN_NAME arm-unknown-linux-musleabihf)
+set(TOOLCHAIN_NAME arm-bemos-linux-musleabihf)
 set(TOOLCHAIN_PREFIX "${TOOLCHAIN_NAME}-")
 
 execute_process(

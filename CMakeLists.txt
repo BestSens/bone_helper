@@ -2,7 +2,7 @@ project(bone_helper)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-add_library(bone_helper STATIC
+add_library(bone_helper STATIC EXCLUDE_FROM_ALL
 	src/loopTimer.cpp
 	src/stdlib_backports.cpp
 	src/system_helper.cpp
@@ -33,7 +33,7 @@ if(NOT STATIC_LINK_BINARY)
 	target_link_libraries(bone_helper PUBLIC ${CMAKE_DL_LIBS})
 endif()
 
-add_library(uff_writer STATIC
+add_library(uff_writer STATIC EXCLUDE_FROM_ALL
 	src/uffWriter.cpp
 )
 
