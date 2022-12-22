@@ -203,7 +203,7 @@ namespace bestsens {
 		static_assert(N > 0, "zero length buffer cannot be filled");
 
 		const std::lock_guard<std::recursive_mutex> lock(this->mutex);
-		this->buffer.resize(std::clamp(this->buffer.size() + values.size(), 0lu, N));
+		this->buffer.resize(std::clamp<size_t>(this->buffer.size() + values.size(), 0, N));
 		for (const auto& e : values) {
 			this->add(e);
 		}
