@@ -199,9 +199,6 @@ namespace bestsens {
 #endif
 			}
 
-			std::mutex MultiWatchdog::list_mtx;
-			std::vector<int*> MultiWatchdog::watchdog_list;
-
 			void MultiWatchdog::enable() {
 				const std::lock_guard<std::mutex> lock(MultiWatchdog::list_mtx);
 				MultiWatchdog::watchdog_list.push_back(&this->own_entry);
@@ -238,7 +235,9 @@ namespace bestsens {
 				watchdog();
 
 				for (auto &e : MultiWatchdog::watchdog_list) {
-					if (*e != -1) *e = 0;
+					if (*e != -1) {
+						*e = 0;
+					}
 				}
 			}
 		}  // namespace systemd

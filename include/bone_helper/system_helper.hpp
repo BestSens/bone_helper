@@ -30,11 +30,11 @@ namespace bestsens {
 
 		auto pipeSystemCommand(const std::string& command) -> std::vector<std::string>;
 
-		void daemonize();
+		auto daemonize() -> void;
 
-		void memcpy_swap_bo(void *dest, const void *src, std::size_t count);
-		void memcpy_be(void *dest, const void *src, std::size_t count);
-		void memcpy_le(void *dest, const void *src, std::size_t count);
+		auto memcpy_swap_bo(void *dest, const void *src, std::size_t count) -> void;
+		auto memcpy_be(void *dest, const void *src, std::size_t count) -> void;
+		auto memcpy_le(void *dest, const void *src, std::size_t count) -> void;
 
 		constexpr auto *deleteFilesRecursive = fs::deleteFilesRecursive;
 		constexpr auto *getDirectoriesUnsorted = fs::getDirectoriesUnsorted;
@@ -44,22 +44,27 @@ namespace bestsens {
 		constexpr auto *readDirectoryNatural = fs::readDirectoryNatural;
 
 		namespace systemd {
-			void ready();
-			void watchdog();
-			void status(const std::string &status);
-			void error(int errno);
+			auto ready() -> void;
+			auto watchdog() -> void;
+			auto status(const std::string &status) -> void;
+			auto error(int errno) -> void;
 
 			class MultiWatchdog {
 			public:
 				MultiWatchdog();
+				MultiWatchdog(const MultiWatchdog &) = default;
+				MultiWatchdog(MultiWatchdog &&) = delete;
+				auto operator=(const MultiWatchdog &) -> MultiWatchdog & = default;
+				auto operator=(MultiWatchdog &&) -> MultiWatchdog & = delete;
 				~MultiWatchdog();
-				void enable();
-				void disable();
-				void trigger();
+
+				auto enable() -> void;
+				auto disable() -> void;
+				auto trigger() -> void;
 			private:
 				int own_entry{0};
-				static std::vector<int*> watchdog_list;
-				static std::mutex list_mtx;
+				static inline std::vector<int*> watchdog_list{}; //NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
+				static inline std::mutex list_mtx{}; //NOLINT(cppcoreguidelines-avoid-non-const-global-variables)
 			};
 		} // namespace systemd
 	} // namespace system_helper
