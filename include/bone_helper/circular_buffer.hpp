@@ -53,6 +53,14 @@ namespace bestsens {
 		a = subtractWithRollover(a, T{1u}, limit);
 	}
 
+	template <typename T, typename Tv>
+	concept hasTemplateGet = requires(T v) {
+		v.template get<Tv>();
+	};
+
+	template <typename R, typename V>
+	concept RangeOf = std::ranges::range<R> && std::same_as<std::ranges::range_value_t<R>, V>;
+
 	template < typename T, size_t N >
 	class CircularBuffer {
 	public:
@@ -71,17 +79,16 @@ namespace bestsens {
 		auto operator=(CircularBuffer&& rhs) noexcept -> CircularBuffer&;
 		auto operator[](size_t id) const -> T;
 
-		auto add(const T& value) -> size_t;
+		auto add(const T& value) -> size_t;	
 		auto add(T&& value) -> size_t;
 
-		template <typename Container>
-		auto add(const Container& values) ->
-			typename std::enable_if<std::is_same<typename Container::value_type, T>::value, size_t>::type;
+		auto add(const RangeOf<T> auto& values) -> size_t;
 
 		auto get(size_t id) const -> T;
 		auto get(T * target, size_t &amount, size_t last_value = 0, bool return_continous = false) const -> size_t;
 
 		template <typename Tv>
+		requires hasTemplateGet<T, Tv>
 		auto getValue(size_t pos, const std::string& identifier) const -> Tv;
 
 		auto getVector(size_t amount) const -> std::vector<T>;
@@ -112,6 +119,7 @@ namespace bestsens {
 
 	template < typename T, size_t N >
 	CircularBuffer<T, N>::CircularBuffer(CircularBuffer&& src) noexcept {
+		const std::lock_guard<std::recursive_mutex> lock(src.mutex);
 		std::swap(this->current_insert_position, src.current_insert_position);
 		std::swap(this->item_count, src.item_count);
 		std::swap(this->base_id, src.base_id);
@@ -120,6 +128,7 @@ namespace bestsens {
 
 	template < typename T, size_t N >
 	CircularBuffer<T, N>::CircularBuffer(const CircularBuffer& src) noexcept {
+		const std::lock_guard<std::recursive_mutex> lock(src.mutex);
 		this->current_insert_position = src.current_insert_position;
 		this->item_count = src.item_count;
 		this->base_id = src.base_id;
@@ -128,6 +137,7 @@ namespace bestsens {
 
 	template < typename T, size_t N >
 	auto CircularBuffer<T, N>::operator=(CircularBuffer&& rhs) noexcept -> CircularBuffer<T, N>& {
+		const std::lock_guard<std::recursive_mutex> lock(rhs.mutex);
 		std::swap(this->current_insert_position, rhs.current_insert_position);
 		std::swap(this->item_count, rhs.item_count);
 		std::swap(this->base_id, rhs.base_id);
@@ -139,9 +149,10 @@ namespace bestsens {
 	template < typename T, size_t N >
 	auto CircularBuffer<T, N>::operator=(const CircularBuffer& rhs) -> CircularBuffer<T, N>& {
 		if (this != &rhs) {
-			current_insert_position = rhs.current_insert_position;
-			item_count = rhs.item_count;
-			base_id = rhs.base_id;
+			const std::lock_guard<std::recursive_mutex> lock(rhs.mutex);
+			this->current_insert_position = rhs.current_insert_position;
+			this->item_count = rhs.item_count;
+			this->base_id = rhs.base_id;
 
 			this->buffer = rhs.buffer;
 		}
@@ -197,9 +208,7 @@ namespace bestsens {
 	}
 
 	template <typename T, size_t N>
-	template <typename Container>
-	auto CircularBuffer<T, N>::add(const Container& values) ->
-		typename std::enable_if<std::is_same<typename Container::value_type, T>::value, size_t>::type {
+	auto CircularBuffer<T, N>::add(const RangeOf<T> auto& values) -> size_t {
 		static_assert(N > 0, "zero length buffer cannot be filled");
 
 		const std::lock_guard<std::recursive_mutex> lock(this->mutex);
@@ -257,6 +266,7 @@ namespace bestsens {
 
 	template <typename T, size_t N>
 	template <typename Tv>
+	requires hasTemplateGet<T, Tv>
 	[[nodiscard]] auto CircularBuffer<T, N>::getValue(size_t pos, const std::string& identifier) const -> Tv {
 		const std::lock_guard<std::recursive_mutex> lock(this->mutex);
 
