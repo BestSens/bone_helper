@@ -3,7 +3,6 @@ project(bone_helper)
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 add_library(bone_helper STATIC EXCLUDE_FROM_ALL
-	src/loopTimer.cpp
 	src/system_helper.cpp
 	src/netHelper.cpp
 	src/strnatcmp.cpp

@@ -6,7 +6,6 @@ add_executable(run_test_bone_helper
 	src/test_loopTimer.cpp 
 	src/test_stopwatch.cpp
 	src/test_jsonHelper.cpp
-	${PROJECT_SOURCE_DIR}/src/loopTimer.cpp 
 )
 
 target_include_directories(run_test_bone_helper PRIVATE
