@@ -5,7 +5,6 @@
 
 #include <algorithm>
 
-#include "bone_helper/stdlib_backports.hpp"
 #include "bone_helper/strnatcmp.hpp"
 #include "bone_helper/system_helper.hpp"
 #include "tinydir.h"
@@ -181,7 +180,7 @@ namespace bestsens {
 						std::string lc_entry(entry);
 						std::transform(lc_entry.begin(), lc_entry.end(), lc_entry.begin(), ::tolower);
 
-						if (backports::startsWith(entry, start_string) && backports::endsWith(lc_entry, lc_extension)) {
+						if (entry.starts_with(start_string) && lc_entry.ends_with(lc_extension)) {
 							if (full_path) {
 								result.push_back(directory_location + "/" + entry);
 							} else {

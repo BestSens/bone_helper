@@ -31,8 +31,6 @@
 #include <systemd/sd-journal.h>
 #endif
 
-#include "bone_helper/stdlib_backports.hpp"
-
 namespace bestsens {
 	auto strerror_s(int errnum) -> std::string {
 		std::array<char, 256> buffer{};
