@@ -7,7 +7,6 @@
 
 #include "bone_helper/system_helper.hpp"
 
-#include <endian.h>
 #include <grp.h>
 #include <pwd.h>
 #include <sys/stat.h>
@@ -16,6 +15,7 @@
 
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <cstdarg>
 #include <cstring>
 #include <mutex>
@@ -143,27 +143,35 @@ namespace bestsens {
 			close(STDERR_FILENO);
 		}
 
-		void memcpy_swap_bo(void *dest, const void *src, std::size_t count) {
-			char *dest_char = reinterpret_cast<char *>(dest);
-			const char *src_char = reinterpret_cast<const char *>(src);
+		auto memcpy_swap_bo(void *dest, const void *src, std::size_t count) -> void {
+			char *dest_char = reinterpret_cast<char *>(dest); //NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+			const char *src_char = reinterpret_cast<const char *>(src); //NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
 
-			for (std::size_t i = 0; i < count; i++) std::memcpy(dest_char + i, src_char + (count - i - 1), 1);
+			for (std::size_t i = 0; i < count; i++) {
+				std::memcpy(dest_char + i, src_char + (count - i - 1), 1);
+			}
 		}
 
-		void memcpy_be(void *dest, const void *src, std::size_t count) {
-#if __BYTE_ORDER == __BIG_ENDIAN
-			std::memcpy(dest, src, count);
-#elif __BYTE_ORDER == __LITTLE_ENDIAN
-			memcpy_swap_bo(dest, src, count);
-#endif
+		auto memcpy_be(void *dest, const void *src, std::size_t count) -> void {
+			static_assert(std::endian::native == std::endian::big || std::endian::native == std::endian::little,
+						  "mixed endian is not supported");
+
+			if constexpr (std::endian::native == std::endian::big) {
+				std::memcpy(dest, src, count);
+			} else {
+				memcpy_swap_bo(dest, src, count);
+			}
 		}
 
-		void memcpy_le(void *dest, const void *src, std::size_t count) {
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-			std::memcpy(dest, src, count);
-#elif __BYTE_ORDER == __BIG_ENDIAN
-			memcpy_swap_bo(dest, src, count);
-#endif
+		auto memcpy_le(void *dest, const void *src, std::size_t count) -> void {
+			static_assert(std::endian::native == std::endian::big || std::endian::native == std::endian::little,
+						  "mixed endian is not supported");
+
+			if constexpr (std::endian::native == std::endian::little) {
+				std::memcpy(dest, src, count);
+			} else {
+				memcpy_swap_bo(dest, src, count);
+			}
 		}
 
 		namespace systemd {
