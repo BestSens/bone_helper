@@ -43,8 +43,6 @@ if(USE_LTO)
 	endif()
 endif()
 
-option(STATIC_LINK_BINARY "statically link binary" OFF)
-
 if(STATIC_LINK_BINARY)
 	set(CMAKE_FIND_LIBRARY_SUFFIXES ".a")
 	set(BUILD_SHARED_LIBS OFF)
