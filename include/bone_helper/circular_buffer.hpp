@@ -10,6 +10,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <concepts>
 #include <limits>
 #include <mutex>
 #include <stdexcept>
@@ -17,7 +18,7 @@
 #include <vector>
 
 namespace bestsens {
-	template <typename T>
+	template <std::integral T>
 	auto subtractWithRollover(const T& a, const T& b, const T& limit = std::numeric_limits<T>::max()) -> T {
 		assert(a >= 0 && b >= 0);
 		assert(a <= limit);
@@ -29,7 +30,7 @@ namespace bestsens {
 		return a - b;
 	}
 
-	template <typename T>
+	template <std::integral T>
 	auto addWithRollover(const T& a, const T& b, const T& limit = std::numeric_limits<T>::max()) -> T {
 		assert(a >= 0 && b >= 0);
 		assert(a <= limit);
