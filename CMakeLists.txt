@@ -1,5 +1,7 @@
 project(bone_helper)
 
+cmake_minimum_required(VERSION 3.24)
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 add_library(bone_helper STATIC EXCLUDE_FROM_ALL

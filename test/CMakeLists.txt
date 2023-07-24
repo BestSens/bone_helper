@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.3)
+cmake_minimum_required(VERSION 3.24)
 find_package(Boost REQUIRED)
 
 add_executable(run_test_bone_helper
