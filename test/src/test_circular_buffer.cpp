@@ -415,13 +415,13 @@ TEST_CASE("circular buffer performance test", "[.]") {
 TEST_CASE("circular buffer stress test", "[.]") {
 	bestsens::CircularBuffer<int, 100'000> buffer_test;
 
-	std::array<std::thread, 50> inst_thread;
+	std::array<std::thread, 5> inst_thread;
 	std::array<std::thread, 50> inst_thread_read;
 
 	for (unsigned int i = 0; i < inst_thread.size(); i++) {
 		new (&inst_thread.at(i)) std::thread(
 			[&buffer_test](unsigned int /*thread_id*/) {
-				for (int i = 0; i < 1000000; i++) {
+				for (int i = 0; i < 10'000'000; i++) {
 					buffer_test.add(i);
 				}
 			},
@@ -431,8 +431,8 @@ TEST_CASE("circular buffer stress test", "[.]") {
 	for (unsigned int i = 0; i < inst_thread_read.size(); i++) {
 		new (&inst_thread_read.at(i)) std::thread(
 			[&buffer_test](unsigned int /*thread_id*/) {
-				for (int i = 0; i < 10000; i++) {
-					size_t amount = 10000;
+				for (int i = 0; i < 10'000; i++) {
+					size_t amount = 10'000;
 					std::vector<int> test;
 					test.resize(amount);
 					const size_t last_position = 0;
@@ -448,7 +448,7 @@ TEST_CASE("circular buffer stress test", "[.]") {
 	for (auto& element : inst_thread) {
 		element.join();
 	}
-	std::cout << inst_thread.size() << "M data points added" << std::endl;
+	std::cout << inst_thread.size() * 10 << "M data points added" << std::endl;
 
 	for (auto& element : inst_thread_read) {
 		element.join();
