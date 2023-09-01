@@ -162,7 +162,7 @@ namespace bestsens {
 				tinydir_dir dir;
 
 				if (tinydir_open(&dir, directory_location.c_str()) != 0) {
-					throw std::runtime_error("error opening directory" + directory_location);
+					throw std::runtime_error("error opening directory " + directory_location);
 				}
 
 				try {
