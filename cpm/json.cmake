@@ -1,12 +1,12 @@
 include(CPM)
 CPMAddPackage(
   NAME json
-  VERSION 3.11.2
-  URL https://github.com/nlohmann/json/archive/refs/tags/v3.11.2.tar.gz
+  VERSION 3.11.3
+  URL https://github.com/nlohmann/json/archive/refs/tags/v3.11.3.tar.gz
   OPTIONS
     "JSON_MultipleHeaders ON"
     "JSON_BuildTests OFF"
-  URL_HASH MD5=e8d56bc54621037842ee9f0aeae27746
+  URL_HASH MD5=39da39c312501a041def772380e30d1ae1837065
   OVERRIDE_FIND_PACKAGE
 )
 
