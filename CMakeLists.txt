@@ -11,6 +11,8 @@ add_library(bone_helper STATIC EXCLUDE_FROM_ALL
 	src/fsHelper.cpp
 )
 
+target_compile_features(bone_helper PUBLIC cxx_std_23)
+
 find_package(Boost REQUIRED filesystem)
 
 target_include_directories(bone_helper PUBLIC include ${Boost_INCLUDE_DIRS})
