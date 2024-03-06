@@ -2,6 +2,7 @@
 
 #include <expected>
 #include <limits>
+#include <utility>
 
 enum class cast_error { negative_overflow, positive_overflow };
 
