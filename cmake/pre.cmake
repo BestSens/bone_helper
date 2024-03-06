@@ -6,7 +6,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 add_library(common_compile_options INTERFACE)
 
 option(ENABLE_WCONVERSION "enables warnings for conversions" ON)
-option(CRITICAL_WARNINGS "throw error on warnings" OFF)
+option(CRITICAL_WARNINGS "throw error on warnings" ON)
 
 add_compile_options(-Wno-psabi)
 
