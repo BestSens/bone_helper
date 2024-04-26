@@ -1,11 +1,11 @@
 include(CPM)
 CPMAddPackage(
   NAME spdlog
-  VERSION 1.13.0
+  VERSION 1.14.0
   OPTIONS
     "SPDLOG_FMT_EXTERNAL ON"
-  GIT_REPOSITORY "https://github.com/gabime/spdlog.git"
-  GIT_TAG 7c02e204c92545f869e2f04edaab1f19fe8b19fd
+  URL https://github.com/gabime/spdlog/archive/refs/tags/v1.14.0.tar.gz
+  URL_HASH MD5=fa062afc1e88ee3bad712dcd2d5a270a
   OVERRIDE_FIND_PACKAGE
 )
 
