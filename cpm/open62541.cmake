@@ -1,9 +1,9 @@
 include(CPM)
 CPMAddPackage(
   NAME open62541
-  VERSION 1.4.7
-  URL https://github.com/open62541/open62541/archive/refs/tags/v1.4.7.zip
-  URL_HASH MD5=aecc57b9f3542ba08d65b523336a30a8
+  VERSION 1.4.8
+  URL https://github.com/open62541/open62541/archive/refs/tags/v1.4.8.zip
+  URL_HASH MD5=d781f5bf16ffb8fc8eb06705f99b7641
   OVERRIDE_FIND_PACKAGE
   OPTIONS
   	"UA_MULTITHREADING 100"
