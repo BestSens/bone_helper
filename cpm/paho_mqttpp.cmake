@@ -1,9 +1,9 @@
 include(CPM)
 CPMAddPackage(
 	NAME paho_mqtt_c
-	VERSION 1.3.13
-	URL https://github.com/eclipse/paho.mqtt.c/archive/refs/tags/v1.3.13.tar.gz
-	URL_HASH MD5=74aee81a2620207bae4f26fc641048de
+	VERSION 1.3.14
+	URL https://github.com/eclipse/paho.mqtt.c/archive/refs/tags/v1.3.14.tar.gz
+	URL_HASH SHA256=7af7d906e60a696a80f1b7c2bd7d6eb164aaad908ff4c40c3332ac2006d07346
 	OPTIONS
 		"PAHO_WITH_SSL ON"
 		"PAHO_BUILD_SHARED OFF"
@@ -21,9 +21,9 @@ set(paho_mqtt_c_INCLUDE_DIRS "${paho_mqtt_c_SOURCE_DIR}/src/")
 
 CPMAddPackage(
 	NAME paho_mqttpp
-	VERSION 1.3.1
-	URL https://github.com/eclipse/paho.mqtt.cpp/archive/refs/tags/v1.3.1.tar.gz
-	URL_HASH MD5=c70e81c1ec15ef369a4620b515b32c60
+	VERSION 1.5.2
+	URL https://github.com/eclipse/paho.mqtt.cpp/archive/refs/tags/v1.5.2.tar.gz
+	URL_HASH SHA256=3d8d9bfee614d74fa2e28dc244733c79e4868fa32a2d49af303ec176ccc55bfb
 	OPTIONS
 		"PAHO_WITH_SSL ON"
 		"PAHO_BUILD_STATIC ON"

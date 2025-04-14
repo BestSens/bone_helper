@@ -3,8 +3,5 @@ CPMAddPackage(
   NAME fmt
   VERSION 11.1.4
   URL https://github.com/fmtlib/fmt/releases/download/11.1.4/fmt-11.1.4.zip
-  URL_HASH MD5=ad6a56b15cddf4aad2a234e7cfc9e8c9
-  OVERRIDE_FIND_PACKAGE
+  URL_HASH SHA256=49b039601196e1a765e81c5c9a05a61ed3d33f23b3961323d7322e4fe213d3e6
 )
-
-find_package(fmt)

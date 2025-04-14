@@ -7,7 +7,4 @@ CPMAddPackage(
     "LIBCORO_BUILD_EXAMPLES OFF"
   GIT_REPOSITORY https://github.com/jbaldwin/libcoro.git
   GIT_TAG v0.6
-  OVERRIDE_FIND_PACKAGE
 )
-
-find_package(libcoro)

@@ -6,8 +6,5 @@ CPMAddPackage(
     "CXXOPTS_BUILD_EXAMPLES OFF"
     "CXXOPTS_BUILD_TESTS OFF"
   URL https://github.com/jarro2783/cxxopts/archive/refs/tags/v3.2.0.tar.gz
-  URL_HASH MD5=23226abcb20225d1033217c137c353d6
-  OVERRIDE_FIND_PACKAGE
+  URL_HASH SHA256=9f43fa972532e5df6c5fd5ad0f5bac606cdec541ccaf1732463d8070bbb7f03b
 )
-
-find_package(cxxopts)
