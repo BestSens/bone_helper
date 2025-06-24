@@ -17,4 +17,5 @@ CPMAddPackage(
 
 set(paho_mqttpp_LIBRARIES "${paho_mqttpp_BINARY_DIR}/src/libpaho-mqttpp3.a")
 set(paho_mqttpp_INCLUDE_DIRS "${paho_mqttpp_SOURCE_DIR}/include")
+set(paho_mqtt_c_LIBRARIES "${paho_mqttpp_BINARY_DIR}/externals/paho-mqtt-c/src/libpaho-mqtt3a.a")
 set(paho_mqtt_c_INCLUDE_DIRS "${paho_mqttpp_SOURCE_DIR}/externals/paho-mqtt-c/src")
